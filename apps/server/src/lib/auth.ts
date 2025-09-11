@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "../db";
-import * as schema from "../db/schema/auth";
+import { db } from "@/db";
+import * as schema from "@/db/schema/auth";
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
@@ -10,8 +10,16 @@ export const auth = betterAuth({
 		schema: schema,
 	}),
 	trustedOrigins: [process.env.CORS_ORIGIN || ""],
-	emailAndPassword: {
-		enabled: true,
+	socialProviders: {
+		discord: {
+			clientId: process.env.DISCORD_CLIENT_ID || "",
+			clientSecret: process.env.DISCORD_CLIENT_SECRET || "",
+		},
+	},
+	user: {
+		deleteUser: {
+			enabled: true,
+		},
 	},
 	advanced: {
 		defaultCookieAttributes: {

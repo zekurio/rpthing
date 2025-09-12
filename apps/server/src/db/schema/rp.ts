@@ -11,6 +11,7 @@ export const realm = sqliteTable("realm", {
 	id: text("id").primaryKey(),
 	name: text("name").notNull(),
 	description: text("description"),
+	password: text("password"),
 	ownerId: text("owner_id")
 		.notNull()
 		.references(() => user.id, { onDelete: "cascade" }),

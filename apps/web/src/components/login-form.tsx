@@ -11,7 +11,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { authClient } from "@/lib/auth-client";
+import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 
 export function LoginForm({
@@ -19,24 +19,19 @@ export function LoginForm({
 	...props
 }: React.ComponentPropsWithoutRef<"div">) {
 	const [loading, setLoading] = useState(false);
+	const { signInWithProvider } = useAuth();
 
 	async function handleSignIn(provider: "discord", callbackURL: string) {
-		await authClient.signIn.social(
-			{
-				provider,
-				callbackURL,
-			},
-			{
-				onRequest: () => {
-					setLoading(true);
-				},
-				onError: (ctx: { error: { message: string } }) => {
-					toast.error(`Failed to login with ${provider}`, {
-						description: ctx.error.message,
-					});
-				},
-			},
-		);
+		try {
+			setLoading(true);
+			await signInWithProvider(provider, callbackURL);
+		} catch (err) {
+			toast.error(`Failed to login with ${provider}`, {
+				description: err instanceof Error ? err.message : "Please try again.",
+			});
+		} finally {
+			setLoading(false);
+		}
 	}
 
 	return (

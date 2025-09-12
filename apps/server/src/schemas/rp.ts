@@ -7,11 +7,13 @@ export const idSchema = z.string().min(1);
 export const realmIdSchema = idSchema;
 export const realmNameSchema = z.string().min(1).max(200);
 export const realmDescriptionSchema = z.string().max(2000).nullish();
+export const realmPasswordSchema = z.string().min(1).max(32).nullish();
 
 export const realmCreateInputSchema = z.object({
 	id: realmIdSchema,
 	name: realmNameSchema,
 	description: realmDescriptionSchema,
+	password: realmPasswordSchema.nullish(),
 });
 export type RealmCreateInput = z.infer<typeof realmCreateInputSchema>;
 
@@ -28,18 +30,11 @@ export type RealmMemberCreateInput = z.infer<
 	typeof realmMemberCreateInputSchema
 >;
 
-// Character
-export const characterIdSchema = idSchema;
-
-export const imageCropSchema = z.record(z.string(), z.unknown()).nullish();
-
-export const characterCreateInputSchema = z.object({
-	id: characterIdSchema,
+// Transfer ownership
+export const realmTransferOwnershipInputSchema = z.object({
 	realmId: realmIdSchema,
-	name: z.string().min(1).max(200),
-	gender: z.string().max(50).nullish(),
-	referenceImageKey: z.string().min(1).nullish(),
-	imageCrop: imageCropSchema,
-	notes: z.string().max(5000).nullish(),
+	newOwnerUserId: idSchema,
 });
-export type CharacterCreateInput = z.infer<typeof characterCreateInputSchema>;
+export type RealmTransferOwnershipInput = z.infer<
+	typeof realmTransferOwnershipInputSchema
+>;

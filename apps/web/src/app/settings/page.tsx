@@ -1,6 +1,5 @@
 "use client";
 
-import type { User } from "better-auth";
 import { Loader2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
@@ -27,12 +26,11 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { authClient } from "@/lib/auth-client";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function SettingsPage() {
 	const router = useRouter();
-	const { data: session, isPending } = authClient.useSession();
-	const user = (session?.user as User | undefined) || undefined;
+	const { user, isLoading, updateProfile, deleteAccount } = useAuth();
 	const nameId = useId();
 
 	// Name state
@@ -47,7 +45,7 @@ export default function SettingsPage() {
 		if (!name || name === user?.name) return;
 		try {
 			setSavingName(true);
-			await authClient.updateUser({ name });
+			await updateProfile({ name });
 			toast.success("Name updated");
 		} catch (err) {
 			console.error(err);
@@ -62,7 +60,7 @@ export default function SettingsPage() {
 	const handleDeleteAccount = async () => {
 		try {
 			setDeleting(true);
-			await authClient.deleteUser();
+			await deleteAccount();
 			toast.success("Your account has been deleted");
 			router.push("/");
 		} catch (err) {
@@ -99,7 +97,7 @@ export default function SettingsPage() {
 									placeholder="Your name"
 									value={name}
 									onChange={(e) => setName(e.target.value)}
-									disabled={isPending || savingName}
+									disabled={isLoading || savingName}
 								/>
 							</div>
 							<div className="flex items-center justify-end gap-2">
@@ -107,7 +105,7 @@ export default function SettingsPage() {
 									variant="secondary"
 									onClick={() => setName(user?.name || "")}
 									disabled={
-										isPending || savingName || name === (user?.name || "")
+										isLoading || savingName || name === (user?.name || "")
 									}
 								>
 									Reset
@@ -115,7 +113,7 @@ export default function SettingsPage() {
 								<Button
 									onClick={handleSaveName}
 									disabled={
-										isPending ||
+										isLoading ||
 										savingName ||
 										!name ||
 										name === (user?.name || "")

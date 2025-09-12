@@ -1,12 +1,12 @@
 "use client";
 
-import type { User } from "better-auth";
 import { Home, LogOut, Monitor, Moon, Settings, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -17,17 +17,16 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { authClient } from "@/lib/auth-client";
+import { useAuth } from "@/hooks/use-auth";
 
 export function UserMenu() {
 	const router = useRouter();
-	const { data: session, isPending } = authClient.useSession();
+	const { user, isLoading, signOut } = useAuth();
 	const { theme, setTheme } = useTheme();
-	const user = session?.user as User | undefined;
 
 	const handleSignOut = async () => {
 		try {
-			await authClient.signOut();
+			await signOut();
 			toast.success("You have been signed out successfully.");
 			router.push("/login");
 		} catch (error) {
@@ -37,32 +36,40 @@ export function UserMenu() {
 	};
 
 	const renderUserInfo = () => {
-		if (isPending) {
+		if (isLoading) {
+			return <div className="h-5 w-24 animate-pulse rounded-md bg-accent" />;
+		}
+
+		return <span className="truncate font-medium">{user?.name || "User"}</span>;
+	};
+
+	const renderUserInfoWithEmail = () => {
+		if (isLoading) {
 			return (
-				<>
-					<div className="h-5 w-24 animate-pulse rounded-md bg-accent" />
-					<div className="mt-1 h-3 w-32 animate-pulse rounded-md bg-accent" />
-				</>
+				<div className="flex flex-col gap-1">
+					<div className="h-4 w-24 animate-pulse rounded-md bg-accent" />
+					<div className="h-3 w-32 animate-pulse rounded-md bg-accent" />
+				</div>
 			);
 		}
 
 		return (
-			<>
+			<div className="flex flex-col gap-1">
 				<span className="truncate font-medium">{user?.name || "User"}</span>
-				<span className="truncate text-muted-foreground text-xs">
+				<span className="truncate text-muted-foreground text-sm">
 					{user?.email || ""}
 				</span>
-			</>
+			</div>
 		);
 	};
 
 	const renderAvatar = () => {
-		if (isPending) {
+		if (isLoading) {
 			return <div className="h-8 w-8 animate-pulse rounded-full bg-accent" />;
 		}
 
 		return (
-			<Avatar className="h-8 w-8 cursor-pointer rounded-full">
+			<Avatar className="h-8 w-8">
 				<AvatarImage src={user?.image || ""} alt={user?.name || ""} />
 				<AvatarFallback className="rounded-lg">
 					{user?.name ? user.name.charAt(0).toUpperCase() : "U"}
@@ -73,7 +80,15 @@ export function UserMenu() {
 
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger asChild>{renderAvatar()}</DropdownMenuTrigger>
+			<DropdownMenuTrigger asChild>
+				<Button
+					variant="ghost"
+					className="flex h-auto items-center gap-3 px-3 py-2"
+				>
+					{renderUserInfo()}
+					<div className="flex flex-col items-start">{renderAvatar()}</div>
+				</Button>
+			</DropdownMenuTrigger>
 
 			<DropdownMenuContent
 				className="min-w-56 rounded-lg"
@@ -82,9 +97,7 @@ export function UserMenu() {
 			>
 				{/* User Information */}
 				<DropdownMenuLabel className="p-0 font-normal">
-					<div className="flex flex-col gap-1 px-3 py-2 text-left">
-						{renderUserInfo()}
-					</div>
+					<div className="px-3 py-2 text-left">{renderUserInfoWithEmail()}</div>
 				</DropdownMenuLabel>
 
 				<DropdownMenuSeparator />

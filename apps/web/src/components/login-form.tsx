@@ -53,7 +53,12 @@ export function LoginForm({
 								variant="outline"
 								className="w-full"
 								type="button"
-								onClick={() => handleSignIn("discord", `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`)}
+								onClick={() =>
+									handleSignIn(
+										"discord",
+										`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+									)
+								}
 								disabled={loading}
 							>
 								<BsDiscord />

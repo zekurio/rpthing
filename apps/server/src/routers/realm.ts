@@ -6,6 +6,7 @@ import { protectedProcedure, router } from "../lib/trpc";
 import {
 	realmCreateInputSchema,
 	realmIdSchema,
+	realmJoinInputSchema,
 	realmTransferOwnershipInputSchema,
 } from "../schemas";
 
@@ -61,6 +62,52 @@ export const realmRouter = router({
 
 		return rows;
 	}),
+
+	join: protectedProcedure
+		.input(realmJoinInputSchema)
+		.mutation(async ({ ctx, input }) => {
+			const userId = ctx.session.user.id;
+			const { realmId, password } = input;
+
+			// Check if realm exists
+			const [r] = await db
+				.select({ id: realm.id, password: realm.password })
+				.from(realm)
+				.where(eq(realm.id, realmId))
+				.limit(1);
+
+			if (!r) {
+				throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
+			}
+
+			// If realm has a password, verify it
+			if (r.password) {
+				const ok = password
+					? await Bun.password.verify(password, r.password)
+					: false;
+				if (!ok) {
+					throw new TRPCError({
+						code: "UNAUTHORIZED",
+						message: "Invalid password",
+					});
+				}
+			}
+
+			// If already a member, succeed idempotently
+			const existing = await db
+				.select({ userId: realmMember.userId })
+				.from(realmMember)
+				.where(
+					and(eq(realmMember.realmId, realmId), eq(realmMember.userId, userId)),
+				)
+				.limit(1);
+			if (existing.length > 0) {
+				return true;
+			}
+
+			await db.insert(realmMember).values({ realmId, userId, role: "member" });
+			return true;
+		}),
 
 	leave: protectedProcedure
 		.input(realmIdSchema)

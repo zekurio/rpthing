@@ -38,3 +38,10 @@ export const realmTransferOwnershipInputSchema = z.object({
 export type RealmTransferOwnershipInput = z.infer<
 	typeof realmTransferOwnershipInputSchema
 >;
+
+// Join realm
+export const realmJoinInputSchema = z.object({
+	realmId: realmIdSchema,
+	password: realmPasswordSchema.nullish(),
+});
+export type RealmJoinInput = z.infer<typeof realmJoinInputSchema>;

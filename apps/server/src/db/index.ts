@@ -1,8 +1,5 @@
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
+import { Database } from "bun:sqlite";
+import { drizzle } from "drizzle-orm/bun-sqlite";
 
-const client = createClient({
-	url: process.env.DATABASE_URL || "",
-});
-
-export const db = drizzle({ client });
+const sqlite = new Database(process.env.DATABASE_URL || "rpthing.sqlite");
+export const db = drizzle(sqlite);

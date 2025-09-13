@@ -27,5 +27,8 @@ export const auth = betterAuth({
 			secure: true,
 			httpOnly: true,
 		},
+		database: {
+			generateId: () => Bun.randomUUIDv7(),
+		},
 	},
 });

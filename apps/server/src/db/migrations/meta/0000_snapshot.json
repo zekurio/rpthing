@@ -1,7 +1,7 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "51e46f67-4524-40ea-a6fd-9c7a2adda373",
+	"id": "1c238b1b-f1e2-460d-9e52-84e01ced9c98",
 	"prevId": "00000000-0000-0000-0000-000000000000",
 	"tables": {
 		"account": {
@@ -90,7 +90,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.448Z\"'"
+					"default": "'\"2025-09-13T08:41:50.392Z\"'"
 				},
 				"updated_at": {
 					"name": "updated_at",
@@ -146,7 +146,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.447Z\"'"
+					"default": "'\"2025-09-13T08:41:50.391Z\"'"
 				},
 				"updated_at": {
 					"name": "updated_at",
@@ -244,7 +244,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.447Z\"'"
+					"default": "'\"2025-09-13T08:41:50.391Z\"'"
 				},
 				"updated_at": {
 					"name": "updated_at",
@@ -252,7 +252,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.447Z\"'"
+					"default": "'\"2025-09-13T08:41:50.391Z\"'"
 				}
 			},
 			"indexes": {
@@ -304,7 +304,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.448Z\"'"
+					"default": "'\"2025-09-13T08:41:50.392Z\"'"
 				},
 				"updated_at": {
 					"name": "updated_at",
@@ -312,7 +312,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.448Z\"'"
+					"default": "'\"2025-09-13T08:41:50.392Z\"'"
 				}
 			},
 			"indexes": {},
@@ -386,7 +386,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.453Z\"'"
+					"default": "'\"2025-09-13T08:41:50.398Z\"'"
 				},
 				"updated_at": {
 					"name": "updated_at",
@@ -394,7 +394,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.453Z\"'"
+					"default": "'\"2025-09-13T08:41:50.398Z\"'"
 				}
 			},
 			"indexes": {},
@@ -467,7 +467,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.453Z\"'"
+					"default": "'\"2025-09-13T08:41:50.399Z\"'"
 				},
 				"updated_at": {
 					"name": "updated_at",
@@ -475,7 +475,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.453Z\"'"
+					"default": "'\"2025-09-13T08:41:50.399Z\"'"
 				}
 			},
 			"indexes": {},
@@ -533,7 +533,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.453Z\"'"
+					"default": "'\"2025-09-13T08:41:50.399Z\"'"
 				},
 				"updated_at": {
 					"name": "updated_at",
@@ -541,7 +541,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.453Z\"'"
+					"default": "'\"2025-09-13T08:41:50.399Z\"'"
 				}
 			},
 			"indexes": {},
@@ -604,7 +604,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.453Z\"'"
+					"default": "'\"2025-09-13T08:41:50.398Z\"'"
 				},
 				"updated_at": {
 					"name": "updated_at",
@@ -612,7 +612,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.453Z\"'"
+					"default": "'\"2025-09-13T08:41:50.398Z\"'"
 				}
 			},
 			"indexes": {},
@@ -655,6 +655,20 @@
 					"notNull": false,
 					"autoincrement": false
 				},
+				"password": {
+					"name": "password",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"icon_key": {
+					"name": "icon_key",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
 				"owner_id": {
 					"name": "owner_id",
 					"type": "text",
@@ -668,7 +682,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.453Z\"'"
+					"default": "'\"2025-09-13T08:41:50.398Z\"'"
 				},
 				"updated_at": {
 					"name": "updated_at",
@@ -676,7 +690,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.453Z\"'"
+					"default": "'\"2025-09-13T08:41:50.398Z\"'"
 				}
 			},
 			"indexes": {},
@@ -725,7 +739,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.453Z\"'"
+					"default": "'\"2025-09-13T08:41:50.398Z\"'"
 				},
 				"updated_at": {
 					"name": "updated_at",
@@ -733,7 +747,7 @@
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'\"2025-09-12T18:05:28.453Z\"'"
+					"default": "'\"2025-09-13T08:41:50.398Z\"'"
 				}
 			},
 			"indexes": {},

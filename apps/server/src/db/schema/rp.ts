@@ -8,10 +8,13 @@ import { user } from "./auth";
 
 // Realm acts as a universe container
 export const realm = sqliteTable("realm", {
-	id: text("id").primaryKey(),
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => Bun.randomUUIDv7()),
 	name: text("name").notNull(),
 	description: text("description"),
 	password: text("password"),
+	iconKey: text("icon_key"),
 	ownerId: text("owner_id")
 		.notNull()
 		.references(() => user.id, { onDelete: "cascade" }),
@@ -48,7 +51,9 @@ export const realmMember = sqliteTable(
 
 // Character belongs to a Realm and a creator (User)
 export const character = sqliteTable("character", {
-	id: text("id").primaryKey(),
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => Bun.randomUUIDv7()),
 	realmId: text("realm_id")
 		.notNull()
 		.references(() => realm.id, { onDelete: "cascade" }),
@@ -71,7 +76,9 @@ export const character = sqliteTable("character", {
 
 // Rating categories defined per Realm
 export const ratingCategory = sqliteTable("rating_category", {
-	id: text("id").primaryKey(),
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => Bun.randomUUIDv7()),
 	realmId: text("realm_id")
 		.notNull()
 		.references(() => realm.id, { onDelete: "cascade" }),
@@ -109,7 +116,9 @@ export const characterRating = sqliteTable(
 
 // Field-level editing permissions for Characters
 export const characterPermission = sqliteTable("character_permission", {
-	id: text("id").primaryKey(),
+	id: text("id")
+		.primaryKey()
+		.$defaultFn(() => Bun.randomUUIDv7()),
 	characterId: text("character_id")
 		.notNull()
 		.references(() => character.id, { onDelete: "cascade" }),

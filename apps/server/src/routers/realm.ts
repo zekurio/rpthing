@@ -2,12 +2,15 @@ import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "../db";
 import { realm, realmMember } from "../db/schema/rp";
+import { deleteFile, getFileUrl } from "../lib/storage";
 import { protectedProcedure, router } from "../lib/trpc";
 import {
 	realmCreateInputSchema,
+	realmDeleteIconInputSchema,
 	realmIdSchema,
 	realmJoinInputSchema,
 	realmTransferOwnershipInputSchema,
+	realmUpdateIconInputSchema,
 } from "../schemas";
 
 export const realmRouter = router({
@@ -51,6 +54,7 @@ export const realmRouter = router({
 				id: realm.id,
 				name: realm.name,
 				description: realm.description,
+				iconKey: realm.iconKey,
 				ownerId: realm.ownerId,
 				createdAt: realm.createdAt,
 				updatedAt: realm.updatedAt,
@@ -251,5 +255,120 @@ export const realmRouter = router({
 			});
 
 			return true;
+		}),
+
+	uploadIcon: protectedProcedure
+		.input(realmUpdateIconInputSchema)
+		.mutation(async ({ ctx, input }) => {
+			const userId = ctx.session.user.id;
+			const { realmId } = input;
+
+			// Check if user is the owner
+			const [r] = await db
+				.select({ ownerId: realm.ownerId, iconKey: realm.iconKey })
+				.from(realm)
+				.where(eq(realm.id, realmId))
+				.limit(1);
+
+			if (!r) {
+				throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
+			}
+
+			if (r.ownerId !== userId) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Only the realm owner can update the icon",
+				});
+			}
+
+			// Generate a unique key for the icon
+			const iconKey = `realm-icons/${realmId}/${Date.now()}-${Math.random().toString(36).substring(2)}.png`;
+
+			// If there's an existing icon, delete it from storage
+			if (r.iconKey) {
+				try {
+					await deleteFile(r.iconKey);
+				} catch (error) {
+					console.error(`Failed to delete old icon ${r.iconKey}:`, error);
+					// Continue anyway - we don't want to fail the upload because of cleanup issues
+				}
+			}
+
+			// Update the database with the new icon key
+			await db.update(realm).set({ iconKey }).where(eq(realm.id, realmId));
+
+			return {
+				success: true,
+				iconKey,
+				uploadUrl: await getFileUrl(iconKey),
+			};
+		}),
+
+	deleteIcon: protectedProcedure
+		.input(realmDeleteIconInputSchema)
+		.mutation(async ({ ctx, input }) => {
+			const userId = ctx.session.user.id;
+			const { realmId } = input;
+
+			// Check if user is the owner
+			const [r] = await db
+				.select({ ownerId: realm.ownerId, iconKey: realm.iconKey })
+				.from(realm)
+				.where(eq(realm.id, realmId))
+				.limit(1);
+
+			if (!r) {
+				throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
+			}
+
+			if (r.ownerId !== userId) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Only the realm owner can delete the icon",
+				});
+			}
+
+			if (!r.iconKey) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Realm has no icon to delete",
+				});
+			}
+
+			// Delete the file from storage
+			try {
+				await deleteFile(r.iconKey);
+			} catch (error) {
+				// Log the error but continue with database update
+				console.error(`Failed to delete icon file ${r.iconKey}:`, error);
+			}
+
+			// Remove icon from database
+			await db
+				.update(realm)
+				.set({ iconKey: null })
+				.where(eq(realm.id, realmId));
+
+			return { success: true };
+		}),
+
+	getIconUrl: protectedProcedure
+		.input(realmIdSchema)
+		.query(async ({ input }) => {
+			const realmId = input;
+
+			// Get the icon key for this realm
+			const [r] = await db
+				.select({ iconKey: realm.iconKey })
+				.from(realm)
+				.where(eq(realm.id, realmId))
+				.limit(1);
+
+			if (!r || !r.iconKey) {
+				return { url: null };
+			}
+
+			const url = await getFileUrl(r.iconKey);
+			return { url };
 		}),
 });

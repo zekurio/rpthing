@@ -45,3 +45,14 @@ export const realmJoinInputSchema = z.object({
 	password: realmPasswordSchema.nullish(),
 });
 export type RealmJoinInput = z.infer<typeof realmJoinInputSchema>;
+
+// Realm icon operations
+export const realmUpdateIconInputSchema = z.object({
+	realmId: realmIdSchema,
+});
+export type RealmUpdateIconInput = z.infer<typeof realmUpdateIconInputSchema>;
+
+export const realmDeleteIconInputSchema = z.object({
+	realmId: realmIdSchema,
+});
+export type RealmDeleteIconInput = z.infer<typeof realmDeleteIconInputSchema>;

@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { BsDiscord } from "react-icons/bs";
 import { toast } from "sonner";
@@ -20,6 +21,8 @@ export function LoginForm({
 }: React.ComponentPropsWithoutRef<"div">) {
 	const [loading, setLoading] = useState(false);
 	const { signInWithProvider } = useAuth();
+	const searchParams = useSearchParams();
+	const redirectUrl = searchParams.get("redirect") || "/realms";
 
 	async function handleSignIn(provider: "discord", callbackURL: string) {
 		try {
@@ -51,7 +54,7 @@ export function LoginForm({
 								onClick={() =>
 									handleSignIn(
 										"discord",
-										`${process.env.NEXT_PUBLIC_APP_URL}/realms`,
+										`${process.env.NEXT_PUBLIC_APP_URL}${redirectUrl}`,
 									)
 								}
 								disabled={loading}

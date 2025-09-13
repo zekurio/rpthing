@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import sharp from "sharp";
+import { z } from "zod";
 import { db } from "../db";
 import { character, realm, realmMember } from "../db/schema/rp";
 import { deleteFile, getFileUrl, uploadFile } from "../lib/storage";
@@ -113,6 +114,42 @@ export const realmRouter = router({
 
 		return rows;
 	}),
+
+	getById: protectedProcedure
+		.input(z.object({ realmId: realmIdSchema }))
+		.query(async ({ ctx, input }) => {
+			const userId = ctx.session.user.id;
+			const { realmId } = input;
+
+			// Check if user is a member of this realm
+			const [result] = await db
+				.select({
+					id: realm.id,
+					name: realm.name,
+					description: realm.description,
+					iconKey: realm.iconKey,
+					ownerId: realm.ownerId,
+					createdAt: realm.createdAt,
+					updatedAt: realm.updatedAt,
+					role: realmMember.role,
+				})
+				.from(realmMember)
+				.innerJoin(realm, eq(realm.id, realmMember.realmId))
+				.where(
+					and(eq(realmMember.realmId, realmId), eq(realmMember.userId, userId)),
+				)
+				.limit(1);
+
+			if (!result) {
+				// Return generic error to prevent information leakage
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Access denied. The requested resource is not available.",
+				});
+			}
+
+			return result;
+		}),
 
 	join: protectedProcedure
 		.input(realmJoinInputSchema)

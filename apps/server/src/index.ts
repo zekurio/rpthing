@@ -21,7 +21,7 @@ app.use(
 	}),
 );
 
-const storageRoot = process.env.STORAGE_PATH || "storage";
+const storageRoot = process.env.STORAGE_PATH || "apps/server/storage";
 app.use("/realm-icons/*", serveStatic({ root: storageRoot }));
 
 app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));

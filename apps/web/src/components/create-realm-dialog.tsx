@@ -173,7 +173,6 @@ function CreateRealmForm({
 								setSelectedFile(file);
 								setImagePreview(preview);
 							}}
-							size={16}
 						/>
 						{imagePreview && (
 							<Button

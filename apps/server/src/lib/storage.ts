@@ -1,7 +1,7 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const STORAGE_ROOT = process.env.STORAGE_PATH || "storage";
+const STORAGE_ROOT = process.env.STORAGE_PATH || "apps/server/storage";
 
 const ensureDirectory = async (dirPath: string) => {
 	await mkdir(dirPath, { recursive: true });

@@ -1,0 +1,46 @@
+"use client";
+
+import { RealmItem } from "@/components/realm-item";
+
+interface Realm {
+	id: string;
+	name?: string;
+	iconKey?: string | null;
+}
+
+interface RealmListProps {
+	realms: Realm[];
+	isPending: boolean;
+	currentRealmId: string | null;
+	serverUrl: string;
+	onEdit: (realmId: string) => void;
+	onDelete: (realmId: string) => void;
+}
+
+export function RealmList({
+	realms,
+	isPending,
+	currentRealmId,
+	serverUrl,
+	onEdit,
+	onDelete,
+}: RealmListProps) {
+	return (
+		<div className="flex min-h-0 w-full flex-1 flex-col items-center gap-2 overflow-y-auto py-3">
+			{isPending ? (
+				<div className="h-10 w-10 animate-pulse rounded-full bg-accent" />
+			) : (
+				realms.map((realm) => (
+					<RealmItem
+						key={realm.id}
+						realm={realm}
+						isSelected={currentRealmId === realm.id}
+						serverUrl={serverUrl}
+						onEdit={onEdit}
+						onDelete={onDelete}
+					/>
+				))
+			)}
+		</div>
+	);
+}

@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import sharp from "sharp";
 import { db } from "../db";
-import { realm, realmMember } from "../db/schema/rp";
+import { character, realm, realmMember } from "../db/schema/rp";
 import { deleteFile, getFileUrl, uploadFile } from "../lib/storage";
 import { protectedProcedure, router } from "../lib/trpc";
 import {
@@ -204,7 +204,7 @@ export const realmRouter = router({
 			const userId = ctx.session.user.id;
 
 			const [r] = await db
-				.select({ ownerId: realm.ownerId })
+				.select({ ownerId: realm.ownerId, iconKey: realm.iconKey })
 				.from(realm)
 				.where(eq(realm.id, input))
 				.limit(1);
@@ -220,7 +220,70 @@ export const realmRouter = router({
 				});
 			}
 
-			await db.delete(realm).where(eq(realm.id, input));
+			// Get all character reference images before deleting the realm
+			const characters = await db
+				.select({ referenceImageKey: character.referenceImageKey })
+				.from(character)
+				.where(eq(character.realmId, input));
+
+			// Collect all files to delete (use a Set to avoid duplicates)
+			const filesToDeleteSet = new Set<string>();
+
+			// Add realm icon if it exists
+			if (r.iconKey) {
+				filesToDeleteSet.add(r.iconKey);
+				console.log(`Will delete realm icon (from DB): ${r.iconKey}`);
+			}
+
+			// Also add stable icon key path in case DB is out of sync
+			const stableIconKey = `/realm-icons/${input}.png`;
+			filesToDeleteSet.add(stableIconKey);
+			console.log(`Will delete realm icon (stable path): ${stableIconKey}`);
+
+			// Add character reference images
+			for (const char of characters) {
+				if (char.referenceImageKey) {
+					filesToDeleteSet.add(char.referenceImageKey);
+					console.log(`Will delete character image: ${char.referenceImageKey}`);
+				}
+			}
+
+			const filesToDelete = Array.from(filesToDeleteSet);
+			console.log(`Total files to delete: ${filesToDelete.length}`);
+
+			// Delete all files first
+			const deleteResults = await Promise.allSettled(
+				filesToDelete.map(async (fileKey) => {
+					try {
+						console.log(`Attempting to delete file: ${fileKey}`);
+						await deleteFile(fileKey);
+						console.log(`Successfully deleted file: ${fileKey}`);
+						return { success: true, fileKey };
+					} catch (error) {
+						console.error(`Failed to delete file ${fileKey}:`, error);
+						return { success: false, fileKey, error };
+					}
+				}),
+			);
+
+			// Log results
+			const successful = deleteResults.filter(
+				(r) => r.status === "fulfilled" && r.value.success,
+			).length;
+			const failed = deleteResults.filter(
+				(r) =>
+					r.status === "rejected" ||
+					(r.status === "fulfilled" && !r.value.success),
+			).length;
+			console.log(
+				`File deletion results: ${successful} successful, ${failed} failed`,
+			);
+
+			// Delete membership relations explicitly, then delete the realm
+			await db.transaction(async (tx) => {
+				await tx.delete(realmMember).where(eq(realmMember.realmId, input));
+				await tx.delete(realm).where(eq(realm.id, input));
+			});
 
 			return true;
 		}),

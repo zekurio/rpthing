@@ -198,7 +198,6 @@ export function EditRealmDialog({
 										setSelectedFile(file);
 										setImagePreview(preview);
 									}}
-									size={20}
 								/>
 								{(imagePreview || currentIconSrc) && (
 									<Button

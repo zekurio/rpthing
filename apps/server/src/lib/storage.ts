@@ -1,10 +1,46 @@
-import { S3Client, type S3File } from "bun";
+import { mkdir, rm, writeFile } from "node:fs/promises";
+import path from "node:path";
 
-export const s3 = new S3Client({
-	accessKeyId: process.env.S3_ACCESS_KEY_ID,
-	secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
-	bucket: process.env.S3_BUCKET,
-});
+const STORAGE_ROOT = process.env.STORAGE_PATH || "storage";
+
+const ensureDirectory = async (dirPath: string) => {
+	await mkdir(dirPath, { recursive: true });
+};
+
+const normalizeAndResolve = (targetPath: string): string => {
+	const withoutLeadingSlash = targetPath.replace(/^\/+/, "");
+	const normalized = path.normalize(withoutLeadingSlash);
+	const resolved = path.resolve(STORAGE_ROOT, normalized);
+	const rootResolved = path.resolve(STORAGE_ROOT);
+	if (
+		!resolved.startsWith(rootResolved + path.sep) &&
+		resolved !== rootResolved
+	) {
+		throw new Error("Attempted path traversal outside of storage root");
+	}
+	return resolved;
+};
+
+const toUint8Array = async (
+	data:
+		| string
+		| ArrayBuffer
+		| SharedArrayBuffer
+		| Blob
+		| Response
+		| Request
+		| Uint8Array,
+): Promise<Uint8Array> => {
+	if (typeof data === "string") return new TextEncoder().encode(data);
+	if (data instanceof Uint8Array) return data;
+	if (data instanceof ArrayBuffer || data instanceof SharedArrayBuffer)
+		return new Uint8Array(data as ArrayBuffer);
+	if (data instanceof Blob) return new Uint8Array(await data.arrayBuffer());
+	if (data instanceof Response) return new Uint8Array(await data.arrayBuffer());
+	if (data instanceof Request)
+		return new Uint8Array(await (await data.blob()).arrayBuffer());
+	throw new Error("Unsupported data type for upload");
+};
 
 /**
  * Uploads a file to the S3 bucket
@@ -14,15 +50,26 @@ export const s3 = new S3Client({
  * @throws Error if upload fails
  */
 export const uploadFile = async (
-	path: string,
-	file: S3File,
+	targetPath: string,
+	data:
+		| string
+		| ArrayBuffer
+		| SharedArrayBuffer
+		| Blob
+		| Response
+		| Request
+		| Uint8Array,
+	_contentType?: string,
 ): Promise<number> => {
 	try {
-		const response = await s3.write(path, file);
-		return response;
+		const absolutePath = normalizeAndResolve(targetPath);
+		await ensureDirectory(path.dirname(absolutePath));
+		const bytes = await toUint8Array(data);
+		await writeFile(absolutePath, bytes);
+		return bytes.byteLength;
 	} catch (error) {
 		throw new Error(
-			`Failed to upload file to ${path}: ${error instanceof Error ? error.message : "Unknown error"}`,
+			`Failed to upload file to ${targetPath}: ${error instanceof Error ? error.message : "Unknown error"}`,
 		);
 	}
 };
@@ -33,13 +80,14 @@ export const uploadFile = async (
  * @returns The response from the S3 bucket
  * @throws Error if deletion fails
  */
-export const deleteFile = async (path: string) => {
+export const deleteFile = async (targetPath: string) => {
 	try {
-		const response = await s3.delete(path);
-		return response;
+		const absolutePath = normalizeAndResolve(targetPath);
+		await rm(absolutePath, { force: true });
+		return true;
 	} catch (error) {
 		throw new Error(
-			`Failed to delete file at ${path}: ${error instanceof Error ? error.message : "Unknown error"}`,
+			`Failed to delete file at ${targetPath}: ${error instanceof Error ? error.message : "Unknown error"}`,
 		);
 	}
 };
@@ -50,13 +98,13 @@ export const deleteFile = async (path: string) => {
  * @returns The public URL to access the file
  * @throws Error if URL generation fails
  */
-export const getFileUrl = async (path: string): Promise<string> => {
+export const getFileUrl = async (targetPath: string): Promise<string> => {
 	try {
-		const url = await s3.file(path).presign();
-		return url;
+		const withoutLeadingSlash = targetPath.replace(/^\/+/, "");
+		return `/${withoutLeadingSlash}`;
 	} catch (error) {
 		throw new Error(
-			`Failed to get URL for file at ${path}: ${error instanceof Error ? error.message : "Unknown error"}`,
+			`Failed to get URL for file at ${targetPath}: ${error instanceof Error ? error.message : "Unknown error"}`,
 		);
 	}
 };

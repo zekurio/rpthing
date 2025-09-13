@@ -17,8 +17,8 @@ export function SiteHeader() {
 	};
 
 	return (
-		<header className="relative z-20">
-			<div className="container mx-auto flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
+		<header className="relative z-20 w-full">
+			<div className="flex h-20 items-center justify-between pr-4 pl-4 sm:pr-4 lg:pr-6">
 				<Logo />
 				<div className="flex items-center gap-4">
 					{isPending ? (

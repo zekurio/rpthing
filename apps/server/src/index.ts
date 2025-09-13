@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { trpcServer } from "@hono/trpc-server";
 import { Hono } from "hono";
+import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { auth } from "@/lib/auth";
@@ -19,6 +20,9 @@ app.use(
 		credentials: true,
 	}),
 );
+
+const storageRoot = process.env.STORAGE_PATH || "storage";
+app.use("/realm-icons/*", serveStatic({ root: storageRoot }));
 
 app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
 

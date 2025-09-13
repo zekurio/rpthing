@@ -1,8 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
+import sharp from "sharp";
 import { db } from "../db";
 import { realm, realmMember } from "../db/schema/rp";
-import { deleteFile, getFileUrl } from "../lib/storage";
+import { deleteFile, getFileUrl, uploadFile } from "../lib/storage";
 import { protectedProcedure, router } from "../lib/trpc";
 import {
 	realmCreateInputSchema,
@@ -11,7 +12,36 @@ import {
 	realmJoinInputSchema,
 	realmTransferOwnershipInputSchema,
 	realmUpdateIconInputSchema,
+	realmUpdateInputSchema,
 } from "../schemas";
+
+const decodeBase64ImageToPng = async (
+	imageBase64: string,
+): Promise<Uint8Array> => {
+	const base64 = imageBase64.includes(",")
+		? (imageBase64.split(",", 2)[1] ?? "")
+		: imageBase64;
+	let bytes: Uint8Array;
+	try {
+		bytes = Buffer.from(base64, "base64");
+	} catch {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Invalid base64 data",
+		});
+	}
+
+	try {
+		const pngBuffer = await sharp(bytes).png().toBuffer();
+		return pngBuffer;
+	} catch (error) {
+		console.error("PNG conversion failed", error);
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: "Failed to process image",
+		});
+	}
+};
 
 export const realmRouter = router({
 	create: protectedProcedure
@@ -19,29 +49,46 @@ export const realmRouter = router({
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
 
-			await db.transaction(async (tx) => {
-				await tx.insert(realm).values({
-					id: input.id,
-					name: input.name,
-					description: input.description ?? null,
-					password: input.password
-						? await Bun.password.hash(input.password)
-						: null,
-					ownerId: userId,
-				});
+			const [created] = await db.transaction(async (tx) => {
+				const [inserted] = await tx
+					.insert(realm)
+					.values({
+						name: input.name,
+						description: input.description ?? null,
+						password: input.password
+							? await Bun.password.hash(input.password)
+							: null,
+						ownerId: userId,
+					})
+					.returning();
 
 				await tx.insert(realmMember).values({
-					realmId: input.id,
+					realmId: inserted.id,
 					userId,
 					role: "owner",
 				});
+
+				return [inserted];
 			});
 
-			const [created] = await db
-				.select()
-				.from(realm)
-				.where(eq(realm.id, input.id))
-				.limit(1);
+			// Handle icon upload if provided
+			if (input.imageBase64) {
+				try {
+					const iconKey = `/realm-icons/${created.id}.png`;
+					const pngBytes = await decodeBase64ImageToPng(input.imageBase64);
+					await uploadFile(iconKey, pngBytes, "image/png");
+					await db
+						.update(realm)
+						.set({ iconKey })
+						.where(eq(realm.id, created.id));
+				} catch (error) {
+					// Log the error but don't fail the realm creation
+					console.error(
+						`Failed to upload icon for realm ${created.id}:`,
+						error,
+					);
+				}
+			}
 
 			return created;
 		}),
@@ -178,6 +225,58 @@ export const realmRouter = router({
 			return true;
 		}),
 
+	update: protectedProcedure
+		.input(realmUpdateInputSchema)
+		.mutation(async ({ ctx, input }) => {
+			const userId = ctx.session.user.id;
+			const { id, ...updates } = input;
+
+			// Check if user is the owner
+			const [r] = await db
+				.select({ ownerId: realm.ownerId, iconKey: realm.iconKey })
+				.from(realm)
+				.where(eq(realm.id, id))
+				.limit(1);
+
+			if (!r) {
+				throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
+			}
+
+			if (r.ownerId !== userId) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Only the realm owner can update it",
+				});
+			}
+
+			// Handle password hashing if provided
+			const updateData: Record<string, unknown> = { ...updates };
+			if (updates.password !== undefined) {
+				if (updates.password) {
+					updateData.password = await Bun.password.hash(updates.password);
+				} else {
+					updateData.password = null;
+				}
+			}
+
+			// Handle icon upload if provided
+			if (updates.imageBase64) {
+				try {
+					const iconKey = `/realm-icons/${id}.png`;
+					const pngBytes = await decodeBase64ImageToPng(updates.imageBase64);
+					await uploadFile(iconKey, pngBytes, "image/png");
+					updateData.iconKey = iconKey;
+				} catch (error) {
+					console.error(`Failed to upload icon for realm ${id}:`, error);
+					// Don't fail the update if icon upload fails
+				}
+			}
+
+			await db.update(realm).set(updateData).where(eq(realm.id, id));
+
+			return { success: true };
+		}),
+
 	transferOwnership: protectedProcedure
 		.input(realmTransferOwnershipInputSchema)
 		.mutation(async ({ ctx, input }) => {
@@ -261,7 +360,7 @@ export const realmRouter = router({
 		.input(realmUpdateIconInputSchema)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
-			const { realmId } = input;
+			const { realmId, imageBase64 } = input;
 
 			// Check if user is the owner
 			const [r] = await db
@@ -281,17 +380,19 @@ export const realmRouter = router({
 				});
 			}
 
-			// Generate a unique key for the icon
-			const iconKey = `realm-icons/${realmId}/${Date.now()}-${Math.random().toString(36).substring(2)}.png`;
+			// Use a stable key per realm, saved as a PNG
+			const iconKey = `/realm-icons/${realmId}.png`;
 
-			// If there's an existing icon, delete it from storage
-			if (r.iconKey) {
-				try {
-					await deleteFile(r.iconKey);
-				} catch (error) {
-					console.error(`Failed to delete old icon ${r.iconKey}:`, error);
-					// Continue anyway - we don't want to fail the upload because of cleanup issues
-				}
+			// Schema guarantees a string; convert and upload
+			const pngBytes = await decodeBase64ImageToPng(imageBase64);
+			try {
+				await uploadFile(iconKey, pngBytes, "image/png");
+			} catch (error) {
+				console.error("Icon upload failed", error);
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Failed to upload icon",
+				});
 			}
 
 			// Update the database with the new icon key

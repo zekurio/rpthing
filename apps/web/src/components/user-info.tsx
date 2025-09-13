@@ -30,7 +30,9 @@ export function UserInfo({
 	if (showEmail) {
 		return (
 			<div className="flex flex-col gap-1">
-				<span className="truncate font-medium">{user?.name || "User"}</span>
+				<span className="truncate font-semibold text-lg">
+					{user?.name || "User"}
+				</span>
 				<span className="truncate text-muted-foreground text-sm">
 					{user?.email || ""}
 				</span>
@@ -38,5 +40,9 @@ export function UserInfo({
 		);
 	}
 
-	return <span className="truncate font-medium">{user?.name || "User"}</span>;
+	return (
+		<span className="truncate font-semibold text-lg">
+			{user?.name || "User"}
+		</span>
+	);
 }

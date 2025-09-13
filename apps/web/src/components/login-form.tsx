@@ -51,7 +51,7 @@ export function LoginForm({
 								onClick={() =>
 									handleSignIn(
 										"discord",
-										`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+										`${process.env.NEXT_PUBLIC_APP_URL}/realms`,
 									)
 								}
 								disabled={loading}

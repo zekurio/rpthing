@@ -25,6 +25,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { queryClient, trpc } from "@/utils/trpc";
 
 const createRealmSchema = z.object({
@@ -140,7 +141,11 @@ function CreateRealmForm({
 						<FormItem>
 							<FormLabel>Description (optional)</FormLabel>
 							<FormControl>
-								<Input {...field} />
+								<Textarea
+									{...field}
+									placeholder="Enter a description for this realm..."
+									className="min-h-[80px] resize-none"
+								/>
 							</FormControl>
 							<FormMessage />
 						</FormItem>

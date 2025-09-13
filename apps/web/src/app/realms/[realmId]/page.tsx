@@ -9,9 +9,9 @@ export default function RealmPage() {
 	const realmId = params.realmId as string;
 
 	return (
-		<div className="flex min-h-screen w-full flex-col">
+		<div className="flex h-full min-h-0 w-full flex-col">
 			<SiteHeader />
-			<div className="flex flex-1">
+			<div className="flex h-full min-h-0">
 				<RealmSidebar />
 				<main className="flex-1 p-4">
 					<div>

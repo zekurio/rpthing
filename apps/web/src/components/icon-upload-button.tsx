@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 interface IconUploadButtonProps {
 	previewSrc?: string | null;
 	onSelect?: (file: File | null, previewBase64: string | null) => void;
-	size?: 12 | 16; // tailwind size token to apply with size-*
+	size?: 12 | 16 | 20 | 24; // tailwind size token to apply with size-*
 	className?: string;
 	ariaLabel?: string;
 	title?: string;
@@ -71,12 +71,26 @@ export function IconUploadButton({
 					<Image
 						src={previewSrc}
 						alt="Preview"
-						width={size === 16 ? 64 : 48}
-						height={size === 16 ? 64 : 48}
-						sizes={size === 16 ? "64px" : "48px"}
+						width={size === 24 ? 96 : size === 20 ? 80 : size === 16 ? 64 : 48}
+						height={size === 24 ? 96 : size === 20 ? 80 : size === 16 ? 64 : 48}
+						sizes={
+							size === 24
+								? "96px"
+								: size === 20
+									? "80px"
+									: size === 16
+										? "64px"
+										: "48px"
+						}
 						className={cn(
 							"rounded-full object-cover",
-							size === 16 ? "h-16 w-16" : "h-12 w-12",
+							size === 24
+								? "h-24 w-24"
+								: size === 20
+									? "h-20 w-20"
+									: size === 16
+										? "h-16 w-16"
+										: "h-12 w-12",
 						)}
 					/>
 				) : (

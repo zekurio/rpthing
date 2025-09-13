@@ -259,16 +259,30 @@ export const realmRouter = router({
 				}
 			}
 
-			// Handle icon upload if provided
-			if (updates.imageBase64) {
-				try {
-					const iconKey = `/realm-icons/${id}.png`;
-					const pngBytes = await decodeBase64ImageToPng(updates.imageBase64);
-					await uploadFile(iconKey, pngBytes, "image/png");
-					updateData.iconKey = iconKey;
-				} catch (error) {
-					console.error(`Failed to upload icon for realm ${id}:`, error);
-					// Don't fail the update if icon upload fails
+			// Handle icon operations
+			if (updates.imageBase64 !== undefined) {
+				if (updates.imageBase64 === "REMOVE_ICON") {
+					// Remove existing icon
+					if (r.iconKey) {
+						try {
+							await deleteFile(r.iconKey);
+						} catch (error) {
+							console.error(`Failed to delete icon for realm ${id}:`, error);
+							// Don't fail the update if icon deletion fails
+						}
+					}
+					updateData.iconKey = null;
+				} else if (updates.imageBase64) {
+					// Upload new icon
+					try {
+						const iconKey = `/realm-icons/${id}.png`;
+						const pngBytes = await decodeBase64ImageToPng(updates.imageBase64);
+						await uploadFile(iconKey, pngBytes, "image/png");
+						updateData.iconKey = iconKey;
+					} catch (error) {
+						console.error(`Failed to upload icon for realm ${id}:`, error);
+						// Don't fail the update if icon upload fails
+					}
 				}
 			}
 

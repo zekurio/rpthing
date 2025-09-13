@@ -26,9 +26,13 @@ export default function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body
-				className={`${geistMono.variable} ${jetBrainsMono.variable} antialiased`}
+				className={`${geistMono.variable} ${jetBrainsMono.variable} h-dvh overflow-hidden antialiased`}
 			>
-				<Providers>{children}</Providers>
+				<Providers>
+					<div className="flex h-full min-h-0">
+						<div className="min-w-0 flex-1">{children}</div>
+					</div>
+				</Providers>
 			</body>
 		</html>
 	);

@@ -25,6 +25,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { queryClient, trpc } from "@/utils/trpc";
 
 const editRealmSchema = z.object({
@@ -52,6 +53,7 @@ export function EditRealmDialog({
 	// retained earlier reset logic no longer needed
 
 	const { data: realm } = useQuery(trpc.realm.list.queryOptions());
+	const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "";
 
 	const form = useForm<EditRealmFormData>({
 		resolver: zodResolver(editRealmSchema),
@@ -69,6 +71,9 @@ export function EditRealmDialog({
 	});
 
 	const currentRealm = realm?.find((r) => r.id === realmId);
+	const currentIconSrc = currentRealm?.iconKey
+		? `${serverUrl}${currentRealm.iconKey}`
+		: null;
 
 	useEffect(() => {
 		if (currentRealm && open) {
@@ -98,6 +103,8 @@ export function EditRealmDialog({
 	const handleRemoveIcon = () => {
 		setSelectedFile(null);
 		setImagePreview(null);
+		// Set a special value to indicate icon removal
+		form.setValue("imageBase64", "REMOVE_ICON");
 		// no input element to reset here
 	};
 
@@ -159,7 +166,11 @@ export function EditRealmDialog({
 								<FormItem>
 									<FormLabel>Description (optional)</FormLabel>
 									<FormControl>
-										<Input {...field} />
+										<Textarea
+											{...field}
+											placeholder="Enter a description for this realm..."
+											className="min-h-[80px] resize-none"
+										/>
 									</FormControl>
 									<FormMessage />
 								</FormItem>
@@ -182,14 +193,14 @@ export function EditRealmDialog({
 							<FormLabel>Icon (optional)</FormLabel>
 							<div className="flex items-center gap-3">
 								<IconUploadButton
-									previewSrc={imagePreview || undefined}
+									previewSrc={imagePreview || currentIconSrc || undefined}
 									onSelect={(file, preview) => {
 										setSelectedFile(file);
 										setImagePreview(preview);
 									}}
-									size={16}
+									size={20}
 								/>
-								{imagePreview && (
+								{(imagePreview || currentIconSrc) && (
 									<Button
 										type="button"
 										variant="ghost"

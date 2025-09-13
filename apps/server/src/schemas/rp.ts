@@ -63,6 +63,6 @@ export const realmUpdateInputSchema = z.object({
 	name: realmNameSchema.optional(),
 	description: realmDescriptionSchema.optional(),
 	password: realmPasswordSchema.nullish(),
-	imageBase64: z.string().min(1).nullish(),
+	imageBase64: z.union([z.string().min(1), z.literal("REMOVE_ICON")]).nullish(),
 });
 export type RealmUpdateInput = z.infer<typeof realmUpdateInputSchema>;

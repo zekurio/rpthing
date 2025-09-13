@@ -21,10 +21,12 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { queryClient, trpc } from "@/utils/trpc";
 
 export function RealmSidebar() {
 	const router = useRouter();
+	const isMobile = useIsMobile();
 	const { data, isPending } = useQuery(trpc.realm.list.queryOptions());
 
 	const [dialogOpen, setDialogOpen] = useState(false);
@@ -63,12 +65,17 @@ export function RealmSidebar() {
 		router.push(`/realms/${realmId}`);
 	};
 
+	// Hide sidebar on mobile
+	if (isMobile) {
+		return null;
+	}
+
 	return (
 		<TooltipProvider>
-			<aside className="flex h-full w-20 shrink-0 flex-col items-center gap-3 border-r bg-background py-4">
-				<div className="flex flex-1 flex-col items-center gap-3 overflow-y-auto">
+			<aside className="flex h-full min-h-0 w-16 shrink-0 flex-col items-center border-r bg-background">
+				<div className="flex min-h-0 w-full flex-1 flex-col items-center gap-2 overflow-y-auto py-3">
 					{isPending ? (
-						<div className="h-12 w-12 animate-pulse rounded-full bg-accent" />
+						<div className="h-10 w-10 animate-pulse rounded-full bg-accent" />
 					) : (
 						realms.map((r) => {
 							const src = r.iconKey ? `${serverUrl}${r.iconKey}` : undefined;
@@ -83,7 +90,7 @@ export function RealmSidebar() {
 														type="button"
 														onClick={() => handleRealmClick(r.id)}
 													>
-														<Avatar className="h-12 w-12">
+														<Avatar className="h-10 w-10">
 															<AvatarImage src={src || ""} alt={r.name} />
 															<AvatarFallback className="rounded-full">
 																{r.name?.[0]?.toUpperCase() || "R"}
@@ -115,14 +122,14 @@ export function RealmSidebar() {
 						})
 					)}
 				</div>
-				<div className="mt-auto">
+				<div className="flex w-full items-center justify-center border-t bg-background py-3">
 					<Button
 						size="icon"
 						variant="ghost"
-						className="h-12 w-12 rounded-full"
+						className="h-10 w-10 rounded-full"
 						onClick={() => setDialogOpen(true)}
 					>
-						<Plus />
+						<Plus className="h-4 w-4" />
 					</Button>
 				</div>
 				<CreateRealmDialog open={dialogOpen} onOpenChange={setDialogOpen} />

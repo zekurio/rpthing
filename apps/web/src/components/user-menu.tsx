@@ -40,7 +40,6 @@ export function UserMenu() {
 					variant="ghost"
 					className="flex h-auto items-center gap-3 py-2 pr-0 pl-3"
 				>
-					<UserInfo user={user} isLoading={isLoading} />
 					<div className="flex flex-col items-start">
 						<UserAvatar user={user} isLoading={isLoading} />
 					</div>
@@ -55,7 +54,7 @@ export function UserMenu() {
 				{/* User Information */}
 				<DropdownMenuLabel className="p-0 font-normal">
 					<div className="px-3 py-2 text-left">
-						<UserInfo user={user} isLoading={isLoading} showEmail />
+						<UserInfo user={user} />
 					</div>
 				</DropdownMenuLabel>
 

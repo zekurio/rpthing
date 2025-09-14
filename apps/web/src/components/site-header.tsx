@@ -77,7 +77,7 @@ function MobileRealmsSheet({
 
 	const { data, isPending } = useQuery(trpc.realm.list.queryOptions());
 	const realms = data ?? [];
-// Server now returns full S3 URLs; no need to prefix with server URL
+	// Server now returns full S3 URLs; no need to prefix with server URL
 
 	const deleteMutation = useMutation({
 		...trpc.realm.delete.mutationOptions(),

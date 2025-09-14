@@ -24,7 +24,8 @@ function AvatarImage({
 	src,
 	...props
 }: React.ComponentProps<typeof AvatarPrimitive.Image>) {
-	const safeSrc = typeof src === "string" && src.trim() === "" ? undefined : src;
+	const safeSrc =
+		typeof src === "string" && src.trim() === "" ? undefined : src;
 	return (
 		<AvatarPrimitive.Image
 			data-slot="avatar-image"

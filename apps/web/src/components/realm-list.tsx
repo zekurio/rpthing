@@ -12,7 +12,6 @@ interface RealmListProps {
 	realms: Realm[];
 	isPending: boolean;
 	currentRealmId: string | null;
-	serverUrl: string;
 	onEdit: (realmId: string) => void;
 	onDelete: (realmId: string) => void;
 }
@@ -21,7 +20,6 @@ export function RealmList({
 	realms,
 	isPending,
 	currentRealmId,
-	serverUrl,
 	onEdit,
 	onDelete,
 }: RealmListProps) {
@@ -35,7 +33,6 @@ export function RealmList({
 						key={realm.id}
 						realm={realm}
 						isSelected={currentRealmId === realm.id}
-						serverUrl={serverUrl}
 						onEdit={onEdit}
 						onDelete={onDelete}
 					/>

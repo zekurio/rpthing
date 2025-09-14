@@ -1,83 +1,71 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-export const user = sqliteTable("user", {
-	id: text("id")
+export const user = pgTable("user", {
+	id: uuid("id")
 		.primaryKey()
-		.$defaultFn(() => Bun.randomUUIDv7()),
+		.$defaultFn(() => crypto.randomUUID()),
 	name: text("name").notNull(),
 	email: text("email").notNull().unique(),
-	emailVerified: integer("email_verified", { mode: "boolean" })
-		.default(false)
-		.notNull(),
+	emailVerified: boolean("email_verified").default(false).notNull(),
 	image: text("image"),
-	createdAt: integer("created_at", { mode: "timestamp" })
-		.default(new Date())
-		.notNull(),
-	updatedAt: integer("updated_at", { mode: "timestamp" })
-		.default(new Date())
-		.$onUpdate(() => /* @__PURE__ */ new Date())
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
+		.$onUpdate(() => new Date())
 		.notNull(),
 });
 
-export const session = sqliteTable("session", {
-	id: text("id")
+export const session = pgTable("session", {
+	id: uuid("id")
 		.primaryKey()
-		.$defaultFn(() => Bun.randomUUIDv7()),
-	expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+		.$defaultFn(() => crypto.randomUUID()),
+	expiresAt: timestamp("expires_at").notNull(),
 	token: text("token").notNull().unique(),
-	createdAt: integer("created_at", { mode: "timestamp" })
-		.default(new Date())
-		.notNull(),
-	updatedAt: integer("updated_at", { mode: "timestamp" })
-		.$onUpdate(() => /* @__PURE__ */ new Date())
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
+		.$onUpdate(() => new Date())
 		.notNull(),
 	ipAddress: text("ip_address"),
 	userAgent: text("user_agent"),
-	userId: text("user_id")
+	userId: uuid("user_id")
 		.notNull()
 		.references(() => user.id, { onDelete: "cascade" }),
 });
 
-export const account = sqliteTable("account", {
-	id: text("id")
+export const account = pgTable("account", {
+	id: uuid("id")
 		.primaryKey()
-		.$defaultFn(() => Bun.randomUUIDv7()),
+		.$defaultFn(() => crypto.randomUUID()),
 	accountId: text("account_id").notNull(),
 	providerId: text("provider_id").notNull(),
-	userId: text("user_id")
+	userId: uuid("user_id")
 		.notNull()
 		.references(() => user.id, { onDelete: "cascade" }),
 	accessToken: text("access_token"),
 	refreshToken: text("refresh_token"),
 	idToken: text("id_token"),
-	accessTokenExpiresAt: integer("access_token_expires_at", {
-		mode: "timestamp",
-	}),
-	refreshTokenExpiresAt: integer("refresh_token_expires_at", {
-		mode: "timestamp",
-	}),
+	accessTokenExpiresAt: timestamp("access_token_expires_at"),
+	refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
 	scope: text("scope"),
 	password: text("password"),
-	createdAt: integer("created_at", { mode: "timestamp" })
-		.default(new Date())
-		.notNull(),
-	updatedAt: integer("updated_at", { mode: "timestamp" })
-		.$onUpdate(() => /* @__PURE__ */ new Date())
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
+		.$onUpdate(() => new Date())
 		.notNull(),
 });
 
-export const verification = sqliteTable("verification", {
-	id: text("id")
+export const verification = pgTable("verification", {
+	id: uuid("id")
 		.primaryKey()
-		.$defaultFn(() => Bun.randomUUIDv7()),
+		.$defaultFn(() => crypto.randomUUID()),
 	identifier: text("identifier").notNull(),
 	value: text("value").notNull(),
-	expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
-	createdAt: integer("created_at", { mode: "timestamp" })
-		.default(new Date())
-		.notNull(),
-	updatedAt: integer("updated_at", { mode: "timestamp" })
-		.default(new Date())
-		.$onUpdate(() => /* @__PURE__ */ new Date())
+	expiresAt: timestamp("expires_at").notNull(),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
+		.$onUpdate(() => new Date())
 		.notNull(),
 });

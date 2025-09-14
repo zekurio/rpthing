@@ -1,17 +1,16 @@
 import "dotenv/config";
 import { trpcServer } from "@hono/trpc-server";
+import { eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import sharp from "sharp";
-import { auth } from "@/lib/auth";
-import { createContext } from "@/lib/context";
-import { appRouter } from "@/routers/index";
-import { uploadFile, getFileUrl, deleteFile } from "@/lib/storage";
 import { db } from "@/db";
 import { realm } from "@/db/schema/rp";
-import { eq } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import { createContext } from "@/lib/context";
+import { deleteFile, getFileUrl, uploadFile } from "@/lib/storage";
+import { appRouter } from "@/routers/index";
 
 const app = new Hono();
 
@@ -25,9 +24,6 @@ app.use(
 		credentials: true,
 	}),
 );
-
-const storageRoot = process.env.STORAGE_PATH || "apps/server/storage";
-app.use("/realm-icons/*", serveStatic({ root: storageRoot }));
 
 app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
 
@@ -80,24 +76,18 @@ app.post("/api/upload/realm-icon/:realmId", async (c) => {
 		const pngBuffer = await sharp(buffer).png().toBuffer();
 
 		// Upload file
-		const iconKey = `/realm-icons/${realmId}.png`;
+		const iconKey = `realm-icons/${realmId}.png`;
 		await uploadFile(iconKey, pngBuffer);
 
 		// Update database
-		await db
-			.update(realm)
-			.set({ iconKey })
-			.where(eq(realm.id, realmId));
+		await db.update(realm).set({ iconKey }).where(eq(realm.id, realmId));
 
 		// Return URL
 		const url = await getFileUrl(iconKey);
 		return c.json({ success: true, iconKey, url });
 	} catch (error) {
 		console.error("File upload failed:", error);
-		return c.json(
-			{ error: "File upload failed" },
-			500
-		);
+		return c.json({ error: "File upload failed" }, 500);
 	}
 });
 
@@ -142,18 +132,12 @@ app.delete("/api/upload/realm-icon/:realmId", async (c) => {
 		}
 
 		// Remove icon from database
-		await db
-			.update(realm)
-			.set({ iconKey: null })
-			.where(eq(realm.id, realmId));
+		await db.update(realm).set({ iconKey: null }).where(eq(realm.id, realmId));
 
 		return c.json({ success: true });
 	} catch (error) {
 		console.error("Icon deletion failed:", error);
-		return c.json(
-			{ error: "Icon deletion failed" },
-			500
-		);
+		return c.json({ error: "Icon deletion failed" }, 500);
 	}
 });
 

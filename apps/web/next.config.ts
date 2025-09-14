@@ -1,9 +1,12 @@
 import type { NextConfig } from "next";
 
-const serverHostname = (() => {
+const s3Hostname = (() => {
 	try {
-		const url = process.env.NEXT_PUBLIC_SERVER_URL;
-		return url ? new URL(url).hostname : undefined;
+		const endpoint = process.env.S3_ENDPOINT;
+		if (endpoint) {
+			return new URL(endpoint).hostname;
+		}
+		return undefined;
 	} catch {
 		return undefined;
 	}
@@ -15,10 +18,10 @@ const nextConfig: NextConfig = {
 	images: {
 		remotePatterns: [
 			{ protocol: "https", hostname: "cdn.discordapp.com" },
-			...(serverHostname
+			...(s3Hostname
 				? ([
-						{ protocol: "http", hostname: serverHostname },
-						{ protocol: "https", hostname: serverHostname },
+						{ protocol: "http", hostname: s3Hostname },
+						{ protocol: "https", hostname: s3Hostname },
 					] as const)
 				: []),
 		],

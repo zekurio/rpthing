@@ -2,6 +2,7 @@
 
 import { Edit, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	ContextMenu,
@@ -14,6 +15,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Realm {
 	id: string;
@@ -24,7 +26,6 @@ interface Realm {
 interface RealmItemProps {
 	realm: Realm;
 	isSelected: boolean;
-	serverUrl: string;
 	onEdit: (realmId: string) => void;
 	onDelete: (realmId: string) => void;
 }
@@ -32,15 +33,23 @@ interface RealmItemProps {
 export function RealmItem({
 	realm,
 	isSelected,
-	serverUrl,
 	onEdit,
 	onDelete,
 }: RealmItemProps) {
 	const router = useRouter();
-	const src = realm.iconKey ? `${serverUrl}${realm.iconKey}` : undefined;
+	const [isImageLoaded, setIsImageLoaded] = useState(false);
+	const src = realm.iconKey || undefined;
 
 	const handleRealmClick = (realmId: string) => {
 		router.push(`/realms/${realmId}`);
+	};
+
+	const handleImageLoad = () => {
+		setIsImageLoaded(true);
+	};
+
+	const handleImageError = () => {
+		setIsImageLoaded(true);
 	};
 
 	return (
@@ -50,16 +59,26 @@ export function RealmItem({
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<button
-								className={`group/realm ${isSelected ? "rounded-full ring-2 ring-primary" : ""}`}
+								className={`group/realm relative ${isSelected ? "rounded-full ring-2 ring-primary" : ""}`}
 								type="button"
 								onClick={() => handleRealmClick(realm.id)}
 							>
 								<Avatar className="h-10 w-10">
-									<AvatarImage src={src || ""} alt={realm.name} />
+									<AvatarImage 
+										src={src || ""} 
+										alt={realm.name}
+										onLoad={handleImageLoad}
+										onError={handleImageError}
+									/>
 									<AvatarFallback className="rounded-full">
 										{realm.name?.[0]?.toUpperCase() || "R"}
 									</AvatarFallback>
 								</Avatar>
+								{src && !isImageLoaded && (
+									<div className="absolute inset-0 rounded-full">
+										<Skeleton className="h-10 w-10 rounded-full" />
+									</div>
+								)}
 							</button>
 						</TooltipTrigger>
 						<TooltipContent side="right">

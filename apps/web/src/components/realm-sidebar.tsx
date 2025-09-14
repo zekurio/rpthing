@@ -25,7 +25,7 @@ export function RealmSidebar() {
 
 	const realms = data ?? [];
 
-	const serverUrl = useMemo(() => process.env.NEXT_PUBLIC_SERVER_URL || "", []);
+	// serverUrl no longer needed - S3 URLs are returned directly from the API
 
 	// Get current realm ID from pathname (e.g., /realms/123 -> "123")
 	const currentRealmId = useMemo(() => {
@@ -57,7 +57,6 @@ export function RealmSidebar() {
 					realms={realms}
 					isPending={isPending}
 					currentRealmId={currentRealmId}
-					serverUrl={serverUrl}
 					onEdit={handleEdit}
 					onDelete={handleDelete}
 				/>

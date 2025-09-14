@@ -96,13 +96,16 @@ function CreateRealmForm({
 	const uploadFile = async (realmId: string, file: File): Promise<void> => {
 		const formData = new FormData();
 		formData.append("file", file);
-		
+
 		const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "";
-		const response = await fetch(`${serverUrl}/api/upload/realm-icon/${realmId}`, {
-			method: "POST",
-			body: formData,
-			credentials: "include",
-		});
+		const response = await fetch(
+			`${serverUrl}/api/upload/realm-icon/${realmId}`,
+			{
+				method: "POST",
+				body: formData,
+				credentials: "include",
+			},
+		);
 
 		if (!response.ok) {
 			const error = await response.json();
@@ -122,6 +125,8 @@ function CreateRealmForm({
 			// Then upload the icon if a file was selected
 			if (selectedFile && realm.id) {
 				await uploadFile(realm.id, selectedFile);
+				// Invalidate realm list to refresh sidebar
+				queryClient.invalidateQueries({ queryKey: trpc.realm.list.queryKey() });
 			}
 		} catch (error) {
 			console.error("Failed to create realm or upload icon:", error);

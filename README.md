@@ -14,6 +14,7 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **Drizzle** - TypeScript-first ORM
 - **SQLite/Turso** - Database engine
 - **Authentication** - Better-Auth
+- **S3 Storage** - Bun native S3 client for file storage
 - **Biome** - Linting and formatting
 - **Turborepo** - Optimized monorepo build system
 
@@ -36,7 +37,18 @@ cd apps/server && bun db:local
 
 2. Update your `.env` file in the `apps/server` directory with the appropriate connection details if needed.
 
-3. Apply the schema to your database:
+3. Configure S3 storage by setting the following environment variables in your `.env` file:
+```bash
+# S3 Storage Configuration
+S3_ACCESS_KEY_ID="your-s3-access-key-id"
+S3_SECRET_ACCESS_KEY="your-s3-secret-access-key"
+S3_BUCKET_NAME="your-s3-bucket-name"
+S3_REGION="us-east-1"
+# Optional: For S3-compatible services (like MinIO, DigitalOcean Spaces, etc.)
+# S3_ENDPOINT="https://your-s3-compatible-endpoint.com"
+```
+
+4. Apply the schema to your database:
 ```bash
 bun db:push
 ```

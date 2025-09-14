@@ -70,9 +70,7 @@ export function EditRealmDialog({
 	});
 
 	const currentRealm = realm?.find((r) => r.id === realmId);
-	const currentIconSrc = currentRealm?.iconKey
-		? `${serverUrl}${currentRealm.iconKey}`
-		: null;
+	const currentIconSrc = currentRealm?.iconKey || null;
 
 	useEffect(() => {
 		if (currentRealm && open) {
@@ -90,12 +88,15 @@ export function EditRealmDialog({
 	const uploadFile = async (realmId: string, file: File): Promise<void> => {
 		const formData = new FormData();
 		formData.append("file", file);
-		
-		const response = await fetch(`${serverUrl}/api/upload/realm-icon/${realmId}`, {
-			method: "POST",
-			body: formData,
-			credentials: "include",
-		});
+
+		const response = await fetch(
+			`${serverUrl}/api/upload/realm-icon/${realmId}`,
+			{
+				method: "POST",
+				body: formData,
+				credentials: "include",
+			},
+		);
 
 		if (!response.ok) {
 			const error = await response.json();
@@ -104,10 +105,13 @@ export function EditRealmDialog({
 	};
 
 	const deleteIcon = async (realmId: string): Promise<void> => {
-		const response = await fetch(`${serverUrl}/api/upload/realm-icon/${realmId}`, {
-			method: "DELETE",
-			credentials: "include",
-		});
+		const response = await fetch(
+			`${serverUrl}/api/upload/realm-icon/${realmId}`,
+			{
+				method: "DELETE",
+				credentials: "include",
+			},
+		);
 
 		if (!response.ok) {
 			const error = await response.json();
@@ -137,9 +141,13 @@ export function EditRealmDialog({
 			if (selectedFile) {
 				// Upload new icon
 				await uploadFile(realmId, selectedFile);
+				// Invalidate realm list to refresh sidebar
+				queryClient.invalidateQueries({ queryKey: trpc.realm.list.queryKey() });
 			} else if (removeIcon && currentIconSrc) {
 				// Remove existing icon
 				await deleteIcon(realmId);
+				// Invalidate realm list to refresh sidebar
+				queryClient.invalidateQueries({ queryKey: trpc.realm.list.queryKey() });
 			}
 		} catch (error) {
 			console.error("Failed to update realm or handle icon:", error);

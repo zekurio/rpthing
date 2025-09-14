@@ -13,7 +13,6 @@ import {
 	realmUpdateInputSchema,
 } from "../schemas";
 
-
 export const realmRouter = router({
 	create: protectedProcedure
 		.input(realmCreateInputSchema)
@@ -65,7 +64,23 @@ export const realmRouter = router({
 			.innerJoin(realm, eq(realm.id, realmMember.realmId))
 			.where(eq(realmMember.userId, userId));
 
-		return rows;
+		// Generate S3 URLs for icons
+		const rowsWithUrls = await Promise.all(
+			rows.map(async (row) => {
+				if (row.iconKey) {
+					try {
+						const iconUrl = await getFileUrl(row.iconKey);
+						return { ...row, iconKey: iconUrl };
+					} catch (error) {
+						console.error(`Failed to get URL for icon ${row.iconKey}:`, error);
+						return { ...row, iconKey: null };
+					}
+				}
+				return row;
+			}),
+		);
+
+		return rowsWithUrls;
 	}),
 
 	getById: protectedProcedure
@@ -99,6 +114,17 @@ export const realmRouter = router({
 					code: "FORBIDDEN",
 					message: "Access denied. The requested resource is not available.",
 				});
+			}
+
+			// Generate S3 URL for icon if it exists
+			if (result.iconKey) {
+				try {
+					const iconUrl = await getFileUrl(result.iconKey);
+					return { ...result, iconKey: iconUrl };
+				} catch (error) {
+					console.error(`Failed to get URL for icon ${result.iconKey}:`, error);
+					return { ...result, iconKey: null };
+				}
 			}
 
 			return result;
@@ -226,7 +252,7 @@ export const realmRouter = router({
 			}
 
 			// Also add stable icon key path in case DB is out of sync
-			const stableIconKey = `/realm-icons/${input}.png`;
+			const stableIconKey = `realm-icons/${input}.png`;
 			filesToDeleteSet.add(stableIconKey);
 			console.log(`Will delete realm icon (stable path): ${stableIconKey}`);
 
@@ -396,26 +422,5 @@ export const realmRouter = router({
 			});
 
 			return true;
-		}),
-
-
-	getIconUrl: protectedProcedure
-		.input(realmIdSchema)
-		.query(async ({ input }) => {
-			const realmId = input;
-
-			// Get the icon key for this realm
-			const [r] = await db
-				.select({ iconKey: realm.iconKey })
-				.from(realm)
-				.where(eq(realm.id, realmId))
-				.limit(1);
-
-			if (!r || !r.iconKey) {
-				return { url: null };
-			}
-
-			const url = await getFileUrl(r.iconKey);
-			return { url };
 		}),
 });

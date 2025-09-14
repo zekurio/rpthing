@@ -1,5 +1,8 @@
-import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 
-const sqlite = new Database(process.env.DATABASE_URL || "rpthing.sqlite");
-export const db = drizzle(sqlite);
+const pool = new Pool({
+	connectionString: process.env.DATABASE_URL,
+});
+
+export const db = drizzle(pool);

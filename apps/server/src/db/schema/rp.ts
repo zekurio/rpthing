@@ -1,137 +1,133 @@
 import {
+	boolean,
 	integer,
+	jsonb,
+	pgTable,
 	primaryKey,
-	sqliteTable,
 	text,
-} from "drizzle-orm/sqlite-core";
+	timestamp,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { user } from "./auth";
 
 // Realm acts as a universe container
-export const realm = sqliteTable("realm", {
-	id: text("id")
+export const realm = pgTable("realm", {
+	id: uuid("id")
 		.primaryKey()
-		.$defaultFn(() => Bun.randomUUIDv7()),
+		.$defaultFn(() => crypto.randomUUID()),
 	name: text("name").notNull(),
 	description: text("description"),
 	password: text("password"),
 	iconKey: text("icon_key"),
-	ownerId: text("owner_id")
+	ownerId: uuid("owner_id")
 		.notNull()
 		.references(() => user.id, { onDelete: "cascade" }),
-	createdAt: integer("created_at", { mode: "timestamp" })
-		.default(new Date())
-		.notNull(),
-	updatedAt: integer("updated_at", { mode: "timestamp" })
-		.default(new Date())
-		.$onUpdate(() => /* @__PURE__ */ new Date())
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
+		.$onUpdate(() => new Date())
 		.notNull(),
 });
 
 // Many-to-many relation between User and Realm
-export const realmMember = sqliteTable(
+export const realmMember = pgTable(
 	"realm_member",
 	{
-		realmId: text("realm_id")
+		realmId: uuid("realm_id")
 			.notNull()
 			.references(() => realm.id, { onDelete: "cascade" }),
-		userId: text("user_id")
+		userId: uuid("user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
 		role: text("role").$type<"owner" | "admin" | "member">().notNull(),
-		createdAt: integer("created_at", { mode: "timestamp" })
-			.default(new Date())
-			.notNull(),
-		updatedAt: integer("updated_at", { mode: "timestamp" })
-			.default(new Date())
-			.$onUpdate(() => /* @__PURE__ */ new Date())
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => new Date())
 			.notNull(),
 	},
-	(table) => [primaryKey({ columns: [table.realmId, table.userId] })],
+	(table) => ({
+		pk: primaryKey({ columns: [table.realmId, table.userId] }),
+	}),
 );
 
 // Character belongs to a Realm and a creator (User)
-export const character = sqliteTable("character", {
-	id: text("id")
+export const character = pgTable("character", {
+	id: uuid("id")
 		.primaryKey()
-		.$defaultFn(() => Bun.randomUUIDv7()),
-	realmId: text("realm_id")
+		.$defaultFn(() => crypto.randomUUID()),
+	realmId: uuid("realm_id")
 		.notNull()
 		.references(() => realm.id, { onDelete: "cascade" }),
-	userId: text("user_id")
+	userId: uuid("user_id")
 		.notNull()
 		.references(() => user.id, { onDelete: "cascade" }),
 	name: text("name").notNull(),
 	gender: text("gender"),
 	referenceImageKey: text("reference_image_key"),
-	imageCrop: text("image_crop").$type<Record<string, unknown> | null>(),
+	imageCrop: jsonb("image_crop").$type<Record<string, unknown> | null>(),
 	notes: text("notes"),
-	createdAt: integer("created_at", { mode: "timestamp" })
-		.default(new Date())
-		.notNull(),
-	updatedAt: integer("updated_at", { mode: "timestamp" })
-		.default(new Date())
-		.$onUpdate(() => /* @__PURE__ */ new Date())
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
+		.$onUpdate(() => new Date())
 		.notNull(),
 });
 
 // Rating categories defined per Realm
-export const ratingCategory = sqliteTable("rating_category", {
-	id: text("id")
+export const ratingCategory = pgTable("rating_category", {
+	id: uuid("id")
 		.primaryKey()
-		.$defaultFn(() => Bun.randomUUIDv7()),
-	realmId: text("realm_id")
+		.$defaultFn(() => crypto.randomUUID()),
+	realmId: uuid("realm_id")
 		.notNull()
 		.references(() => realm.id, { onDelete: "cascade" }),
 	name: text("name").notNull(),
-	createdAt: integer("created_at", { mode: "timestamp" })
-		.default(new Date())
-		.notNull(),
-	updatedAt: integer("updated_at", { mode: "timestamp" })
-		.default(new Date())
-		.$onUpdate(() => /* @__PURE__ */ new Date())
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
+		.$onUpdate(() => new Date())
 		.notNull(),
 });
 
 // Character ratings per category (value range 1-20 enforced in app layer)
-export const characterRating = sqliteTable(
+export const characterRating = pgTable(
 	"character_rating",
 	{
-		characterId: text("character_id")
+		characterId: uuid("character_id")
 			.notNull()
 			.references(() => character.id, { onDelete: "cascade" }),
-		categoryId: text("category_id")
+		categoryId: uuid("category_id")
 			.notNull()
 			.references(() => ratingCategory.id, { onDelete: "cascade" }),
 		value: integer("value").notNull(),
-		createdAt: integer("created_at", { mode: "timestamp" })
-			.default(new Date())
-			.notNull(),
-		updatedAt: integer("updated_at", { mode: "timestamp" })
-			.default(new Date())
-			.$onUpdate(() => /* @__PURE__ */ new Date())
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at")
+			.defaultNow()
+			.$onUpdate(() => new Date())
 			.notNull(),
 	},
-	(table) => [primaryKey({ columns: [table.characterId, table.categoryId] })],
+	(table) => ({
+		pk: primaryKey({ columns: [table.characterId, table.categoryId] }),
+	}),
 );
 
 // Field-level editing permissions for Characters
-export const characterPermission = sqliteTable("character_permission", {
-	id: text("id")
+export const characterPermission = pgTable("character_permission", {
+	id: uuid("id")
 		.primaryKey()
-		.$defaultFn(() => Bun.randomUUIDv7()),
-	characterId: text("character_id")
+		.$defaultFn(() => crypto.randomUUID()),
+	characterId: uuid("character_id")
 		.notNull()
 		.references(() => character.id, { onDelete: "cascade" }),
 	field: text("field").notNull(),
-	grantedToUserId: text("granted_to_user_id")
+	grantedToUserId: uuid("granted_to_user_id")
 		.notNull()
 		.references(() => user.id, { onDelete: "cascade" }),
-	canEdit: integer("can_edit", { mode: "boolean" }).default(false).notNull(),
-	createdAt: integer("created_at", { mode: "timestamp" })
-		.default(new Date())
-		.notNull(),
-	updatedAt: integer("updated_at", { mode: "timestamp" })
-		.default(new Date())
-		.$onUpdate(() => /* @__PURE__ */ new Date())
+	canEdit: boolean("can_edit").default(false).notNull(),
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
+		.$onUpdate(() => new Date())
 		.notNull(),
 });

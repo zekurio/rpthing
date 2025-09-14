@@ -1,89 +1,129 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { S3Client } from "bun";
 
-const STORAGE_ROOT = process.env.STORAGE_PATH || "apps/server/storage";
+//
+// --- Environment Validation ---
+//
+const accessKeyId = process.env.S3_ACCESS_KEY_ID;
+const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY;
+const bucketName = process.env.S3_BUCKET_NAME;
+const endpoint = process.env.S3_ENDPOINT;
+const region = process.env.S3_REGION || "us-east-1";
 
-const ensureDirectory = async (dirPath: string) => {
-	await mkdir(dirPath, { recursive: true });
-};
+if (!accessKeyId || !secretAccessKey || !bucketName) {
+	throw new Error(
+		"Missing required S3 environment variables: " +
+			"S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET_NAME",
+	);
+}
 
-const normalizeAndResolve = (targetPath: string): string => {
-	const withoutLeadingSlash = targetPath.replace(/^\/+/, "");
-	const normalized = path.normalize(withoutLeadingSlash);
-	const resolved = path.resolve(STORAGE_ROOT, normalized);
-	const rootResolved = path.resolve(STORAGE_ROOT);
-	if (
-		!resolved.startsWith(rootResolved + path.sep) &&
-		resolved !== rootResolved
-	) {
-		throw new Error("Attempted path traversal outside of storage root");
-	}
-	return resolved;
-};
+//
+// --- S3 Client ---
+//
+const s3Client = new S3Client({
+	accessKeyId,
+	secretAccessKey,
+	region,
+	endpoint,
+});
 
-const toUint8Array = async (
-	data: ArrayBuffer | Uint8Array,
-): Promise<Uint8Array> => {
-	if (data instanceof Uint8Array) return data;
-	if (data instanceof ArrayBuffer) return new Uint8Array(data);
-	throw new Error("Unsupported data type for upload");
+//
+// --- Helpers ---
+//
+const endpointIncludesBucket = endpoint?.includes(bucketName) ?? false;
+
+/**
+ * Normalize relative path (no leading slash, no double slashes).
+ */
+const normalizePath = (targetPath: string): string =>
+	targetPath.replace(/^\/+/, "").replace(/\/+/g, "/");
+
+/**
+ * Resolves the actual storage path depending on endpoint style.
+ */
+const resolvePath = (targetPath: string): string => {
+	const normalized = normalizePath(targetPath);
+	return endpointIncludesBucket ? normalized : `${bucketName}/${normalized}`;
 };
 
 /**
- * Uploads a file to storage
- * @param path - The path to the file
- * @param data - The file data to upload
- * @returns The number of bytes written
- * @throws Error if upload fails
+ * Converts ArrayBuffer or Uint8Array into Uint8Array.
+ */
+const toUint8Array = (data: ArrayBuffer | Uint8Array): Uint8Array => {
+	if (data instanceof Uint8Array) return data;
+	if (data instanceof ArrayBuffer) return new Uint8Array(data);
+	throw new TypeError("uploadFile() only supports ArrayBuffer or Uint8Array.");
+};
+
+//
+// --- Core API ---
+//
+
+/**
+ * Upload file content to S3.
  */
 export const uploadFile = async (
 	targetPath: string,
 	data: ArrayBuffer | Uint8Array,
 ): Promise<number> => {
+	const fullPath = resolvePath(targetPath);
+	const bytes = toUint8Array(data);
+
 	try {
-		const absolutePath = normalizeAndResolve(targetPath);
-		await ensureDirectory(path.dirname(absolutePath));
-		const bytes = await toUint8Array(data);
-		await writeFile(absolutePath, bytes);
+		const file = s3Client.file(fullPath);
+		await file.write(bytes);
 		return bytes.byteLength;
-	} catch (error) {
-		throw new Error(
-			`Failed to upload file to ${targetPath}: ${error instanceof Error ? error.message : "Unknown error"}`,
-		);
+	} catch (cause) {
+		throw new Error(`Upload failed for "${targetPath}"`, { cause });
 	}
 };
 
 /**
- * Deletes a file from storage
- * @param path - The path to the file
- * @returns True if deletion succeeded
- * @throws Error if deletion fails
+ * Delete a file from S3.
  */
-export const deleteFile = async (targetPath: string) => {
+export const deleteFile = async (targetPath: string): Promise<boolean> => {
+	const fullPath = resolvePath(targetPath);
+
 	try {
-		const absolutePath = normalizeAndResolve(targetPath);
-		await rm(absolutePath, { force: true });
+		const file = s3Client.file(fullPath);
+		await file.delete();
 		return true;
-	} catch (error) {
-		throw new Error(
-			`Failed to delete file at ${targetPath}: ${error instanceof Error ? error.message : "Unknown error"}`,
-		);
+	} catch (cause) {
+		throw new Error(`Delete failed for "${targetPath}"`, { cause });
 	}
 };
 
 /**
- * Gets a public URL for a file in storage
- * @param path - The path to the file
- * @returns The public URL to access the file
- * @throws Error if URL generation fails
+ * Generate a presigned public URL for a file.
  */
-export const getFileUrl = async (targetPath: string): Promise<string> => {
+export const getFileUrl = async (
+	targetPath: string,
+	opts?: { expiresIn?: number },
+): Promise<string> => {
+	const fullPath = resolvePath(targetPath);
+
 	try {
-		const withoutLeadingSlash = targetPath.replace(/^\/+/, "");
-		return `/${withoutLeadingSlash}`;
-	} catch (error) {
-		throw new Error(
-			`Failed to get URL for file at ${targetPath}: ${error instanceof Error ? error.message : "Unknown error"}`,
-		);
+		const file = s3Client.file(fullPath);
+		return file.presign({
+			acl: "public-read",
+			expiresIn: opts?.expiresIn ?? 60 * 60 * 24, // 1 day
+		});
+	} catch (cause) {
+		throw new Error(`URL generation failed for "${targetPath}"`, { cause });
+	}
+};
+
+/**
+ * Check whether a file exists in S3.
+ */
+export const existsFile = async (targetPath: string): Promise<boolean> => {
+	const fullPath = resolvePath(targetPath);
+
+	try {
+		const file = s3Client.file(fullPath);
+		const stat = await file.stat(); // Bun S3 returns metadata if exists
+		return stat !== null;
+	} catch {
+		// Explicitly return false when object not found
+		return false;
 	}
 };

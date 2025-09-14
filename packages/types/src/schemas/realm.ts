@@ -7,7 +7,11 @@ export const idSchema = z.string().min(1);
 export const realmIdSchema = z.string().length(7);
 export const realmNameSchema = z.string().min(1).max(200);
 export const realmDescriptionSchema = z.string().max(2000).nullish();
-export const realmPasswordSchema = z.string().min(1).max(32).nullish();
+export const realmPasswordSchema = z
+	.string()
+	.min(1)
+	.max(32)
+	.nullish();
 
 export const realmCreateInputSchema = z.object({
 	name: realmNameSchema,
@@ -52,3 +56,4 @@ export const realmUpdateInputSchema = z.object({
 	password: realmPasswordSchema.nullish(),
 });
 export type RealmUpdateInput = z.infer<typeof realmUpdateInputSchema>;
+

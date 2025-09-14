@@ -6,6 +6,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { realmIdSchema } from "@repo/types";
 
 import { IconUploadButton } from "@/components/icon-upload-button";
 import { Button } from "@/components/ui/button";
@@ -46,14 +47,8 @@ const createRealmSchema = z.object({
 });
 
 const joinRealmSchema = z.object({
-	realmId: z
-		.string()
-		.length(7, "Realm ID must be exactly 7 characters")
-		.regex(/^[A-Za-z0-9]+$/, "Realm ID must contain only letters and numbers"),
-	password: z
-		.string()
-		.max(100, "Password must be less than 100 characters")
-		.optional(),
+	realmId: realmIdSchema,
+	password: z.string().max(100, "Password must be less than 100 characters").optional(),
 });
 
 type CreateRealmFormData = z.infer<typeof createRealmSchema>;

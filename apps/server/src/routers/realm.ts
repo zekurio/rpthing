@@ -11,7 +11,7 @@ import {
 	realmJoinInputSchema,
 	realmTransferOwnershipInputSchema,
 	realmUpdateInputSchema,
-} from "../schemas/index.js";
+} from "@repo/types";
 
 export const realmRouter = router({
 	create: protectedProcedure

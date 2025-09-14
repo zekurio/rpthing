@@ -1,0 +1,16 @@
+{
+	"compilerOptions": {
+		"outDir": "dist",
+		"rootDir": "src",
+		"composite": true,
+		"declaration": true,
+		"emitDeclarationOnly": false,
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"target": "ES2022",
+		"jsx": "react-jsx",
+		"skipLibCheck": true
+	},
+	"include": ["src"]
+}
+

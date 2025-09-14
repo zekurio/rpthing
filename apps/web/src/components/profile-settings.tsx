@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { updateProfileInput as userUpdateProfileSchema } from "@rpthing/schemas";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -27,19 +28,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 
 // Schema
-const nameSchema = z
-	.string()
-	.trim()
-	.min(2, "Name must be at least 2 characters.")
-	.max(64, "Name must be at most 64 characters.")
-	.regex(
-		/^[\p{L}\p{N} .,'-]+$/u,
-		"Only letters, numbers, spaces, and .,'- are allowed.",
-	);
-
-const formSchema = z.object({
-	name: nameSchema,
-});
+const formSchema = userUpdateProfileSchema;
 
 type FormValues = z.infer<typeof formSchema>;
 

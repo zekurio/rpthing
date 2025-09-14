@@ -6,14 +6,23 @@
 		"verbatimModuleSyntax": true,
 		"strict": true,
 		"skipLibCheck": true,
+		"rootDir": "../../",
 		"baseUrl": "./",
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@rpthing/schemas": ["../../packages/schemas/src/index.ts"]
 		},
 		"outDir": "./dist",
 		"types": ["bun"],
 		"composite": true,
+		"references": [
+			{ "path": "../../packages/schemas" }
+		],
 		"jsx": "react-jsx",
 		"jsxImportSource": "hono/jsx"
-	}
+	},
+	"include": [
+		"./src/**/*.ts",
+		"../../packages/schemas/src/**/*.ts"
+	]
 }

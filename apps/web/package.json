@@ -5,9 +5,11 @@
 	"scripts": {
 		"dev": "next dev --turbopack --port=3001",
 		"build": "next build",
-		"start": "next start"
+		"start": "next start",
+		"check-types": "tsc -b"
 	},
 	"dependencies": {
+		"@rpthing/schemas": "workspace:*",
 		"@hookform/resolvers": "^5.2.1",
 		"@radix-ui/react-accordion": "^1.2.12",
 		"@radix-ui/react-alert-dialog": "^1.1.15",

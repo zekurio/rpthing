@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { form as realmForm } from "@rpthing/schemas";
 import { IconUploadButton } from "@/components/icon-upload-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,11 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { queryClient, trpc } from "@/utils/trpc";
 
-const editRealmSchema = z.object({
-	name: z.string().min(1, "Name is required"),
-	description: z.string().optional(),
-	password: z.string().optional(),
-});
+const editRealmSchema = realmForm.update;
 
 type EditRealmFormData = z.infer<typeof editRealmSchema>;
 

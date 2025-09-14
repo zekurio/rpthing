@@ -6,6 +6,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { form as realmForm } from "@rpthing/schemas";
 
 import { IconUploadButton } from "@/components/icon-upload-button";
 import { Button } from "@/components/ui/button";
@@ -29,32 +30,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { queryClient, trpc } from "@/utils/trpc";
 
-const createRealmSchema = z.object({
-	name: z
-		.string()
-		.min(1, "Name is required")
-		.max(50, "Name must be less than 50 characters"),
-	description: z
-		.string()
-		.max(500, "Description must be less than 500 characters")
-		.optional(),
-	password: z
-		.string()
-		.min(4, "Password must be at least 4 characters")
-		.max(100, "Password must be less than 100 characters")
-		.optional(),
-});
+const createRealmSchema = realmForm.create;
 
-const joinRealmSchema = z.object({
-	realmId: z
-		.string()
-		.length(7, "Realm ID must be exactly 7 characters")
-		.regex(/^[A-Za-z0-9]+$/, "Realm ID must contain only letters and numbers"),
-	password: z
-		.string()
-		.max(100, "Password must be less than 100 characters")
-		.optional(),
-});
+const joinRealmSchema = realmForm.join;
 
 type CreateRealmFormData = z.infer<typeof createRealmSchema>;
 type JoinRealmFormData = z.infer<typeof joinRealmSchema>;

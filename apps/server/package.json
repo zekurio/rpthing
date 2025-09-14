@@ -5,6 +5,7 @@
 	"scripts": {
 		"build": "tsdown",
 		"check-types": "tsc -b",
+		"build:schemas": "turbo -F @rpthing/schemas build",
 		"compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
 		"dev": "bun run --hot src/index.ts",
 		"start": "bun run dist/index.js",
@@ -14,6 +15,7 @@
 		"db:migrate": "drizzle-kit migrate"
 	},
 	"dependencies": {
+		"@rpthing/schemas": "workspace:*",
 		"@hono/trpc-server": "^0.4.0",
 		"@trpc/client": "^11.5.0",
 		"@trpc/server": "^11.5.0",

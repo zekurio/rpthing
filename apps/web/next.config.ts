@@ -15,6 +15,10 @@ const s3Hostname = (() => {
 const nextConfig: NextConfig = {
 	output: "standalone",
 	typedRoutes: true,
+	transpilePackages: ["@rpthing/schemas"],
+	experimental: {
+		externalDir: true,
+	},
 	images: {
 		remotePatterns: [
 			{ protocol: "https", hostname: "cdn.discordapp.com" },

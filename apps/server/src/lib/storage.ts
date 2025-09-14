@@ -22,44 +22,23 @@ const normalizeAndResolve = (targetPath: string): string => {
 };
 
 const toUint8Array = async (
-	data:
-		| string
-		| ArrayBuffer
-		| SharedArrayBuffer
-		| Blob
-		| Response
-		| Request
-		| Uint8Array,
+	data: ArrayBuffer | Uint8Array,
 ): Promise<Uint8Array> => {
-	if (typeof data === "string") return new TextEncoder().encode(data);
 	if (data instanceof Uint8Array) return data;
-	if (data instanceof ArrayBuffer || data instanceof SharedArrayBuffer)
-		return new Uint8Array(data as ArrayBuffer);
-	if (data instanceof Blob) return new Uint8Array(await data.arrayBuffer());
-	if (data instanceof Response) return new Uint8Array(await data.arrayBuffer());
-	if (data instanceof Request)
-		return new Uint8Array(await (await data.blob()).arrayBuffer());
+	if (data instanceof ArrayBuffer) return new Uint8Array(data);
 	throw new Error("Unsupported data type for upload");
 };
 
 /**
- * Uploads a file to the S3 bucket
+ * Uploads a file to storage
  * @param path - The path to the file
- * @param file - The file to upload
+ * @param data - The file data to upload
  * @returns The number of bytes written
  * @throws Error if upload fails
  */
 export const uploadFile = async (
 	targetPath: string,
-	data:
-		| string
-		| ArrayBuffer
-		| SharedArrayBuffer
-		| Blob
-		| Response
-		| Request
-		| Uint8Array,
-	_contentType?: string,
+	data: ArrayBuffer | Uint8Array,
 ): Promise<number> => {
 	try {
 		const absolutePath = normalizeAndResolve(targetPath);
@@ -75,9 +54,9 @@ export const uploadFile = async (
 };
 
 /**
- * Deletes a file from the S3 bucket
+ * Deletes a file from storage
  * @param path - The path to the file
- * @returns The response from the S3 bucket
+ * @returns True if deletion succeeded
  * @throws Error if deletion fails
  */
 export const deleteFile = async (targetPath: string) => {
@@ -93,7 +72,7 @@ export const deleteFile = async (targetPath: string) => {
 };
 
 /**
- * Gets a public URL for a file in the S3 bucket
+ * Gets a public URL for a file in storage
  * @param path - The path to the file
  * @returns The public URL to access the file
  * @throws Error if URL generation fails

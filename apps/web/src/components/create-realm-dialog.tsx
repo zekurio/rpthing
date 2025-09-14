@@ -32,7 +32,6 @@ const createRealmSchema = z.object({
 	name: z.string().min(1, "Name is required"),
 	description: z.string().optional(),
 	password: z.string().optional(),
-	imageBase64: z.string().optional(),
 });
 
 type CreateRealmFormData = z.infer<typeof createRealmSchema>;
@@ -76,7 +75,7 @@ function CreateRealmForm({
 
 	const form = useForm<CreateRealmFormData>({
 		resolver: zodResolver(createRealmSchema),
-		defaultValues: { name: "", description: "", password: "", imageBase64: "" },
+		defaultValues: { name: "", description: "", password: "" },
 	});
 
 	const createMutation = useMutation({
@@ -94,28 +93,39 @@ function CreateRealmForm({
 		setImagePreview(null);
 	};
 
-	const convertFileToBase64 = (file: File): Promise<string> => {
-		return new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			reader.onload = () => resolve(reader.result as string);
-			reader.onerror = reject;
-			reader.readAsDataURL(file);
+	const uploadFile = async (realmId: string, file: File): Promise<void> => {
+		const formData = new FormData();
+		formData.append("file", file);
+		
+		const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "";
+		const response = await fetch(`${serverUrl}/api/upload/realm-icon/${realmId}`, {
+			method: "POST",
+			body: formData,
+			credentials: "include",
 		});
+
+		if (!response.ok) {
+			const error = await response.json();
+			throw new Error(error.error || "Failed to upload icon");
+		}
 	};
 
 	const onSubmit = async (data: CreateRealmFormData) => {
 		try {
-			let imageBase64: string | undefined;
-			if (selectedFile) {
-				imageBase64 = await convertFileToBase64(selectedFile);
-			}
-			await createMutation.mutateAsync({
+			// First create the realm
+			const realm = await createMutation.mutateAsync({
 				name: data.name,
 				description: data.description || undefined,
 				password: data.password || undefined,
-				imageBase64,
 			});
-		} catch {}
+
+			// Then upload the icon if a file was selected
+			if (selectedFile && realm.id) {
+				await uploadFile(realm.id, selectedFile);
+			}
+		} catch (error) {
+			console.error("Failed to create realm or upload icon:", error);
+		}
 	};
 
 	return (

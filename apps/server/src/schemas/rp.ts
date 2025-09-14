@@ -13,7 +13,6 @@ export const realmCreateInputSchema = z.object({
 	name: realmNameSchema,
 	description: realmDescriptionSchema,
 	password: realmPasswordSchema.nullish(),
-	imageBase64: z.string().min(1).nullish(),
 });
 export type RealmCreateInput = z.infer<typeof realmCreateInputSchema>;
 
@@ -46,23 +45,10 @@ export const realmJoinInputSchema = z.object({
 });
 export type RealmJoinInput = z.infer<typeof realmJoinInputSchema>;
 
-// Realm icon operations
-export const realmUpdateIconInputSchema = z.object({
-	realmId: realmIdSchema,
-	imageBase64: z.string().min(1),
-});
-export type RealmUpdateIconInput = z.infer<typeof realmUpdateIconInputSchema>;
-
-export const realmDeleteIconInputSchema = z.object({
-	realmId: realmIdSchema,
-});
-export type RealmDeleteIconInput = z.infer<typeof realmDeleteIconInputSchema>;
-
 export const realmUpdateInputSchema = z.object({
 	id: realmIdSchema,
 	name: realmNameSchema.optional(),
 	description: realmDescriptionSchema.optional(),
 	password: realmPasswordSchema.nullish(),
-	imageBase64: z.union([z.string().min(1), z.literal("REMOVE_ICON")]).nullish(),
 });
 export type RealmUpdateInput = z.infer<typeof realmUpdateInputSchema>;

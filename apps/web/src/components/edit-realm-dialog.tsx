@@ -32,7 +32,6 @@ const editRealmSchema = z.object({
 	name: z.string().min(1, "Name is required"),
 	description: z.string().optional(),
 	password: z.string().optional(),
-	imageBase64: z.string().optional(),
 });
 
 type EditRealmFormData = z.infer<typeof editRealmSchema>;
@@ -50,14 +49,14 @@ export function EditRealmDialog({
 }: EditRealmDialogProps) {
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
-	// retained earlier reset logic no longer needed
+	const [removeIcon, setRemoveIcon] = useState(false);
 
 	const { data: realm } = useQuery(trpc.realm.list.queryOptions());
 	const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "";
 
 	const form = useForm<EditRealmFormData>({
 		resolver: zodResolver(editRealmSchema),
-		defaultValues: { name: "", description: "", password: "", imageBase64: "" },
+		defaultValues: { name: "", description: "", password: "" },
 	});
 
 	const updateMutation = useMutation({
@@ -81,57 +80,77 @@ export function EditRealmDialog({
 				name: currentRealm.name || "",
 				description: currentRealm.description || "",
 				password: "",
-				imageBase64: "",
 			});
 			setSelectedFile(null);
 			setImagePreview(null);
-			// no input element to reset here
+			setRemoveIcon(false);
 		}
 	}, [currentRealm, open, form]);
 
-	// file selection is handled inside IconUploadButton now
-
-	const convertFileToBase64 = (file: File): Promise<string> => {
-		return new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			reader.onload = () => resolve(reader.result as string);
-			reader.onerror = reject;
-			reader.readAsDataURL(file);
+	const uploadFile = async (realmId: string, file: File): Promise<void> => {
+		const formData = new FormData();
+		formData.append("file", file);
+		
+		const response = await fetch(`${serverUrl}/api/upload/realm-icon/${realmId}`, {
+			method: "POST",
+			body: formData,
+			credentials: "include",
 		});
+
+		if (!response.ok) {
+			const error = await response.json();
+			throw new Error(error.error || "Failed to upload icon");
+		}
+	};
+
+	const deleteIcon = async (realmId: string): Promise<void> => {
+		const response = await fetch(`${serverUrl}/api/upload/realm-icon/${realmId}`, {
+			method: "DELETE",
+			credentials: "include",
+		});
+
+		if (!response.ok) {
+			const error = await response.json();
+			throw new Error(error.error || "Failed to delete icon");
+		}
 	};
 
 	const handleRemoveIcon = () => {
 		setSelectedFile(null);
 		setImagePreview(null);
-		// Set a special value to indicate icon removal
-		form.setValue("imageBase64", "REMOVE_ICON");
-		// no input element to reset here
+		setRemoveIcon(true);
 	};
 
 	const onSubmit = async (data: EditRealmFormData) => {
 		if (!realmId) return;
 
 		try {
-			let imageBase64: string | undefined;
-			if (selectedFile) {
-				imageBase64 = await convertFileToBase64(selectedFile);
-			}
-
+			// First update the realm
 			await updateMutation.mutateAsync({
 				id: realmId,
 				name: data.name,
 				description: data.description || undefined,
 				password: data.password || undefined,
-				imageBase64,
 			});
-		} catch {}
+
+			// Handle icon operations
+			if (selectedFile) {
+				// Upload new icon
+				await uploadFile(realmId, selectedFile);
+			} else if (removeIcon && currentIconSrc) {
+				// Remove existing icon
+				await deleteIcon(realmId);
+			}
+		} catch (error) {
+			console.error("Failed to update realm or handle icon:", error);
+		}
 	};
 
 	const onClose = () => {
 		form.reset();
 		setSelectedFile(null);
 		setImagePreview(null);
-		// no input element to reset here
+		setRemoveIcon(false);
 		onOpenChange(false);
 	};
 
@@ -199,7 +218,7 @@ export function EditRealmDialog({
 										setImagePreview(preview);
 									}}
 								/>
-								{(imagePreview || currentIconSrc) && (
+								{(imagePreview || currentIconSrc) && !removeIcon && (
 									<Button
 										type="button"
 										variant="ghost"

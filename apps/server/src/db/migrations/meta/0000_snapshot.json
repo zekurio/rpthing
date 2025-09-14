@@ -1,5 +1,5 @@
 {
-	"id": "036a4820-d314-4099-9ccf-a5b9e5f29451",
+	"id": "575e5c5d-4caa-4ab4-8490-23f24cbefa0e",
 	"prevId": "00000000-0000-0000-0000-000000000000",
 	"version": "7",
 	"dialect": "postgresql",
@@ -313,7 +313,7 @@
 				},
 				"realm_id": {
 					"name": "realm_id",
-					"type": "uuid",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": true
 				},
@@ -553,7 +553,7 @@
 				},
 				"realm_id": {
 					"name": "realm_id",
-					"type": "uuid",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": true
 				},
@@ -602,7 +602,7 @@
 			"columns": {
 				"id": {
 					"name": "id",
-					"type": "uuid",
+					"type": "text",
 					"primaryKey": true,
 					"notNull": true
 				},
@@ -675,7 +675,7 @@
 			"columns": {
 				"realm_id": {
 					"name": "realm_id",
-					"type": "uuid",
+					"type": "text",
 					"primaryKey": false,
 					"notNull": true
 				},

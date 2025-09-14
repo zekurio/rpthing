@@ -7,7 +7,7 @@ import { Edit, Plus, Trash, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { CreateRealmDialog } from "@/components/create-realm-dialog";
+import { CreateOrJoinRealmDialog } from "@/components/create-or-join-realm-dialog";
 import { EditRealmDialog } from "@/components/edit-realm-dialog";
 import { Logo } from "@/components/logo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -208,7 +208,10 @@ function MobileRealmsSheet({
 						})
 					)}
 				</div>
-				<CreateRealmDialog open={createOpen} onOpenChange={setCreateOpen} />
+				<CreateOrJoinRealmDialog
+					open={createOpen}
+					onOpenChange={setCreateOpen}
+				/>
 				<EditRealmDialog
 					open={editOpen}
 					onOpenChange={setEditOpen}

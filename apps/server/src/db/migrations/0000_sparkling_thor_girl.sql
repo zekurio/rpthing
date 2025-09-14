@@ -48,7 +48,7 @@ CREATE TABLE "verification" (
 --> statement-breakpoint
 CREATE TABLE "character" (
 	"id" uuid PRIMARY KEY NOT NULL,
-	"realm_id" uuid NOT NULL,
+	"realm_id" text NOT NULL,
 	"user_id" uuid NOT NULL,
 	"name" text NOT NULL,
 	"gender" text,
@@ -80,14 +80,14 @@ CREATE TABLE "character_rating" (
 --> statement-breakpoint
 CREATE TABLE "rating_category" (
 	"id" uuid PRIMARY KEY NOT NULL,
-	"realm_id" uuid NOT NULL,
+	"realm_id" text NOT NULL,
 	"name" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "realm" (
-	"id" uuid PRIMARY KEY NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"description" text,
 	"password" text,
@@ -98,7 +98,7 @@ CREATE TABLE "realm" (
 );
 --> statement-breakpoint
 CREATE TABLE "realm_member" (
-	"realm_id" uuid NOT NULL,
+	"realm_id" text NOT NULL,
 	"user_id" uuid NOT NULL,
 	"role" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,

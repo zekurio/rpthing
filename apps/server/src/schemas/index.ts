@@ -1,1 +1,1 @@
-export * from "./rp.js";
+export * from "./rp";

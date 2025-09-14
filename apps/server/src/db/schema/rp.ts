@@ -8,13 +8,14 @@ import {
 	timestamp,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { user } from "./auth.js";
+import { nanoid } from "nanoid";
+import { user } from "./auth";
 
 // Realm acts as a universe container
 export const realm = pgTable("realm", {
-	id: uuid("id")
+	id: text("id")
 		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
+		.$defaultFn(() => nanoid(7)),
 	name: text("name").notNull(),
 	description: text("description"),
 	password: text("password"),
@@ -33,7 +34,7 @@ export const realm = pgTable("realm", {
 export const realmMember = pgTable(
 	"realm_member",
 	{
-		realmId: uuid("realm_id")
+		realmId: text("realm_id")
 			.notNull()
 			.references(() => realm.id, { onDelete: "cascade" }),
 		userId: uuid("user_id")
@@ -56,7 +57,7 @@ export const character = pgTable("character", {
 	id: uuid("id")
 		.primaryKey()
 		.$defaultFn(() => crypto.randomUUID()),
-	realmId: uuid("realm_id")
+	realmId: text("realm_id")
 		.notNull()
 		.references(() => realm.id, { onDelete: "cascade" }),
 	userId: uuid("user_id")
@@ -79,7 +80,7 @@ export const ratingCategory = pgTable("rating_category", {
 	id: uuid("id")
 		.primaryKey()
 		.$defaultFn(() => crypto.randomUUID()),
-	realmId: uuid("realm_id")
+	realmId: text("realm_id")
 		.notNull()
 		.references(() => realm.id, { onDelete: "cascade" }),
 	name: text("name").notNull(),

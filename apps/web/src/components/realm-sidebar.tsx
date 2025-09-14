@@ -3,8 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
+import { CreateOrJoinRealmDialog } from "@/components/create-or-join-realm-dialog";
 import { CreateRealmButton } from "@/components/create-realm-button";
-import { CreateRealmDialog } from "@/components/create-realm-dialog";
 import { DeleteRealmDialog } from "@/components/delete-realm-dialog";
 import { EditRealmDialog } from "@/components/edit-realm-dialog";
 import { RealmList } from "@/components/realm-list";
@@ -17,7 +17,7 @@ export function RealmSidebar() {
 	const isMobile = useIsMobile();
 	const { data, isPending } = useQuery(trpc.realm.list.queryOptions());
 
-	const [dialogOpen, setDialogOpen] = useState(false);
+	const [createOrJoinDialogOpen, setCreateOrJoinDialogOpen] = useState(false);
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [selectedRealmId, setSelectedRealmId] = useState<string | null>(null);
@@ -60,8 +60,11 @@ export function RealmSidebar() {
 					onEdit={handleEdit}
 					onDelete={handleDelete}
 				/>
-				<CreateRealmButton onClick={() => setDialogOpen(true)} />
-				<CreateRealmDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+				<CreateRealmButton onClick={() => setCreateOrJoinDialogOpen(true)} />
+				<CreateOrJoinRealmDialog
+					open={createOrJoinDialogOpen}
+					onOpenChange={setCreateOrJoinDialogOpen}
+				/>
 				<EditRealmDialog
 					open={editDialogOpen}
 					onOpenChange={setEditDialogOpen}

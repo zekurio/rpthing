@@ -40,8 +40,7 @@ const createRealmSchema = z.object({
 		.optional(),
 	password: z
 		.string()
-		.min(4, "Password must be at least 4 characters")
-		.max(100, "Password must be less than 100 characters")
+		.max(32, "Password must be less than 32 characters")
 		.optional(),
 });
 
@@ -52,7 +51,7 @@ const joinRealmSchema = z.object({
 		.regex(/^[A-Za-z0-9]+$/, "Realm ID must contain only letters and numbers"),
 	password: z
 		.string()
-		.max(100, "Password must be less than 100 characters")
+		.max(32, "Password must be less than 32 characters")
 		.optional(),
 });
 

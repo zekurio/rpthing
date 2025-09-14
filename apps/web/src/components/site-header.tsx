@@ -132,6 +132,9 @@ function MobileRealmsSheet({
 					draggingRef.current = false;
 				}}
 			>
+				<DialogPrimitive.Title className="sr-only">
+					Realms
+				</DialogPrimitive.Title>
 				<div className="flex items-center justify-between border-b p-3">
 					<span className="font-semibold">Realms</span>
 					<div className="flex items-center gap-1">

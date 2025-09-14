@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/index.js";
+import { user } from "../db/schema/auth.js";
 import { character, realm, realmMember } from "../db/schema/rp.js";
 import { deleteFile, getFileUrl } from "../lib/storage.js";
 import { protectedProcedure, router } from "../lib/trpc.js";
@@ -343,6 +344,46 @@ export const realmRouter = router({
 			await db.update(realm).set(updateData).where(eq(realm.id, id));
 
 			return { success: true };
+		}),
+
+	getMembers: protectedProcedure
+		.input(z.object({ realmId: realmIdSchema }))
+		.query(async ({ ctx, input }) => {
+			const userId = ctx.session.user.id;
+			const { realmId } = input;
+
+			// Check if user is a member of this realm
+			const [membership] = await db
+				.select({ role: realmMember.role })
+				.from(realmMember)
+				.where(
+					and(eq(realmMember.realmId, realmId), eq(realmMember.userId, userId)),
+				)
+				.limit(1);
+
+			if (!membership) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Access denied. The requested resource is not available.",
+				});
+			}
+
+			// Get all members of the realm
+			const members = await db
+				.select({
+					userId: user.id,
+					name: user.name,
+					email: user.email,
+					image: user.image,
+					role: realmMember.role,
+					joinedAt: realmMember.createdAt,
+				})
+				.from(realmMember)
+				.innerJoin(user, eq(user.id, realmMember.userId))
+				.where(eq(realmMember.realmId, realmId))
+				.orderBy(realmMember.createdAt);
+
+			return members;
 		}),
 
 	transferOwnership: protectedProcedure

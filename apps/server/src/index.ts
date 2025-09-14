@@ -5,12 +5,12 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import sharp from "sharp";
-import { db } from "./db";
-import { realm } from "./db/schema/rp";
-import { auth } from "./lib/auth";
-import { createContext } from "./lib/context";
-import { deleteFile, getFileUrl, uploadFile } from "./lib/storage";
-import { appRouter } from "./routers/index";
+import { db } from "./db/index.js";
+import { realm } from "./db/schema/rp.js";
+import { auth } from "./lib/auth.js";
+import { createContext } from "./lib/context.js";
+import { deleteFile, getFileUrl, uploadFile } from "./lib/storage.js";
+import { appRouter } from "./routers/index.js";
 
 const app = new Hono();
 

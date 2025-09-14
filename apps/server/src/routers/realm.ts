@@ -1,17 +1,17 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "../db";
-import { character, realm, realmMember } from "../db/schema/rp";
-import { deleteFile, getFileUrl } from "../lib/storage";
-import { protectedProcedure, router } from "../lib/trpc";
+import { db } from "../db/index.js";
+import { character, realm, realmMember } from "../db/schema/rp.js";
+import { deleteFile, getFileUrl } from "../lib/storage.js";
+import { protectedProcedure, router } from "../lib/trpc.js";
 import {
 	realmCreateInputSchema,
 	realmIdSchema,
 	realmJoinInputSchema,
 	realmTransferOwnershipInputSchema,
 	realmUpdateInputSchema,
-} from "../schemas";
+} from "../schemas/index.js";
 
 export const realmRouter = router({
 	create: protectedProcedure

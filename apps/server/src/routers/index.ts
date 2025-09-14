@@ -1,5 +1,5 @@
-import { protectedProcedure, publicProcedure, router } from "../lib/trpc";
-import { realmRouter } from "./realm";
+import { protectedProcedure, publicProcedure, router } from "../lib/trpc.js";
+import { realmRouter } from "./realm.js";
 
 export const appRouter = router({
 	healthCheck: publicProcedure.query(() => {

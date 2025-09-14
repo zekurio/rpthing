@@ -10,12 +10,12 @@ import {
 	ContextMenuItem,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface Realm {
 	id: string;
@@ -64,8 +64,8 @@ export function RealmItem({
 								onClick={() => handleRealmClick(realm.id)}
 							>
 								<Avatar className="h-10 w-10">
-									<AvatarImage 
-										src={src || ""} 
+									<AvatarImage
+										src={src || ""}
 										alt={realm.name}
 										onLoad={handleImageLoad}
 										onError={handleImageError}
@@ -75,7 +75,7 @@ export function RealmItem({
 									</AvatarFallback>
 								</Avatar>
 								{src && !isImageLoaded && (
-									<div className="absolute inset-0 rounded-full">
+									<div className="absolute inset-0 flex h-10 w-10 items-center justify-center">
 										<Skeleton className="h-10 w-10 rounded-full" />
 									</div>
 								)}

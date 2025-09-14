@@ -14,13 +14,7 @@ export default function RealmsPage() {
 			<div className="flex h-full min-h-0 w-full flex-col">
 				<SiteHeader />
 				<div className="flex h-full min-h-0">
-					<div className="w-64 border-r">
-						<div className="space-y-4 p-4">
-							<Skeleton className="h-8 w-32" />
-							<Skeleton className="h-6 w-full" />
-							<Skeleton className="h-6 w-full" />
-						</div>
-					</div>
+					<RealmSidebar />
 					<main className="flex-1 p-4">
 						<div className="space-y-4">
 							<Skeleton className="h-8 w-48" />

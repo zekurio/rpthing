@@ -22,7 +22,7 @@ export function UserAvatar({ user, isLoading, className }: UserAvatarProps) {
 
 	return (
 		<Avatar className={`h-10 w-10 ${className || ""}`}>
-			<AvatarImage src={user?.image || ""} alt={user?.name || ""} />
+			<AvatarImage src={user?.image ?? undefined} alt={user?.name || ""} />
 			<AvatarFallback className="rounded-lg">
 				{user?.name ? user.name.charAt(0).toUpperCase() : "U"}
 			</AvatarFallback>

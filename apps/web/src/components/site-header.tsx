@@ -5,7 +5,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import type { User } from "better-auth";
 import { Edit, Plus, Trash, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { CreateRealmDialog } from "@/components/create-realm-dialog";
 import { EditRealmDialog } from "@/components/edit-realm-dialog";
@@ -77,7 +77,7 @@ function MobileRealmsSheet({
 
 	const { data, isPending } = useQuery(trpc.realm.list.queryOptions());
 	const realms = data ?? [];
-	const serverUrl = useMemo(() => process.env.NEXT_PUBLIC_SERVER_URL || "", []);
+// Server now returns full S3 URLs; no need to prefix with server URL
 
 	const deleteMutation = useMutation({
 		...trpc.realm.delete.mutationOptions(),
@@ -163,7 +163,7 @@ function MobileRealmsSheet({
 						<div className="text-muted-foreground text-sm">No realms yet.</div>
 					) : (
 						realms.map((r) => {
-							const src = r.iconKey ? `${serverUrl}${r.iconKey}` : undefined;
+							const src = r.iconKey || undefined;
 							return (
 								<div
 									key={r.id}
@@ -175,7 +175,7 @@ function MobileRealmsSheet({
 										className="flex flex-1 items-center gap-3 text-left"
 									>
 										<Avatar className="h-8 w-8">
-											<AvatarImage src={src || ""} alt={r.name} />
+											<AvatarImage src={src} alt={r.name} />
 											<AvatarFallback className="rounded-full">
 												{r.name?.[0]?.toUpperCase() || "R"}
 											</AvatarFallback>

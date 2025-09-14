@@ -82,7 +82,7 @@ export function RealmItem({
 							>
 								<Avatar className="h-10 w-10">
 									<AvatarImage
-										src={src || ""}
+										src={src}
 										alt={realm.name}
 										onLoad={handleImageLoad}
 										onError={handleImageError}

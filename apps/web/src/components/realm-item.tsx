@@ -2,7 +2,7 @@
 
 import { Edit, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	ContextMenu,
@@ -38,7 +38,24 @@ export function RealmItem({
 }: RealmItemProps) {
 	const router = useRouter();
 	const [isImageLoaded, setIsImageLoaded] = useState(false);
+	const [currentSrc, setCurrentSrc] = useState<string | undefined>(undefined);
 	const src = realm.iconKey || undefined;
+
+	// Reset loading state when image source changes
+	useEffect(() => {
+		if (src !== currentSrc) {
+			setCurrentSrc(src);
+			setIsImageLoaded(false);
+
+			// Check if image is already cached
+			if (src) {
+				const img = new Image();
+				img.onload = () => setIsImageLoaded(true);
+				img.onerror = () => setIsImageLoaded(true);
+				img.src = src;
+			}
+		}
+	}, [src, currentSrc]);
 
 	const handleRealmClick = (realmId: string) => {
 		router.push(`/realms/${realmId}`);

@@ -38,7 +38,7 @@ export function UserMenu() {
 			<DropdownMenuTrigger asChild>
 				<Button
 					variant="ghost"
-					className="flex h-auto items-center gap-3 py-2 pr-0 pl-3"
+					className="flex h-auto items-center gap-3 p-0 py-2"
 				>
 					<div className="flex flex-col items-start">
 						<UserAvatar user={user} isLoading={isLoading} />

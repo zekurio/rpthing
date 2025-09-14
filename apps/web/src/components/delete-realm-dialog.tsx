@@ -30,7 +30,7 @@ export function DeleteRealmDialog({
 	const deleteMutation = useMutation({
 		...trpc.realm.delete.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries();
+			queryClient.invalidateQueries({ queryKey: trpc.realm.list.queryKey() });
 			toast.success("Realm deleted.");
 			onOpenChange(false);
 		},

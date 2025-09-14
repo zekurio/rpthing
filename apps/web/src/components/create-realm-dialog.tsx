@@ -81,7 +81,7 @@ function CreateRealmForm({
 	const createMutation = useMutation({
 		...trpc.realm.create.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries();
+			queryClient.invalidateQueries({ queryKey: trpc.realm.list.queryKey() });
 			toast.success("Realm created.");
 			onCompleted();
 		},

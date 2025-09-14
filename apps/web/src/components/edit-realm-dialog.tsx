@@ -62,7 +62,7 @@ export function EditRealmDialog({
 	const updateMutation = useMutation({
 		...trpc.realm.update.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries();
+			queryClient.invalidateQueries({ queryKey: trpc.realm.list.queryKey() });
 			toast.success("Realm updated.");
 			onClose();
 		},
@@ -220,10 +220,15 @@ export function EditRealmDialog({
 							<FormLabel>Icon (optional)</FormLabel>
 							<div className="flex items-center gap-3">
 								<IconUploadButton
-									previewSrc={imagePreview || currentIconSrc || undefined}
+									previewSrc={
+										removeIcon
+											? undefined
+											: imagePreview || currentIconSrc || undefined
+									}
 									onSelect={(file, preview) => {
 										setSelectedFile(file);
 										setImagePreview(preview);
+										setRemoveIcon(false);
 									}}
 								/>
 								{(imagePreview || currentIconSrc) && !removeIcon && (

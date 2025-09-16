@@ -2,7 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -39,19 +40,26 @@ type EditRealmFormData = z.infer<typeof editRealmSchema>;
 interface EditRealmDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	realmId: string | null;
 }
 
-export function EditRealmDialog({
-	open,
-	onOpenChange,
-	realmId,
-}: EditRealmDialogProps) {
+export function EditRealmDialog({ open, onOpenChange }: EditRealmDialogProps) {
+	const pathname = usePathname();
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 	const [removeIcon, setRemoveIcon] = useState(false);
 
-	const { data: realm } = useQuery(trpc.realm.list.queryOptions());
+	// Get current realm ID from pathname (e.g., /realms/123 -> "123")
+	const realmId = useMemo(() => {
+		const match = pathname.match(/^\/realms\/([^/]+)/);
+		return match ? match[1] : null;
+	}, [pathname]);
+
+	const { data: realm } = useQuery({
+		...trpc.realm.getById.queryOptions({ realmId: realmId ?? "" }),
+		enabled: !!realmId && open,
+		retry: 2,
+		retryDelay: 1000,
+	});
 	const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "";
 
 	const form = useForm<EditRealmFormData>({
@@ -63,27 +71,31 @@ export function EditRealmDialog({
 		...trpc.realm.update.mutationOptions(),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: trpc.realm.list.queryKey() });
+			if (realmId) {
+				queryClient.invalidateQueries({
+					queryKey: trpc.realm.getById.queryKey({ realmId }),
+				});
+			}
 			toast.success("Realm updated.");
 			onClose();
 		},
 		onError: (err) => toast.error(err.message),
 	});
 
-	const currentRealm = realm?.find((r) => r.id === realmId);
-	const currentIconSrc = currentRealm?.iconKey || null;
+	const currentIconSrc = realm?.iconKey || null;
 
 	useEffect(() => {
-		if (currentRealm && open) {
+		if (realm && open) {
 			form.reset({
-				name: currentRealm.name || "",
-				description: currentRealm.description || "",
+				name: realm.name || "",
+				description: realm.description || "",
 				password: "",
 			});
 			setSelectedFile(null);
 			setImagePreview(null);
 			setRemoveIcon(false);
 		}
-	}, [currentRealm, open, form]);
+	}, [realm, open, form]);
 
 	const uploadFile = async (realmId: string, file: File): Promise<void> => {
 		const formData = new FormData();
@@ -129,7 +141,6 @@ export function EditRealmDialog({
 		if (!realmId) return;
 
 		try {
-			// First update the realm
 			await updateMutation.mutateAsync({
 				id: realmId,
 				name: data.name,

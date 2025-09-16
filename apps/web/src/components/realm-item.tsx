@@ -76,7 +76,7 @@ export function RealmItem({
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<button
-								className={`group/realm relative ${isSelected ? "rounded-full ring-2 ring-primary" : ""}`}
+								className={`group/realm relative cursor-pointer ${isSelected ? "rounded-full ring-2 ring-primary" : ""}`}
 								type="button"
 								onClick={() => handleRealmClick(realm.id)}
 							>

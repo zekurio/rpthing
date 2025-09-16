@@ -14,7 +14,7 @@ export function useAuth() {
 
 	const signOut = useCallback(async () => {
 		await authClient.signOut();
-		await refetch();
+		refetch();
 	}, [refetch]);
 
 	const signInWithProvider = useCallback(
@@ -27,14 +27,14 @@ export function useAuth() {
 	const updateProfile = useCallback(
 		async (updates: Partial<Pick<User, "name" | "image">>) => {
 			await authClient.updateUser(updates);
-			await refetch();
+			refetch();
 		},
 		[refetch],
 	);
 
 	const deleteAccount = useCallback(async () => {
 		await authClient.deleteUser();
-		await refetch();
+		refetch();
 	}, [refetch]);
 
 	return useMemo(

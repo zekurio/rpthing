@@ -4,7 +4,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { User } from "better-auth";
 import { Edit, Plus, Trash, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { CreateOrJoinRealmDialog } from "@/components/create-or-join-realm-dialog";
@@ -68,16 +68,25 @@ function MobileRealmsSheet({
 	onOpenChange: (open: boolean) => void;
 }) {
 	const router = useRouter();
+	const params = useParams();
 	const [createOpen, setCreateOpen] = useState(false);
 	const [editOpen, setEditOpen] = useState(false);
-	const [selectedRealmId, setSelectedRealmId] = useState<string | null>(null);
 	const draggingRef = useRef(false);
 	const startXRef = useRef(0);
 	const startYRef = useRef(0);
 
-	const { data, isPending } = useQuery(trpc.realm.list.queryOptions());
-	const realms = data ?? [];
+	const { data, isPending, error } = useQuery({
+		...trpc.realm.list.queryOptions(),
+		retry: 2, // Retry failed requests up to 2 times
+		retryDelay: 1000, // Wait 1 second between retries
+	});
+	// If there's an error, treat it as if there are no realms (show empty state)
+	// This provides a better UX than showing an error when the user has no realms
+	const realms = error ? [] : (data ?? []);
 	// Server now returns full S3 URLs; no need to prefix with server URL
+
+	// Get current realm ID from URL params
+	const currentRealmId = params.realmId as string | undefined;
 
 	const deleteMutation = useMutation({
 		...trpc.realm.delete.mutationOptions(),
@@ -93,8 +102,7 @@ function MobileRealmsSheet({
 		onOpenChange(false);
 	};
 
-	const handleEdit = (realmId: string) => {
-		setSelectedRealmId(realmId);
+	const handleEdit = (_realmId: string) => {
 		setEditOpen(true);
 	};
 
@@ -167,10 +175,13 @@ function MobileRealmsSheet({
 					) : (
 						realms.map((r) => {
 							const src = r.iconKey || undefined;
+							const isSelected = r.id === currentRealmId;
 							return (
 								<div
 									key={r.id}
-									className="flex items-center justify-between gap-3 rounded-md border p-2"
+									className={`flex items-center justify-between gap-3 rounded-md border p-2 ${
+										isSelected ? "ring-2 ring-primary" : ""
+									}`}
 								>
 									<button
 										type="button"
@@ -215,11 +226,7 @@ function MobileRealmsSheet({
 					open={createOpen}
 					onOpenChange={setCreateOpen}
 				/>
-				<EditRealmDialog
-					open={editOpen}
-					onOpenChange={setEditOpen}
-					realmId={selectedRealmId}
-				/>
+				<EditRealmDialog open={editOpen} onOpenChange={setEditOpen} />
 			</DialogPrimitive.Content>
 		</Dialog>
 	);

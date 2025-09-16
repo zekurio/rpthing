@@ -15,7 +15,11 @@ import { trpc } from "@/utils/trpc";
 export function RealmSidebar() {
 	const pathname = usePathname();
 	const isMobile = useIsMobile();
-	const { data, isPending } = useQuery(trpc.realm.list.queryOptions());
+	const { data, isPending, error } = useQuery({
+		...trpc.realm.list.queryOptions(),
+		retry: 2,
+		retryDelay: 1000,
+	});
 
 	const [createOrJoinDialogOpen, setCreateOrJoinDialogOpen] = useState(false);
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -23,9 +27,9 @@ export function RealmSidebar() {
 	const [selectedRealmId, setSelectedRealmId] = useState<string | null>(null);
 	const [selectedRealmName, setSelectedRealmName] = useState<string>("");
 
-	const realms = data ?? [];
-
-	// serverUrl no longer needed - S3 URLs are returned directly from the API
+	// If there's an error, treat it as if there are no realms (show empty state)
+	// This provides a better UX than showing an error when the user has no realms
+	const realms = error ? [] : (data ?? []);
 
 	// Get current realm ID from pathname (e.g., /realms/123 -> "123")
 	const currentRealmId = useMemo(() => {
@@ -68,7 +72,6 @@ export function RealmSidebar() {
 				<EditRealmDialog
 					open={editDialogOpen}
 					onOpenChange={setEditDialogOpen}
-					realmId={selectedRealmId}
 				/>
 				<DeleteRealmDialog
 					open={deleteDialogOpen}

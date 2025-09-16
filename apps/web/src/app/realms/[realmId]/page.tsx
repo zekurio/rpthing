@@ -8,8 +8,10 @@ import NotFound from "@/app/not-found";
 import { MemberSidebar } from "@/components/member-sidebar";
 import { RealmSidebar } from "@/components/realm-sidebar";
 import { SiteHeader } from "@/components/site-header";
+import { TraitsManager } from "@/components/traits-manager";
 import { Dialog, DialogOverlay } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRealmAccess } from "@/hooks/use-realm-access";
 
@@ -38,6 +40,7 @@ export default function RealmPage() {
 						<div className="space-y-4">
 							<Skeleton className="h-8 w-48" />
 							<Skeleton className="h-4 w-96" />
+							<Skeleton className="h-32 w-full" />
 						</div>
 					</main>
 					<div className="p-4">
@@ -69,15 +72,40 @@ export default function RealmPage() {
 			<div className="flex h-full min-h-0">
 				<RealmSidebar />
 				<main className="flex-1 p-4">
-					<div>
-						<h1 className="font-bold text-2xl">{realm.name}</h1>
-						<p className="text-muted-foreground">
-							{realm.description ||
-								"Content for the selected realm will go here."}
-						</p>
-						<div className="mt-4 text-muted-foreground text-sm">
-							Role: {realm.role}
+					<div className="space-y-6">
+						<div>
+							<h1 className="font-bold text-2xl">{realm.name}</h1>
+							<p className="text-muted-foreground">{realm.description}</p>
 						</div>
+
+						<Tabs defaultValue="characters" className="w-full">
+							<TabsList className="grid w-full grid-cols-3">
+								<TabsTrigger value="characters">Characters</TabsTrigger>
+								<TabsTrigger value="traits">Traits</TabsTrigger>
+								<TabsTrigger value="notes">Notes</TabsTrigger>
+							</TabsList>
+							<TabsContent value="characters" className="mt-6">
+								<div className="rounded-lg border p-6">
+									<h3 className="mb-4 font-semibold text-lg">Characters</h3>
+									<p className="text-muted-foreground">
+										Character management will be implemented here.
+									</p>
+								</div>
+							</TabsContent>
+							<TabsContent value="traits" className="mt-6">
+								<div className="rounded-lg border p-6">
+									<TraitsManager realmId={realm.id} />
+								</div>
+							</TabsContent>
+							<TabsContent value="notes" className="mt-6">
+								<div className="rounded-lg border p-6">
+									<h3 className="mb-4 font-semibold text-lg">Notes</h3>
+									<p className="text-muted-foreground">
+										Note management will be implemented here.
+									</p>
+								</div>
+							</TabsContent>
+						</Tabs>
 					</div>
 				</main>
 				<div className="">

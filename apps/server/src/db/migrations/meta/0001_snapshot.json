@@ -1,6 +1,6 @@
 {
-	"id": "840e4d71-5838-4c04-b0fe-5e042e2bfce6",
-	"prevId": "00000000-0000-0000-0000-000000000000",
+	"id": "1a797c3a-646b-4e32-92ca-41c8cd704693",
+	"prevId": "840e4d71-5838-4c04-b0fe-5e042e2bfce6",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
@@ -457,6 +457,226 @@
 					"tableFrom": "realm",
 					"tableTo": "user",
 					"columnsFrom": ["owner_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.character_trait_rating": {
+			"name": "character_trait_rating",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"character_id": {
+					"name": "character_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"trait_id": {
+					"name": "trait_id",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"value": {
+					"name": "value",
+					"type": "smallint",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {
+				"ctr_character_trait_unique": {
+					"name": "ctr_character_trait_unique",
+					"columns": [
+						{
+							"expression": "character_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						},
+						{
+							"expression": "trait_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": true,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				},
+				"ctr_character_id_idx": {
+					"name": "ctr_character_id_idx",
+					"columns": [
+						{
+							"expression": "character_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				},
+				"ctr_trait_id_idx": {
+					"name": "ctr_trait_id_idx",
+					"columns": [
+						{
+							"expression": "trait_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"character_trait_rating_character_id_character_id_fk": {
+					"name": "character_trait_rating_character_id_character_id_fk",
+					"tableFrom": "character_trait_rating",
+					"tableTo": "character",
+					"columnsFrom": ["character_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				},
+				"character_trait_rating_trait_id_trait_id_fk": {
+					"name": "character_trait_rating_trait_id_trait_id_fk",
+					"tableFrom": "character_trait_rating",
+					"tableTo": "trait",
+					"columnsFrom": ["trait_id"],
+					"columnsTo": ["id"],
+					"onDelete": "cascade",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.trait": {
+			"name": "trait",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"realm_id": {
+					"name": "realm_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"description": {
+					"name": "description",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {
+				"trait_realm_id_name_unique": {
+					"name": "trait_realm_id_name_unique",
+					"columns": [
+						{
+							"expression": "realm_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						},
+						{
+							"expression": "name",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": true,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				},
+				"trait_realm_id_idx": {
+					"name": "trait_realm_id_idx",
+					"columns": [
+						{
+							"expression": "realm_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"trait_realm_id_realm_id_fk": {
+					"name": "trait_realm_id_realm_id_fk",
+					"tableFrom": "trait",
+					"tableTo": "realm",
+					"columnsFrom": ["realm_id"],
 					"columnsTo": ["id"],
 					"onDelete": "cascade",
 					"onUpdate": "no action"

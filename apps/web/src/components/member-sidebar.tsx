@@ -20,13 +20,12 @@ interface MemberSidebarProps {
 	forceVisible?: boolean;
 }
 
-interface Member {
+interface Owner {
 	userId: string;
 	name: string | null;
 	email: string;
 	image: string | null;
-	role: "owner" | "admin" | "member";
-	joinedAt: string;
+	createdAt: string;
 }
 
 export function MemberSidebar({
@@ -34,8 +33,8 @@ export function MemberSidebar({
 	forceVisible = false,
 }: MemberSidebarProps) {
 	const isMobile = useIsMobile();
-	const { data: members, isLoading } = useQuery({
-		...trpc.realm.getMembers.queryOptions({ realmId }),
+	const { data: owner, isLoading } = useQuery({
+		...trpc.realm.getOwner.queryOptions({ realmId }),
 		enabled: !isMobile || forceVisible,
 	});
 
@@ -68,77 +67,46 @@ export function MemberSidebar({
 		);
 	}
 
-	if (!members || members.length === 0) {
+	if (!owner) {
 		return (
 			<aside className="flex h-full min-h-0 w-64 shrink-0 flex-col border-r bg-background">
 				<div className="border-b p-4">
-					<h2 className="font-semibold">Members</h2>
+					<h2 className="font-semibold">Owner</h2>
 				</div>
 				<div className="flex-1 p-4">
-					<p className="text-muted-foreground text-sm">No members found</p>
+					<p className="text-muted-foreground text-sm">Owner not found</p>
 				</div>
 			</aside>
 		);
 	}
 
-	const getRoleColor = (role: string) => {
-		switch (role) {
-			case "owner":
-				return "text-yellow-600 dark:text-yellow-400";
-			case "admin":
-				return "text-blue-600 dark:text-blue-400";
-			case "member":
-				return "text-muted-foreground";
-			default:
-				return "text-muted-foreground";
-		}
-	};
-
-	const getRoleBadge = (role: string) => {
-		switch (role) {
-			case "owner":
-				return "👑";
-			case "admin":
-				return "⚡";
-			case "member":
-				return "👤";
-			default:
-				return "👤";
-		}
-	};
+	const getRoleColor = () => "text-yellow-600 dark:text-yellow-400";
+	const getRoleBadge = () => "👑";
 
 	return (
 		<aside className="flex h-full min-h-0 w-64 shrink-0 flex-col border-r bg-background">
 			<div className="border-b border-l p-4">
-				<h2 className="flex items-center gap-2 font-semibold">
-					Members
-					<span className="font-normal text-muted-foreground text-sm">
-						({members.length})
-					</span>
-				</h2>
+				<h2 className="flex items-center gap-2 font-semibold">Owner</h2>
 			</div>
 			<div className="flex-1 space-y-3 border-l p-4">
-				{members.map((member: Member) => (
-					<MemberRow
-						key={member.userId}
-						member={member}
-						getRoleBadge={getRoleBadge}
-						getRoleColor={getRoleColor}
-					/>
-				))}
+				<OwnerRow
+					owner={owner}
+					getRoleBadge={getRoleBadge}
+					getRoleColor={getRoleColor}
+				/>
 			</div>
 		</aside>
 	);
 }
 
-function MemberRow({
-	member,
+function OwnerRow({
+	owner,
 	getRoleBadge,
 	getRoleColor,
 }: {
-	member: Member;
-	getRoleBadge: (role: string) => string;
-	getRoleColor: (role: string) => string;
+	owner: Owner;
+	getRoleBadge: () => string;
+	getRoleColor: () => string;
 }) {
 	const [open, setOpen] = useState(false);
 	const longPressTimerRef = useRef<number | null>(null);
@@ -209,32 +177,30 @@ function MemberRow({
 					onPointerLeave={handlePointerUpOrCancel}
 				>
 					<Avatar className="h-8 w-8">
-						<AvatarImage src={member.image || undefined} />
+						<AvatarImage src={owner.image || undefined} />
 						<AvatarFallback>
-							{member.name?.charAt(0).toUpperCase() || "?"}
+							{owner.name?.charAt(0).toUpperCase() || "?"}
 						</AvatarFallback>
 					</Avatar>
 					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-1">
-							<p className="truncate font-medium text-sm">{member.name}</p>
-							<span className="text-xs">{getRoleBadge(member.role)}</span>
+							<p className="truncate font-medium text-sm">{owner.name}</p>
+							<span className="text-xs">{getRoleBadge()}</span>
 						</div>
-						<p className={`text-xs ${getRoleColor(member.role)}`}>
-							{member.role}
-						</p>
+						<p className={`text-xs ${getRoleColor()}`}>owner</p>
 					</div>
 				</button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent>
 				<DropdownMenuItem disabled>
-					<span className="mr-1 text-xs">{getRoleBadge(member.role)}</span>
-					{member.role}
+					<span className="mr-1 text-xs">{getRoleBadge()}</span>
+					owner
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem onClick={() => copy(member.email, "Email")}>
+				<DropdownMenuItem onClick={() => copy(owner.email, "Email")}>
 					Copy email
 				</DropdownMenuItem>
-				<DropdownMenuItem onClick={() => copy(member.userId, "User ID")}>
+				<DropdownMenuItem onClick={() => copy(owner.userId, "User ID")}>
 					Copy user ID
 				</DropdownMenuItem>
 			</DropdownMenuContent>

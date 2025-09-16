@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, Plus } from "lucide-react";
+import { Camera, Plus, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -8,31 +8,58 @@ import { ImageCropDialog } from "./image-crop-dialog";
 
 interface IconUploadButtonProps {
 	previewSrc?: string | null;
-	onSelect?: (file: File | null, previewBase64: string | null) => void;
+	onSelect?: (
+		file: File | null,
+		previewBase64: string | null,
+		meta?: {
+			originalFile?: File | null;
+			percentCrop?: {
+				unit?: string;
+				x?: number;
+				y?: number;
+				width?: number;
+				height?: number;
+			} | null;
+		},
+	) => void;
+	onRemove?: () => void;
 	className?: string;
 	ariaLabel?: string;
 	title?: string;
+	showRemoveIcon?: boolean;
 }
 
 export function IconUploadButton({
 	previewSrc,
 	onSelect,
+	onRemove,
 	className,
 	ariaLabel = "Upload icon",
 	title = "Upload icon",
+	showRemoveIcon = true,
 }: IconUploadButtonProps) {
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const [cropDialogOpen, setCropDialogOpen] = useState(false);
 	const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
+	const originalFileRef = useRef<File | null>(null);
+	const percentCropRef = useRef<{
+		unit?: string;
+		x?: number;
+		y?: number;
+		width?: number;
+		height?: number;
+	} | null>(null);
 
 	const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0] || null;
 		if (!file) {
-			onSelect?.(null, null);
+			onSelect?.(null, null, { originalFile: null, percentCrop: null });
 			// Clear input value so selecting same file later still triggers change
 			if (fileInputRef.current) fileInputRef.current.value = "";
 			return;
 		}
+
+		originalFileRef.current = file;
 
 		const reader = new FileReader();
 		reader.onload = (e) => {
@@ -45,7 +72,7 @@ export function IconUploadButton({
 			if (fileInputRef.current) fileInputRef.current.value = "";
 		};
 		reader.onerror = () => {
-			onSelect?.(null, null);
+			onSelect?.(null, null, { originalFile: null, percentCrop: null });
 			if (fileInputRef.current) fileInputRef.current.value = "";
 		};
 		reader.readAsDataURL(file);
@@ -56,7 +83,10 @@ export function IconUploadButton({
 		const reader = new FileReader();
 		reader.onload = (e) => {
 			const result = (e.target?.result as string) || null;
-			onSelect?.(croppedFile, result);
+			onSelect?.(croppedFile, result, {
+				originalFile: originalFileRef.current,
+				percentCrop: percentCropRef.current,
+			});
 		};
 		reader.readAsDataURL(croppedFile);
 	};
@@ -97,12 +127,34 @@ export function IconUploadButton({
 						<Plus className="size-3" />
 					</span>
 				</button>
+				{previewSrc && showRemoveIcon ? (
+					<button
+						type="button"
+						className="ml-2 grid h-7 w-7 place-items-center rounded-full border text-muted-foreground hover:text-foreground"
+						onClick={() => onRemove?.()}
+						aria-label="Remove image"
+						title="Remove image"
+					>
+						<Trash2 className="h-3.5 w-3.5" />
+					</button>
+				) : null}
 			</div>
 			<ImageCropDialog
 				open={cropDialogOpen}
 				onOpenChange={setCropDialogOpen}
 				imageSrc={selectedImageSrc || ""}
 				onCropComplete={handleCropComplete}
+				onPercentComplete={(pc) => {
+					percentCropRef.current = pc
+						? {
+								unit: "%",
+								x: pc.x,
+								y: pc.y,
+								width: pc.width,
+								height: pc.height,
+							}
+						: null;
+				}}
 			/>
 		</>
 	);

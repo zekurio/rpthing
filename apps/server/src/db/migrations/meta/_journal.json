@@ -1,20 +1,13 @@
 {
-	"version": "7",
-	"dialect": "postgresql",
-	"entries": [
-		{
-			"idx": 0,
-			"version": "7",
-			"when": 1758016216026,
-			"tag": "0000_tan_mongoose",
-			"breakpoints": true
-		},
-		{
-			"idx": 1,
-			"version": "7",
-			"when": 1758019400852,
-			"tag": "0001_supreme_molecule_man",
-			"breakpoints": true
-		}
-	]
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1758059622831,
+      "tag": "0000_hard_sheva_callister",
+      "breakpoints": true
+    }
+  ]
 }

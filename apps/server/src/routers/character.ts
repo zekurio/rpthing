@@ -4,6 +4,7 @@ import { db } from "../db/index";
 import { character } from "../db/schema/character";
 import { realm } from "../db/schema/realm";
 import { characterTraitRating, trait } from "../db/schema/traits";
+import { deleteFile, getFileUrl } from "../lib/storage";
 import { protectedProcedure, router } from "../lib/trpc";
 import {
 	characterCreateInputSchema,
@@ -11,10 +12,10 @@ import {
 	characterListInputSchema,
 	characterUpdateInputSchema,
 } from "../schemas";
-import { characterTraitRatingRouter } from "./characterTraitRating";
+import { ratingRouter } from "./characterTraitRating";
 
 export const characterRouter = router({
-	ratings: characterTraitRatingRouter,
+	ratings: ratingRouter,
 	create: protectedProcedure
 		.input(characterCreateInputSchema)
 		.mutation(async ({ ctx, input }) => {
@@ -53,7 +54,7 @@ export const characterRouter = router({
 					name: character.name,
 					gender: character.gender,
 					referenceImageKey: character.referenceImageKey,
-					imageCrop: character.imageCrop,
+					croppedImageKey: character.croppedImageKey,
 					notes: character.notes,
 					createdAt: character.createdAt,
 					updatedAt: character.updatedAt,
@@ -80,7 +81,15 @@ export const characterRouter = router({
 				});
 			}
 
-			return row;
+			if (!row.referenceImageKey) return row;
+
+			const selectedKey = row.croppedImageKey ?? row.referenceImageKey;
+			try {
+				const url = await getFileUrl(selectedKey);
+				return { ...row, referenceImageKey: url };
+			} catch {
+				return { ...row, referenceImageKey: null };
+			}
 		}),
 
 	list: protectedProcedure
@@ -101,17 +110,33 @@ export const characterRouter = router({
 				});
 			}
 
-			return await db
+			const rows = await db
 				.select({
 					id: character.id,
 					name: character.name,
 					gender: character.gender,
 					referenceImageKey: character.referenceImageKey,
+					croppedImageKey: character.croppedImageKey,
 					createdAt: character.createdAt,
 					updatedAt: character.updatedAt,
 				})
 				.from(character)
 				.where(eq(character.realmId, realmId));
+
+			const withUrls = await Promise.all(
+				rows.map(async (row) => {
+					if (!row.referenceImageKey) return row;
+					const selectedKey = row.croppedImageKey ?? row.referenceImageKey;
+					try {
+						const url = await getFileUrl(selectedKey);
+						return { ...row, referenceImageKey: url };
+					} catch {
+						return { ...row, referenceImageKey: null };
+					}
+				}),
+			);
+
+			return withUrls;
 		}),
 
 	update: protectedProcedure
@@ -154,7 +179,10 @@ export const characterRouter = router({
 			const userId = ctx.session.user.id;
 
 			const [row] = await db
-				.select({ realmId: character.realmId })
+				.select({
+					realmId: character.realmId,
+					imageKey: character.referenceImageKey,
+				})
 				.from(character)
 				.where(eq(character.id, input.id))
 				.limit(1);
@@ -175,6 +203,30 @@ export const characterRouter = router({
 					code: "FORBIDDEN",
 					message: "Not the realm owner",
 				});
+			}
+
+			// Attempt to delete stored image(s) if present (best-effort)
+			const originalKey = `character-images/${input.id}.png`;
+			const croppedKey = `character-images/${input.id}-cropped.png`;
+			const keys = new Set<string>([originalKey, croppedKey]);
+			if (row.imageKey) keys.add(row.imageKey);
+			// Also try deleting any stored cropped key variant if present
+			const [existing] = await db
+				.select({
+					ref: character.referenceImageKey,
+					crop: character.croppedImageKey,
+				})
+				.from(character)
+				.where(eq(character.id, input.id))
+				.limit(1);
+			if (existing?.ref) keys.add(existing.ref);
+			if (existing?.crop) keys.add(existing.crop);
+			for (const key of keys) {
+				try {
+					await deleteFile(key);
+				} catch (err) {
+					console.error(`Failed to delete character image ${key}:`, err);
+				}
 			}
 
 			await db.delete(character).where(eq(character.id, input.id));

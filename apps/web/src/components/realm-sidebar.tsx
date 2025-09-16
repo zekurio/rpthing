@@ -9,12 +9,10 @@ import { DeleteRealmDialog } from "@/components/delete-realm-dialog";
 import { EditRealmDialog } from "@/components/edit-realm-dialog";
 import { RealmList } from "@/components/realm-list";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { trpc } from "@/utils/trpc";
 
 export function RealmSidebar() {
 	const pathname = usePathname();
-	const isMobile = useIsMobile();
 	const { data, isPending, error } = useQuery({
 		...trpc.realm.list.queryOptions(),
 		retry: 2,
@@ -48,11 +46,6 @@ export function RealmSidebar() {
 		setSelectedRealmName(realm?.name || "");
 		setDeleteDialogOpen(true);
 	};
-
-	// Hide sidebar on mobile
-	if (isMobile) {
-		return null;
-	}
 
 	return (
 		<TooltipProvider>

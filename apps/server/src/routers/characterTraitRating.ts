@@ -21,7 +21,7 @@ function mapGradeToValue(
 	return idx + 1; // 1..20
 }
 
-export const characterTraitRatingRouter = router({
+export const ratingRouter = router({
 	upsert: protectedProcedure
 		.input(ratingCreateOrUpdateInputSchema)
 		.mutation(async ({ ctx, input }) => {

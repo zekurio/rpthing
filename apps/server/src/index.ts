@@ -6,10 +6,11 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import sharp from "sharp";
 import { db } from "./db/index";
+import { character } from "./db/schema/character";
 import { realm } from "./db/schema/realm";
 import { auth } from "./lib/auth";
 import { createContext } from "./lib/context";
-import { deleteFile, getFileUrl, uploadFile } from "./lib/storage";
+import { deleteFile, existsFile, getFileUrl, uploadFile } from "./lib/storage";
 import { appRouter } from "./routers/index";
 
 const app = new Hono();
@@ -71,13 +72,35 @@ app.post("/api/upload/realm-icon/:realmId", async (c) => {
 			return c.json({ error: "Forbidden" }, 403);
 		}
 
-		// Process image with Sharp
-		const buffer = await file.arrayBuffer();
-		const pngBuffer = await sharp(buffer).png().toBuffer();
+		// Derive extension without converting the image
+		const originalBuffer = await file.arrayBuffer();
+		const mime = file.type || "";
+		const nameExt = (() => {
+			const name = (file as unknown as { name?: string }).name || "";
+			const idx = name.lastIndexOf(".");
+			return idx >= 0 ? name.slice(idx + 1).toLowerCase() : "";
+		})();
+		const extFromMime = (() => {
+			switch (mime) {
+				case "image/png":
+					return "png";
+				case "image/jpeg":
+					return "jpg";
+				case "image/webp":
+					return "webp";
+				case "image/avif":
+					return "avif";
+				case "image/gif":
+					return "gif";
+				default:
+					return "";
+			}
+		})();
+		const ext = (extFromMime || nameExt || "bin").toLowerCase();
 
-		// Upload file
-		const iconKey = `realm-icons/${realmId}.png`;
-		await uploadFile(iconKey, pngBuffer);
+		// Upload file in its original format
+		const iconKey = `realm-icons/${realmId}.${ext}`;
+		await uploadFile(iconKey, originalBuffer);
 
 		// Update database
 		await db.update(realm).set({ iconKey }).where(eq(realm.id, realmId));
@@ -138,6 +161,406 @@ app.delete("/api/upload/realm-icon/:realmId", async (c) => {
 	} catch (error) {
 		console.error("Icon deletion failed:", error);
 		return c.json({ error: "Icon deletion failed" }, 500);
+	}
+});
+
+// Upload character reference image without format conversion
+// Store original image as-is and optional crop in the same format
+app.post("/api/upload/character-image/:characterId", async (c) => {
+	try {
+		const characterId = c.req.param("characterId");
+		const formData = await c.req.formData();
+		const file = (formData.get("file") as File) ?? null;
+		const cropJson = formData.get("crop") as string | null;
+
+		if (!file && !cropJson) {
+			return c.json({ error: "No file or crop provided" }, 400);
+		}
+
+		// Authenticate user
+		const session = await auth.api.getSession({
+			headers: c.req.raw.headers,
+		});
+		if (!session?.user) {
+			return c.json({ error: "Unauthorized" }, 401);
+		}
+
+		// Verify character exists and user owns the realm
+		const [charRow] = await db
+			.select({ realmId: character.realmId })
+			.from(character)
+			.where(eq(character.id, characterId))
+			.limit(1);
+		if (!charRow) {
+			return c.json({ error: "Character not found" }, 404);
+		}
+		const [r] = await db
+			.select({ ownerId: realm.ownerId })
+			.from(realm)
+			.where(eq(realm.id, charRow.realmId))
+			.limit(1);
+		if (!r || r.ownerId !== session.user.id) {
+			return c.json({ error: "Forbidden" }, 403);
+		}
+
+		// We will derive the extension from the uploaded file (or previously stored key)
+		let originalExt: string | null = null;
+
+		// Prepare base (original) image buffer
+		let baseBuffer: Uint8Array | null = null;
+		if (file) {
+			const buffer = await file.arrayBuffer();
+			baseBuffer = new Uint8Array(buffer);
+			const mime = file.type || "";
+			const name = (file as unknown as { name?: string }).name || "";
+			const nameExt = (() => {
+				const idx = name.lastIndexOf(".");
+				return idx >= 0 ? name.slice(idx + 1).toLowerCase() : "";
+			})();
+			const extFromMime = (() => {
+				switch (mime) {
+					case "image/png":
+						return "png";
+					case "image/jpeg":
+						return "jpg";
+					case "image/webp":
+						return "webp";
+					case "image/avif":
+						return "avif";
+					case "image/gif":
+						return "gif";
+					default:
+						return "";
+				}
+			})();
+			originalExt = (extFromMime || nameExt || "bin").toLowerCase();
+
+			const originalKey = `character-images/${characterId}.${originalExt}`;
+			// Upload original as-is
+			await uploadFile(originalKey, baseBuffer);
+		} else {
+			// No file provided, ensure original exists and fetch it
+			// Try known common extensions to locate the existing original
+			const tryExts = ["png", "jpg", "jpeg", "webp", "avif", "gif", "bin"];
+			let foundKey: string | null = null;
+			for (const ext of tryExts) {
+				const key = `character-images/${characterId}.${ext}`;
+				if (await existsFile(key)) {
+					foundKey = key;
+					originalExt = ext;
+					break;
+				}
+			}
+			if (!foundKey) {
+				return c.json({ error: "Original image not found" }, 400);
+			}
+			const presigned = await getFileUrl(foundKey, { expiresIn: 60 });
+			const resp = await fetch(presigned);
+			if (!resp.ok) return c.json({ error: "Failed to fetch original" }, 502);
+			const buf = await resp.arrayBuffer();
+			baseBuffer = new Uint8Array(buf);
+		}
+
+		// Optionally create cropped variant
+		let croppedKey: string | null = null;
+		if (cropJson) {
+			try {
+				const crop = JSON.parse(cropJson) as {
+					unit?: string;
+					x?: number;
+					y?: number;
+					width?: number;
+					height?: number;
+				};
+				if (
+					crop &&
+					crop.unit === "%" &&
+					typeof crop.x === "number" &&
+					typeof crop.y === "number" &&
+					typeof crop.width === "number" &&
+					typeof crop.height === "number" &&
+					baseBuffer
+				) {
+					const base = sharp(baseBuffer);
+					const meta = await base.metadata();
+					const srcWidth = meta.width ?? 0;
+					const srcHeight = meta.height ?? 0;
+					if (srcWidth > 0 && srcHeight > 0) {
+						const left = Math.max(0, Math.round((crop.x / 100) * srcWidth));
+						const top = Math.max(0, Math.round((crop.y / 100) * srcHeight));
+						const width = Math.max(
+							1,
+							Math.round((crop.width / 100) * srcWidth),
+						);
+						const height = Math.max(
+							1,
+							Math.round((crop.height / 100) * srcHeight),
+						);
+						const boundedLeft = Math.min(left, Math.max(0, srcWidth - 1));
+						const boundedTop = Math.min(top, Math.max(0, srcHeight - 1));
+						const boundedWidth = Math.min(width, srcWidth - boundedLeft);
+						const boundedHeight = Math.min(height, srcHeight - boundedTop);
+						const pipeline = base.extract({
+							left: boundedLeft,
+							top: boundedTop,
+							width: boundedWidth,
+							height: boundedHeight,
+						});
+						// Write in the same format as original (no conversion)
+						let croppedBuf: Uint8Array;
+						switch ((originalExt || "").toLowerCase()) {
+							case "jpg":
+							case "jpeg":
+								croppedBuf = await pipeline.jpeg().toBuffer();
+								break;
+							case "png":
+								croppedBuf = await pipeline.png().toBuffer();
+								break;
+							case "webp":
+								croppedBuf = await pipeline.webp().toBuffer();
+								break;
+							case "avif":
+								croppedBuf = await pipeline.avif().toBuffer();
+								break;
+							case "gif":
+								// sharp cannot output GIF; fall back to PNG to preserve transparency
+								croppedBuf = await pipeline.png().toBuffer();
+								originalExt = "png";
+								break;
+							default:
+								croppedBuf = await pipeline.png().toBuffer();
+								originalExt = "png";
+						}
+						croppedKey = `character-images/${characterId}-cropped.${originalExt}`;
+						await uploadFile(croppedKey, croppedBuf);
+					}
+				}
+			} catch {}
+		}
+
+		// Update database keys
+		// Compute original key from ext
+		const finalOriginalKey = `character-images/${characterId}.${originalExt ?? "bin"}`;
+		await db
+			.update(character)
+			.set({ referenceImageKey: finalOriginalKey, croppedImageKey: croppedKey })
+			.where(eq(character.id, characterId));
+
+		const url = await getFileUrl(croppedKey ?? finalOriginalKey);
+		return c.json({
+			success: true,
+			imageKey: finalOriginalKey,
+			croppedKey,
+			url,
+		});
+	} catch (error) {
+		console.error("Character image upload failed:", error);
+		return c.json({ error: "File upload failed" }, 500);
+	}
+});
+
+// Delete character reference image
+app.delete("/api/upload/character-image/:characterId", async (c) => {
+	try {
+		const characterId = c.req.param("characterId");
+
+		// Authenticate user
+		const session = await auth.api.getSession({
+			headers: c.req.raw.headers,
+		});
+		if (!session?.user) {
+			return c.json({ error: "Unauthorized" }, 401);
+		}
+
+		// Verify character exists and user owns the realm
+		const [charRow] = await db
+			.select({
+				realmId: character.realmId,
+				imageKey: character.referenceImageKey,
+				croppedKey: character.croppedImageKey,
+			})
+			.from(character)
+			.where(eq(character.id, characterId))
+			.limit(1);
+		if (!charRow) {
+			return c.json({ error: "Character not found" }, 404);
+		}
+		const [r] = await db
+			.select({ ownerId: realm.ownerId })
+			.from(realm)
+			.where(eq(realm.id, charRow.realmId))
+			.limit(1);
+		if (!r || r.ownerId !== session.user.id) {
+			return c.json({ error: "Forbidden" }, 403);
+		}
+
+		if (!charRow.imageKey) {
+			return c.json({ error: "Character has no image to delete" }, 400);
+		}
+
+		const originalKey = `character-images/${characterId}.png`;
+		const croppedKey = `character-images/${characterId}-cropped.png`;
+		const keysToDelete = new Set<string>([originalKey, croppedKey]);
+		if (charRow.imageKey) keysToDelete.add(charRow.imageKey);
+		if (charRow.croppedKey) keysToDelete.add(charRow.croppedKey);
+		for (const key of keysToDelete) {
+			try {
+				await deleteFile(key);
+			} catch (error) {
+				console.error(`Failed to delete character image ${key}:`, error);
+			}
+		}
+
+		await db
+			.update(character)
+			.set({ referenceImageKey: null, croppedImageKey: null })
+			.where(eq(character.id, characterId));
+
+		return c.json({ success: true });
+	} catch (error) {
+		console.error("Character image deletion failed:", error);
+		return c.json({ error: "Image deletion failed" }, 500);
+	}
+});
+
+// Serve stored character image; choose cropped if exists (unless raw=1). Optionally resize.
+app.get("/api/character/:characterId/image", async (c) => {
+	try {
+		const characterId = c.req.param("characterId");
+		const url = new URL(c.req.url);
+		const widthParam = url.searchParams.get("width");
+		const heightParam = url.searchParams.get("height");
+		const rawParam = url.searchParams.get("raw");
+
+		const requestedWidth = widthParam
+			? Math.max(1, Math.min(2048, Number(widthParam)))
+			: undefined;
+		const requestedHeight = heightParam
+			? Math.max(1, Math.min(2048, Number(heightParam)))
+			: undefined;
+
+		// Authenticate user
+		const session = await auth.api.getSession({
+			headers: c.req.raw.headers,
+		});
+		if (!session?.user) {
+			return c.json({ error: "Unauthorized" }, 401);
+		}
+
+		// Load character and verify ownership
+		const [charRow] = await db
+			.select({
+				imageKey: character.referenceImageKey,
+				croppedKey: character.croppedImageKey,
+				realmId: character.realmId,
+			})
+			.from(character)
+			.where(eq(character.id, characterId))
+			.limit(1);
+		if (!charRow || !charRow.imageKey) {
+			return c.json({ error: "Image not found" }, 404);
+		}
+
+		const [r] = await db
+			.select({ ownerId: realm.ownerId })
+			.from(realm)
+			.where(eq(realm.id, charRow.realmId))
+			.limit(1);
+		if (!r || r.ownerId !== session.user.id) {
+			return c.json({ error: "Forbidden" }, 403);
+		}
+
+		// Determine actual existing keys with extension flexibility
+		const knownExts = ["png", "jpg", "jpeg", "webp", "avif", "gif", "bin"];
+		const resolveExisting = async (base: string): Promise<string | null> => {
+			// If DB already has a concrete key, use it
+			if (base.includes(".")) {
+				return base;
+			}
+			for (const ext of knownExts) {
+				const candidate = `${base}.${ext}`;
+				if (await existsFile(candidate)) return candidate;
+			}
+			return null;
+		};
+
+		const originalKeyDb = charRow.imageKey;
+		const croppedKeyDb = charRow.croppedKey;
+		const fallbackOriginal = await resolveExisting(
+			`character-images/${characterId}`,
+		);
+		const fallbackCropped = await resolveExisting(
+			`character-images/${characterId}-cropped`,
+		);
+		const originalKey = originalKeyDb || fallbackOriginal;
+		const croppedKey = croppedKeyDb || fallbackCropped;
+		if (!originalKey) {
+			return c.json({ error: "Image not found" }, 404);
+		}
+		const selectedKey =
+			rawParam === "1"
+				? originalKey
+				: croppedKey && (await existsFile(croppedKey))
+					? croppedKey
+					: originalKey;
+
+		// Fetch selected image from S3 via presigned URL
+		const presigned = await getFileUrl(selectedKey, { expiresIn: 60 });
+		const resp = await fetch(presigned);
+		if (!resp.ok) {
+			return c.json({ error: "Failed to fetch image" }, 502);
+		}
+		const arrayBuf = await resp.arrayBuffer();
+		let img = sharp(Buffer.from(arrayBuf));
+		const lower = selectedKey.toLowerCase();
+		const _isPng = lower.endsWith(".png");
+		const isJpg = lower.endsWith(".jpg") || lower.endsWith(".jpeg");
+		const isWebp = lower.endsWith(".webp");
+		const isAvif = lower.endsWith(".avif");
+		const isGif = lower.endsWith(".gif");
+
+		if (requestedWidth || requestedHeight) {
+			img = img.resize({
+				width: requestedWidth,
+				height: requestedHeight,
+				fit: "cover",
+			});
+		}
+
+		let out: Uint8Array;
+		let contentType = "application/octet-stream";
+		if (isJpg) {
+			out = await img.jpeg().toBuffer();
+			contentType = "image/jpeg";
+		} else if (isWebp) {
+			out = await img.webp().toBuffer();
+			contentType = "image/webp";
+		} else if (isAvif) {
+			out = await img.avif().toBuffer();
+			contentType = "image/avif";
+		} else if (isGif) {
+			// sharp cannot output GIF; default to PNG for processing path
+			out = await img.png().toBuffer();
+			contentType = "image/png";
+		} else {
+			out = await img.png().toBuffer();
+			contentType = "image/png";
+		}
+
+		// Create a fresh ArrayBuffer to satisfy BodyInit typings
+		const ab = new ArrayBuffer(out.length);
+		const view = new Uint8Array(ab);
+		view.set(out as unknown as ArrayLike<number>);
+		return new Response(ab, {
+			status: 200,
+			headers: {
+				"Content-Type": contentType,
+				"Cache-Control": "no-store",
+			},
+		});
+	} catch (error) {
+		console.error("Serve character image failed:", error);
+		return c.json({ error: "Failed to serve image" }, 500);
 	}
 });
 

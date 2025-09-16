@@ -6,6 +6,7 @@ import ReactCrop, {
 	type Crop,
 	centerCrop,
 	makeAspectCrop,
+	type PercentCrop,
 	type PixelCrop,
 } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
@@ -24,7 +25,8 @@ interface ImageCropDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	imageSrc: string;
-	onCropComplete: (croppedFile: File) => void;
+	onCropComplete?: (croppedFile: File) => void;
+	onPercentComplete?: (percentCrop: PercentCrop) => void;
 }
 
 function centerAspectCrop(
@@ -52,9 +54,12 @@ export function ImageCropDialog({
 	onOpenChange,
 	imageSrc,
 	onCropComplete,
+	onPercentComplete,
 }: ImageCropDialogProps) {
 	const [crop, setCrop] = useState<Crop>();
 	const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+	const [completedPercentCrop, setCompletedPercentCrop] =
+		useState<PercentCrop>();
 	const [aspect, _setAspect] = useState<number | undefined>(1); // Square aspect ratio
 	const imgRef = useRef<HTMLImageElement>(null);
 
@@ -124,8 +129,13 @@ export function ImageCropDialog({
 		if (!imgRef.current || !completedCrop) return;
 
 		try {
-			const croppedFile = await getCroppedImg(imgRef.current, completedCrop);
-			onCropComplete(croppedFile);
+			if (onPercentComplete && completedPercentCrop) {
+				onPercentComplete(completedPercentCrop);
+			}
+			if (onCropComplete) {
+				const croppedFile = await getCroppedImg(imgRef.current, completedCrop);
+				onCropComplete(croppedFile);
+			}
 			onOpenChange(false);
 		} catch (error) {
 			console.error("Error cropping image:", error);
@@ -152,7 +162,10 @@ export function ImageCropDialog({
 					<ReactCrop
 						crop={crop}
 						onChange={(_, percentCrop) => setCrop(percentCrop)}
-						onComplete={(c) => setCompletedCrop(c)}
+						onComplete={(c, pc) => {
+							setCompletedCrop(c);
+							setCompletedPercentCrop(pc);
+						}}
 						aspect={aspect}
 						minWidth={64}
 						minHeight={64}

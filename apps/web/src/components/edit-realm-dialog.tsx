@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { IconUploadButton } from "@/components/icon-upload-button";
+import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -229,30 +229,19 @@ export function EditRealmDialog({ open, onOpenChange }: EditRealmDialogProps) {
 						/>
 						<div className="grid gap-2">
 							<FormLabel>Icon (optional)</FormLabel>
-							<div className="flex items-center gap-3">
-								<IconUploadButton
-									previewSrc={
-										removeIcon
-											? undefined
-											: imagePreview || currentIconSrc || undefined
-									}
-									onSelect={(file, preview) => {
-										setSelectedFile(file);
-										setImagePreview(preview);
-										setRemoveIcon(false);
-									}}
-								/>
-								{(imagePreview || currentIconSrc) && !removeIcon && (
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										onClick={handleRemoveIcon}
-									>
-										Remove
-									</Button>
-								)}
-							</div>
+							<ImageUpload
+								previewSrc={
+									removeIcon
+										? undefined
+										: imagePreview || currentIconSrc || undefined
+								}
+								onSelect={(file, preview) => {
+									setSelectedFile(file);
+									setImagePreview(preview);
+									setRemoveIcon(false);
+								}}
+								onRemove={handleRemoveIcon}
+							/>
 						</div>
 						<DialogFooter>
 							<Button variant="outline" type="button" onClick={onClose}>

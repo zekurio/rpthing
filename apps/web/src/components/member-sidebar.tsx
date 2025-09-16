@@ -12,12 +12,10 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { trpc } from "@/utils/trpc";
 
 interface MemberSidebarProps {
 	realmId: string;
-	forceVisible?: boolean;
 }
 
 interface Owner {
@@ -28,20 +26,10 @@ interface Owner {
 	createdAt: string;
 }
 
-export function MemberSidebar({
-	realmId,
-	forceVisible = false,
-}: MemberSidebarProps) {
-	const isMobile = useIsMobile();
+export function MemberSidebar({ realmId }: MemberSidebarProps) {
 	const { data: owner, isLoading } = useQuery({
 		...trpc.realm.getOwner.queryOptions({ realmId }),
-		enabled: !isMobile || forceVisible,
 	});
-
-	// Hide on mobile unless explicitly forced (e.g., inside a mobile drawer)
-	if (isMobile && !forceVisible) {
-		return null;
-	}
 
 	if (isLoading) {
 		return (

@@ -24,9 +24,6 @@ jobs:
           - service: server
             dockerfile: apps/server/Dockerfile
             context: .
-          - service: web
-            dockerfile: apps/web/Dockerfile
-            context: .
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -4,6 +4,8 @@ export type Trait = {
 	description: string | null;
 	displayMode: "number" | "grade";
 	realmId: string;
+	createdByUserId?: string;
+	createdByName?: string | null;
 	createdAt?: string | Date;
 	updatedAt?: string | Date;
 };

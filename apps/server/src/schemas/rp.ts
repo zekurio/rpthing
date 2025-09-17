@@ -17,13 +17,12 @@ export const realmCreateInputSchema = z.object({
 export type RealmCreateInput = z.infer<typeof realmCreateInputSchema>;
 
 // Realm Member
-export const realmMemberRoleSchema = z.enum(["owner", "admin", "member"]);
+export const realmMemberRoleSchema = z.enum(["owner", "member"]);
 export type RealmMemberRole = z.infer<typeof realmMemberRoleSchema>;
 
 export const realmMemberCreateInputSchema = z.object({
 	realmId: realmIdSchema,
 	userId: idSchema,
-	role: realmMemberRoleSchema,
 });
 export type RealmMemberCreateInput = z.infer<
 	typeof realmMemberCreateInputSchema

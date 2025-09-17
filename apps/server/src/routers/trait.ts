@@ -2,9 +2,24 @@ import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/index";
-import { realm } from "../db/schema/realm";
+import { user as userTable } from "../db/schema/auth";
+import { realmMember } from "../db/schema/realmMember";
 import { trait } from "../db/schema/traits";
 import { protectedProcedure, router } from "../lib/trpc";
+
+// Helper function to check if user is a realm member (including owner)
+async function isRealmMember(userId: string, realmId: string) {
+	const result = await db
+		.select({ id: realmMember.id })
+		.from(realmMember)
+		.where(
+			and(eq(realmMember.realmId, realmId), eq(realmMember.userId, userId)),
+		)
+		.limit(1);
+	const member = result[0];
+	return !!member;
+}
+
 import {
 	traitCreateInputSchema,
 	traitIdSchema,
@@ -19,28 +34,26 @@ export const traitRouter = router({
 			const userId = ctx.session.user.id;
 			const { realmId, name, description, displayMode } = input;
 
-			const [ownsRealm] = await db
-				.select({ id: realm.id })
-				.from(realm)
-				.where(and(eq(realm.id, realmId), eq(realm.ownerId, userId)))
-				.limit(1);
-
-			if (!ownsRealm) {
+			// Check if user is a realm member (including owner)
+			const isMember = await isRealmMember(userId, realmId);
+			if (!isMember) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "Not the realm owner",
+					message: "Not a realm member",
 				});
 			}
 
-			const [created] = await db
+			const result = await db
 				.insert(trait)
 				.values({
 					realmId,
+					createdByUserId: userId,
 					name,
 					description: description ?? null,
 					displayMode: displayMode ?? undefined,
 				})
 				.returning();
+			const created = result[0];
 
 			return created;
 		}),
@@ -51,32 +64,34 @@ export const traitRouter = router({
 			const userId = ctx.session.user.id;
 			const { id } = input;
 
-			const [t] = await db
+			const result = await db
 				.select({
 					id: trait.id,
 					name: trait.name,
 					description: trait.description,
 					displayMode: trait.displayMode,
 					realmId: trait.realmId,
+					createdByUserId: trait.createdByUserId,
+					createdByName: userTable.name,
+					createdAt: trait.createdAt,
+					updatedAt: trait.updatedAt,
 				})
 				.from(trait)
+				.leftJoin(userTable, eq(userTable.id, trait.createdByUserId))
 				.where(eq(trait.id, id))
 				.limit(1);
+			const t = result[0];
 
 			if (!t) {
 				throw new TRPCError({ code: "NOT_FOUND", message: "Trait not found" });
 			}
 
-			const [ownsRealm] = await db
-				.select({ id: realm.id })
-				.from(realm)
-				.where(and(eq(realm.id, t.realmId), eq(realm.ownerId, userId)))
-				.limit(1);
-
-			if (!ownsRealm) {
+			// Check if user is a realm member (including owner)
+			const isMember = await isRealmMember(userId, t.realmId);
+			if (!isMember) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "Not the realm owner",
+					message: "Not a realm member",
 				});
 			}
 
@@ -89,16 +104,12 @@ export const traitRouter = router({
 			const userId = ctx.session.user.id;
 			const { realmId } = input;
 
-			const [ownsRealm] = await db
-				.select({ id: realm.id })
-				.from(realm)
-				.where(and(eq(realm.id, realmId), eq(realm.ownerId, userId)))
-				.limit(1);
-
-			if (!ownsRealm) {
+			// Check if user is a realm member (including owner)
+			const isMember = await isRealmMember(userId, realmId);
+			if (!isMember) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "Not the realm owner",
+					message: "Not a realm member",
 				});
 			}
 
@@ -111,8 +122,11 @@ export const traitRouter = router({
 					realmId: trait.realmId,
 					createdAt: trait.createdAt,
 					updatedAt: trait.updatedAt,
+					createdByUserId: trait.createdByUserId,
+					createdByName: userTable.name,
 				})
 				.from(trait)
+				.leftJoin(userTable, eq(userTable.id, trait.createdByUserId))
 				.where(eq(trait.realmId, realmId));
 		}),
 
@@ -122,26 +136,23 @@ export const traitRouter = router({
 			const userId = ctx.session.user.id;
 			const { id, ...updates } = input;
 
-			const [t] = await db
+			const result = await db
 				.select({ id: trait.id, realmId: trait.realmId })
 				.from(trait)
 				.where(eq(trait.id, id))
 				.limit(1);
+			const t = result[0];
 
 			if (!t) {
 				throw new TRPCError({ code: "NOT_FOUND", message: "Trait not found" });
 			}
 
-			const [ownsRealm] = await db
-				.select({ id: realm.id })
-				.from(realm)
-				.where(and(eq(realm.id, t.realmId), eq(realm.ownerId, userId)))
-				.limit(1);
-
-			if (!ownsRealm) {
+			// Check if user is a realm member (including owner)
+			const isMember = await isRealmMember(userId, t.realmId);
+			if (!isMember) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "Not the realm owner",
+					message: "Not a realm member",
 				});
 			}
 
@@ -155,26 +166,23 @@ export const traitRouter = router({
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
 
-			const [t] = await db
+			const result = await db
 				.select({ id: trait.id, realmId: trait.realmId })
 				.from(trait)
 				.where(eq(trait.id, input))
 				.limit(1);
+			const t = result[0];
 
 			if (!t) {
 				throw new TRPCError({ code: "NOT_FOUND", message: "Trait not found" });
 			}
 
-			const [ownsRealm] = await db
-				.select({ id: realm.id })
-				.from(realm)
-				.where(and(eq(realm.id, t.realmId), eq(realm.ownerId, userId)))
-				.limit(1);
-
-			if (!ownsRealm) {
+			// Check if user is a realm member (including owner)
+			const isMember = await isRealmMember(userId, t.realmId);
+			if (!isMember) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "Not the realm owner",
+					message: "Not a realm member",
 				});
 			}
 

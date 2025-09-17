@@ -37,7 +37,7 @@ export const realmRouter = router({
 			// Ensure owner is persisted as a member
 			await db
 				.insert(realmMember)
-				.values({ realmId: created.id, userId, role: "owner" })
+				.values({ realmId: created.id, userId })
 				.onConflictDoNothing();
 
 			return created;
@@ -57,7 +57,8 @@ export const realmRouter = router({
 				updatedAt: realm.updatedAt,
 			})
 			.from(realm)
-			.where(eq(realm.ownerId, userId));
+			.innerJoin(realmMember, eq(realm.id, realmMember.realmId))
+			.where(eq(realmMember.userId, userId));
 
 		// Generate S3 URLs for icons
 		const rowsWithUrls = await Promise.all(
@@ -113,7 +114,7 @@ export const realmRouter = router({
 			const userId = ctx.session.user.id;
 			await db
 				.insert(realmMember)
-				.values({ realmId, userId, role: "member" })
+				.values({ realmId, userId })
 				.onConflictDoNothing();
 			return true;
 		}),
@@ -124,7 +125,7 @@ export const realmRouter = router({
 			const userId = ctx.session.user.id;
 			const { realmId } = input;
 
-			// Check if user is the owner of this realm
+			// Check if user is a member of this realm (owner or regular member)
 			const [result] = await db
 				.select({
 					id: realm.id,
@@ -136,7 +137,8 @@ export const realmRouter = router({
 					updatedAt: realm.updatedAt,
 				})
 				.from(realm)
-				.where(and(eq(realm.id, realmId), eq(realm.ownerId, userId)))
+				.innerJoin(realmMember, eq(realm.id, realmMember.realmId))
+				.where(and(eq(realm.id, realmId), eq(realmMember.userId, userId)))
 				.limit(1);
 
 			if (!result) {
@@ -287,6 +289,68 @@ export const realmRouter = router({
 			await db.update(realm).set(updateData).where(eq(realm.id, id));
 
 			return { success: true };
+		}),
+
+	getMembers: protectedProcedure
+		.input(z.object({ realmId: realmIdSchema }))
+		.query(async ({ ctx, input }) => {
+			const userId = ctx.session.user.id;
+			const { realmId } = input;
+
+			// Check if user is a member of this realm (including owner)
+			const [memberCheck] = await db
+				.select({ id: realmMember.id })
+				.from(realmMember)
+				.where(
+					and(eq(realmMember.realmId, realmId), eq(realmMember.userId, userId)),
+				)
+				.limit(1);
+
+			if (!memberCheck) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Access denied. You are not a member of this realm.",
+				});
+			}
+
+			// Get realm owner ID
+			const [realmData] = await db
+				.select({ ownerId: realm.ownerId })
+				.from(realm)
+				.where(eq(realm.id, realmId))
+				.limit(1);
+
+			if (!realmData) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Realm not found",
+				});
+			}
+
+			// Get all members with their roles determined dynamically
+			const members = await db
+				.select({
+					userId: user.id,
+					name: user.name,
+					email: user.email,
+					image: user.image,
+					joinedAt: realmMember.createdAt,
+				})
+				.from(realmMember)
+				.innerJoin(user, eq(user.id, realmMember.userId))
+				.where(eq(realmMember.realmId, realmId))
+				.orderBy(realmMember.createdAt);
+
+			// Add role information dynamically
+			const membersWithRoles = members.map((member) => ({
+				...member,
+				role:
+					member.userId === realmData.ownerId
+						? ("owner" as const)
+						: ("member" as const),
+			}));
+
+			return membersWithRoles;
 		}),
 
 	getOwner: protectedProcedure

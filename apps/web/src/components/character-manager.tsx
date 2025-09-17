@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { useCallback, useState } from "react";
 import { CharacterGallery } from "@/components/character-gallery";
 import { CreateCharacterDialog } from "@/components/create-character-dialog";
@@ -27,11 +27,22 @@ export function CharacterManager({ realmId }: { realmId: string }) {
 	const [createOpen, setCreateOpen] = useState(false);
 
 	return (
-		<div className="grid gap-4">
-			<div className="flex items-center justify-between">
-				<h3 className="font-semibold text-lg">Characters</h3>
-				<Button size="sm" onClick={() => setCreateOpen(true)}>
-					<Plus className="mr-1 h-3 w-3" /> New
+		<div className="space-y-6">
+			<div className="flex items-start justify-between">
+				<div>
+					<h3 className="font-bold text-xl tracking-tight">Characters</h3>
+					<p className="mt-1 text-muted-foreground text-sm">
+						{characters?.length || 0} character
+						{characters?.length === 1 ? "" : "s"}
+					</p>
+				</div>
+				<Button
+					size="sm"
+					onClick={() => setCreateOpen(true)}
+					className="shrink-0"
+				>
+					<Plus className="mr-2 h-4 w-4" />
+					Add Character
 				</Button>
 			</div>
 
@@ -51,8 +62,14 @@ export function CharacterManager({ realmId }: { realmId: string }) {
 			) : characters && characters.length > 0 ? (
 				<CharacterGallery items={characters} onChanged={invalidate} />
 			) : (
-				<div className="rounded-md border p-6 text-center text-muted-foreground text-sm">
-					No characters yet. Create your first one.
+				<div className="flex min-h-[12rem] flex-col items-center justify-center rounded-lg border-2 border-muted-foreground/25 border-dashed p-8 text-center">
+					<div className="mb-4 rounded-full bg-muted p-3">
+						<Users className="h-6 w-6 text-muted-foreground" />
+					</div>
+					<h4 className="mb-1 font-semibold text-sm">No characters yet</h4>
+					<p className="mb-4 max-w-sm text-muted-foreground text-xs">
+						Create characters to start building your realm's roster.
+					</p>
 				</div>
 			)}
 

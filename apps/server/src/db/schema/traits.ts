@@ -8,6 +8,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import { user } from "./auth";
 import { character } from "./character";
 import { realm } from "./realm";
 
@@ -26,6 +27,9 @@ export const trait = pgTable(
 		realmId: text("realm_id")
 			.notNull()
 			.references(() => realm.id, { onDelete: "cascade" }),
+		createdByUserId: uuid("created_by_user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "restrict" }),
 		name: text("name").notNull(),
 		description: text("description"),
 		displayMode: traitDisplayModeEnum("display_mode")
@@ -40,6 +44,7 @@ export const trait = pgTable(
 	(table) => [
 		uniqueIndex("trait_realm_id_name_unique").on(table.realmId, table.name),
 		index("trait_realm_id_idx").on(table.realmId),
+		index("trait_created_by_user_id_idx").on(table.createdByUserId),
 	],
 );
 

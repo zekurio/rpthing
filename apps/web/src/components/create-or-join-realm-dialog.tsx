@@ -181,7 +181,7 @@ export function CreateOrJoinRealmDialog({
 		async (data: JoinRealmFormData) => {
 			try {
 				await joinMutation.mutateAsync({
-					realmId: data.realmId.trim().toUpperCase(),
+					realmId: data.realmId.trim(),
 					password: data.password || undefined,
 				});
 			} catch (error) {
@@ -332,10 +332,7 @@ export function CreateOrJoinRealmDialog({
 													{...field}
 													placeholder="Enter 7-character realm ID"
 													maxLength={7}
-													className="font-mono uppercase"
-													onChange={(e) =>
-														field.onChange(e.target.value.toUpperCase())
-													}
+													className="font-mono"
 												/>
 											</FormControl>
 											<FormMessage />

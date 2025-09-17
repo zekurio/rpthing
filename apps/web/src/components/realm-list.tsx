@@ -6,6 +6,7 @@ interface Realm {
 	id: string;
 	name?: string;
 	iconKey?: string | null;
+	ownerId?: string;
 }
 
 interface RealmListProps {
@@ -14,6 +15,7 @@ interface RealmListProps {
 	currentRealmId: string | null;
 	onEdit: (realmId: string) => void;
 	onDelete: (realmId: string) => void;
+	currentUserId?: string;
 }
 
 export function RealmList({
@@ -22,6 +24,7 @@ export function RealmList({
 	currentRealmId,
 	onEdit,
 	onDelete,
+	currentUserId,
 }: RealmListProps) {
 	return (
 		<div className="flex min-h-0 w-full flex-1 flex-col items-center gap-2 overflow-y-auto py-3">
@@ -35,6 +38,7 @@ export function RealmList({
 						isSelected={currentRealmId === realm.id}
 						onEdit={onEdit}
 						onDelete={onDelete}
+						isOwner={currentUserId ? realm.ownerId === currentUserId : false}
 					/>
 				))
 			)}

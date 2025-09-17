@@ -3,7 +3,6 @@
 import { useParams } from "next/navigation";
 import NotFound from "@/app/not-found";
 import { CharacterManager } from "@/components/character-manager";
-import { MemberSidebar } from "@/components/member-sidebar";
 import { RealmSidebar } from "@/components/realm-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { TraitsManager } from "@/components/traits-manager";
@@ -37,9 +36,6 @@ export default function RealmPage() {
 							<Skeleton className="h-32 w-full" />
 						</div>
 					</main>
-					<div className="p-4">
-						<MemberSidebar realmId={realmId} />
-					</div>
 				</div>
 			</div>
 		);
@@ -63,13 +59,12 @@ export default function RealmPage() {
 						</div>
 
 						<Tabs defaultValue="characters" className="w-full">
-							<TabsList className="grid w-full grid-cols-3">
+							<TabsList className="grid w-full grid-cols-2">
 								<TabsTrigger value="characters">Characters</TabsTrigger>
 								<TabsTrigger value="traits">Traits</TabsTrigger>
-								<TabsTrigger value="notes">Notes</TabsTrigger>
 							</TabsList>
 							<TabsContent value="characters" className="mt-6">
-								<div className="rounded-lg border p-4 sm:p-6">
+								<div className="rounded-lg border p-6">
 									<CharacterManager realmId={realm.id} />
 								</div>
 							</TabsContent>
@@ -78,20 +73,9 @@ export default function RealmPage() {
 									<TraitsManager realmId={realm.id} />
 								</div>
 							</TabsContent>
-							<TabsContent value="notes" className="mt-6">
-								<div className="rounded-lg border p-6">
-									<h3 className="mb-4 font-semibold text-lg">Notes</h3>
-									<p className="text-muted-foreground">
-										Note management will be implemented here.
-									</p>
-								</div>
-							</TabsContent>
 						</Tabs>
 					</div>
 				</main>
-				<div className="">
-					<MemberSidebar realmId={realmId} />
-				</div>
 			</div>
 		</div>
 	);

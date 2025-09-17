@@ -2,14 +2,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { CharacterOverview } from "@/components/character-overview";
 import { CreateOrJoinRealmDialog } from "@/components/create-or-join-realm-dialog";
 import { RealmSidebar } from "@/components/realm-sidebar";
+import { RecentActivity } from "@/components/recent-activity";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import { useAuthGuard } from "@/hooks/use-realm-access";
 import { trpc } from "@/utils/trpc";
 
@@ -102,92 +101,17 @@ export default function RealmsPage() {
 			<SiteHeader />
 			<div className="flex h-full min-h-0">
 				<RealmSidebar />
-				<main className="flex-1 p-4">
+				<main className="flex-1 space-y-6 p-6">
 					<div className="mb-6">
-						<h1 className="font-bold text-2xl">Dashboard</h1>
-						<p className="text-muted-foreground">
-							Welcome back. Pick a realm from the left, or work on your stuff
-							here.
+						<h1 className="font-bold text-3xl">Dashboard</h1>
+						<p className="mt-2 text-muted-foreground">
+							Quick access to your recent characters and activity.
 						</p>
 					</div>
-					<div className="grid gap-4 md:grid-cols-2">
-						<Card>
-							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="font-semibold text-lg">
-									Characters
-								</CardTitle>
-								<Button size="sm" variant="secondary">
-									New Character
-								</Button>
-							</CardHeader>
-							<CardContent className="space-y-4">
-								<Input placeholder="Search characters" />
-								<div className="space-y-3">
-									<div className="flex items-center justify-between rounded-md border p-3">
-										<div className="flex items-center gap-3">
-											<div className="h-8 w-8 rounded-full bg-accent" />
-											<div>
-												<div className="font-medium">A mysterious wanderer</div>
-												<div className="text-muted-foreground text-xs">
-													Rogue • Level 3
-												</div>
-											</div>
-										</div>
-										<Button size="sm" variant="ghost">
-											Open
-										</Button>
-									</div>
-									<div className="flex items-center justify-between rounded-md border p-3">
-										<div className="flex items-center gap-3">
-											<div className="h-8 w-8 rounded-full bg-accent" />
-											<div>
-												<div className="font-medium">Sir Placeholder III</div>
-												<div className="text-muted-foreground text-xs">
-													Paladin • Level 7
-												</div>
-											</div>
-										</div>
-										<Button size="sm" variant="ghost">
-											Open
-										</Button>
-									</div>
-								</div>
-							</CardContent>
-						</Card>
 
-						<Card>
-							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="font-semibold text-lg">Notes</CardTitle>
-								<Button size="sm" variant="secondary">
-									New Note
-								</Button>
-							</CardHeader>
-							<CardContent className="space-y-4">
-								<div className="space-y-3">
-									<div className="rounded-md border p-3">
-										<div className="font-medium">Quest ideas</div>
-										<div className="text-muted-foreground text-xs">
-											A dragon, but it just wants better zoning laws.
-										</div>
-									</div>
-									<div className="rounded-md border p-3">
-										<div className="font-medium">Shopping list</div>
-										<div className="text-muted-foreground text-xs">
-											Rations, rope, and a suspiciously specific amount of oil.
-										</div>
-									</div>
-								</div>
-								<div>
-									<Textarea
-										placeholder="Write a quick note..."
-										className="min-h-[100px] resize-none"
-									/>
-									<div className="mt-2 flex justify-end">
-										<Button size="sm">Save</Button>
-									</div>
-								</div>
-							</CardContent>
-						</Card>
+					<div className="space-y-6">
+						<CharacterOverview />
+						<RecentActivity />
 					</div>
 				</main>
 			</div>

@@ -9,10 +9,12 @@ import { DeleteRealmDialog } from "@/components/delete-realm-dialog";
 import { EditRealmDialog } from "@/components/edit-realm-dialog";
 import { RealmList } from "@/components/realm-list";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/utils/trpc";
 
 export function RealmSidebar() {
 	const pathname = usePathname();
+	const { user } = useAuth();
 	const { data, isPending, error } = useQuery({
 		...trpc.realm.list.queryOptions(),
 		retry: 2,
@@ -56,6 +58,7 @@ export function RealmSidebar() {
 					currentRealmId={currentRealmId}
 					onEdit={handleEdit}
 					onDelete={handleDelete}
+					currentUserId={user?.id}
 				/>
 				<CreateRealmButton onClick={() => setCreateOrJoinDialogOpen(true)} />
 				<CreateOrJoinRealmDialog

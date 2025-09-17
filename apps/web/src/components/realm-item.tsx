@@ -21,6 +21,7 @@ interface Realm {
 	id: string;
 	name?: string;
 	iconKey?: string | null;
+	ownerId?: string;
 }
 
 interface RealmItemProps {
@@ -28,6 +29,7 @@ interface RealmItemProps {
 	isSelected: boolean;
 	onEdit: (realmId: string) => void;
 	onDelete: (realmId: string) => void;
+	isOwner?: boolean;
 }
 
 export function RealmItem({
@@ -35,6 +37,7 @@ export function RealmItem({
 	isSelected,
 	onEdit,
 	onDelete,
+	isOwner = false,
 }: RealmItemProps) {
 	const router = useRouter();
 	const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -69,54 +72,60 @@ export function RealmItem({
 		setIsImageLoaded(true);
 	};
 
-	return (
-		<ContextMenu>
-			<ContextMenuTrigger asChild>
-				<div className="group relative">
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<button
-								className={`group/realm relative cursor-pointer ${isSelected ? "rounded-full ring-2 ring-primary" : ""}`}
-								type="button"
-								onClick={() => handleRealmClick(realm.id)}
-							>
-								<Avatar className="h-10 w-10">
-									<AvatarImage
-										src={src}
-										alt={realm.name}
-										onLoad={handleImageLoad}
-										onError={handleImageError}
-									/>
-									<AvatarFallback className="rounded-full">
-										{realm.name?.[0]?.toUpperCase() || "R"}
-									</AvatarFallback>
-								</Avatar>
-								{src && !isImageLoaded && (
-									<div className="absolute inset-0 flex h-10 w-10 items-center justify-center">
-										<Skeleton className="h-10 w-10 rounded-full" />
-									</div>
-								)}
-							</button>
-						</TooltipTrigger>
-						<TooltipContent side="right">
-							<p>{realm.name}</p>
-						</TooltipContent>
-					</Tooltip>
-				</div>
-			</ContextMenuTrigger>
-			<ContextMenuContent>
-				<ContextMenuItem onClick={() => onEdit(realm.id)}>
-					<Edit className="mr-2 h-4 w-4" />
-					Edit
-				</ContextMenuItem>
-				<ContextMenuItem
-					onClick={() => onDelete(realm.id)}
-					className="text-destructive focus:text-destructive"
-				>
-					<Trash className="mr-2 h-4 w-4" />
-					Delete
-				</ContextMenuItem>
-			</ContextMenuContent>
-		</ContextMenu>
+	const realmButton = (
+		<div className="group relative">
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<button
+						className={`group/realm relative cursor-pointer ${isSelected ? "rounded-full ring-2 ring-primary" : ""}`}
+						type="button"
+						onClick={() => handleRealmClick(realm.id)}
+					>
+						<Avatar className="h-10 w-10">
+							<AvatarImage
+								src={src}
+								alt={realm.name}
+								onLoad={handleImageLoad}
+								onError={handleImageError}
+							/>
+							<AvatarFallback className="rounded-full">
+								{realm.name?.[0]?.toUpperCase() || "R"}
+							</AvatarFallback>
+						</Avatar>
+						{src && !isImageLoaded && (
+							<div className="absolute inset-0 flex h-10 w-10 items-center justify-center">
+								<Skeleton className="h-10 w-10 rounded-full" />
+							</div>
+						)}
+					</button>
+				</TooltipTrigger>
+				<TooltipContent side="right">
+					<p>{realm.name}</p>
+				</TooltipContent>
+			</Tooltip>
+		</div>
 	);
+
+	if (isOwner) {
+		return (
+			<ContextMenu>
+				<ContextMenuTrigger asChild>{realmButton}</ContextMenuTrigger>
+				<ContextMenuContent>
+					<ContextMenuItem onClick={() => onEdit(realm.id)}>
+						<Edit className="mr-2 h-4 w-4" />
+						Edit
+					</ContextMenuItem>
+					<ContextMenuItem
+						onClick={() => onDelete(realm.id)}
+						className="text-destructive focus:text-destructive"
+					>
+						<Trash className="mr-2 h-4 w-4" />
+						Delete
+					</ContextMenuItem>
+				</ContextMenuContent>
+			</ContextMenu>
+		);
+	}
+
+	return realmButton;
 }

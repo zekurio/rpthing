@@ -1,5 +1,4 @@
 import {
-	pgEnum,
 	pgTable,
 	text,
 	timestamp,
@@ -8,12 +7,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 import { realm } from "./realm";
-
-export const realmMemberRoleEnum = pgEnum("realm_member_role", [
-	"owner",
-	"admin",
-	"member",
-]);
 
 export const realmMember = pgTable(
 	"realm_member",
@@ -27,7 +20,6 @@ export const realmMember = pgTable(
 		userId: uuid("user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
-		role: realmMemberRoleEnum("role").notNull().default("member"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.defaultNow()

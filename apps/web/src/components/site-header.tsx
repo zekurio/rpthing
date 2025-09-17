@@ -3,7 +3,6 @@
 import type { User } from "better-auth";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/logo";
-import { MobileRealmDrawer } from "@/components/mobile-realm-drawer";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/user-menu";
 import { authClient } from "@/lib/auth-client";
@@ -21,7 +20,6 @@ export function SiteHeader() {
 		<header className="relative z-20 w-full border-b">
 			<div className="flex h-16 items-center justify-between pr-3 pl-3">
 				<div className="flex items-center gap-2">
-					<MobileRealmDrawer />
 					<Logo />
 				</div>
 				<div className="flex items-center gap-4">

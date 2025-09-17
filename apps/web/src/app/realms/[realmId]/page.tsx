@@ -28,9 +28,7 @@ export default function RealmPage() {
 			<div className="flex h-full min-h-0 w-full flex-col">
 				<SiteHeader />
 				<div className="flex h-full min-h-0 overflow-hidden">
-					<div className="hidden sm:flex">
-						<RealmSidebar />
-					</div>
+					<RealmSidebar />
 					<main className="flex-1 overflow-y-auto p-4">
 						<div className="space-y-4">
 							<Skeleton className="h-8 w-48" />
@@ -52,9 +50,7 @@ export default function RealmPage() {
 		<div className="flex h-full min-h-0 w-full flex-col">
 			<SiteHeader />
 			<div className="flex h-full min-h-0 overflow-hidden">
-				<div className="hidden sm:flex">
-					<RealmSidebar />
-				</div>
+				<RealmSidebar />
 				<main className="flex-1 overflow-y-auto p-4">
 					<div className="space-y-6">
 						<div>

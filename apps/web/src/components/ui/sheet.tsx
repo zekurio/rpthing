@@ -8,7 +8,9 @@ import { cn } from "@/lib/utils";
 
 type SheetSide = "left" | "right" | "top" | "bottom";
 
-function Sheet({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
+function Sheet({
+	...props
+}: React.ComponentProps<typeof DialogPrimitive.Root>) {
 	return <DialogPrimitive.Root data-slot="sheet" {...props} />;
 }
 
@@ -57,12 +59,10 @@ function SheetContent({
 	showCloseButton?: boolean;
 }) {
 	const sideClasses: Record<SheetSide, string> = {
-		left:
-			"left-0 top-0 h-full w-[85vw] max-w-xs translate-x-[-100%] data-[state=open]:translate-x-0",
+		left: "left-0 top-0 h-full w-[85vw] max-w-xs translate-x-[-100%] data-[state=open]:translate-x-0",
 		right:
 			"right-0 top-0 h-full w-[85vw] max-w-xs translate-x-[100%] data-[state=open]:translate-x-0",
-		top:
-			"left-0 top-0 w-full max-h-[85vh] translate-y-[-100%] data-[state=open]:translate-y-0",
+		top: "left-0 top-0 w-full max-h-[85vh] translate-y-[-100%] data-[state=open]:translate-y-0",
 		bottom:
 			"left-0 bottom-0 w-full max-h-[85vh] translate-y-[100%] data-[state=open]:translate-y-0",
 	};
@@ -141,4 +141,3 @@ export {
 	SheetTitle,
 	SheetTrigger,
 };
-

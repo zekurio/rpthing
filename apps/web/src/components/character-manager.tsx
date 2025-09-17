@@ -11,10 +11,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { queryClient, trpc } from "@/utils/trpc";
 
 export function CharacterManager({ realmId }: { realmId: string }) {
-	const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
-	if (!serverUrl) {
-		throw new Error("NEXT_PUBLIC_SERVER_URL is not defined");
-	}
 	const { data: characters, isLoading } = useQuery({
 		...trpc.character.list.queryOptions({ realmId }),
 	});

@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Pencil, Trash2 } from "lucide-react";
 import Image from "next/image";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 
 // Custom throttle hook for smooth animations
 function _useThrottle<T>(value: T, delay: number): T {
@@ -77,15 +77,13 @@ export const CharacterCard = memo(function CharacterCard({
 		}
 	}, [realmId, traitSnapshot, character.id]);
 
-	const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "";
-	const fullImageSrc = useMemo(
-		() => `${serverUrl}/api/character/${character.id}/image?raw=1`,
-		[serverUrl, character.id],
-	);
+	const previewSrc =
+		character.croppedImageKey || character.referenceImageKey || undefined;
+	const fullImageSrc = character.referenceImageKey || undefined;
 
 	return (
 		<div className="group overflow-hidden rounded-lg border">
-			{character.referenceImageKey ? (
+			{previewSrc ? (
 				<button
 					className="relative aspect-square w-full cursor-pointer bg-muted"
 					onClick={() => setViewerOpen(true)}
@@ -93,7 +91,7 @@ export const CharacterCard = memo(function CharacterCard({
 					type="button"
 				>
 					<Image
-						src={character.referenceImageKey}
+						src={previewSrc}
 						alt={character.name}
 						fill
 						sizes="(max-width:640px) 45vw, (max-width:1024px) 18vw, 12vw"
@@ -169,7 +167,7 @@ export const CharacterCard = memo(function CharacterCard({
 			/>
 
 			{/* New high-performance image viewer */}
-			{character.referenceImageKey ? (
+			{fullImageSrc ? (
 				<ImageViewer
 					open={viewerOpen}
 					onOpenChange={setViewerOpen}

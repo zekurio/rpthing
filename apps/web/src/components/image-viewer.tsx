@@ -38,6 +38,7 @@ export function ImageViewer({
 }: ImageViewerProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const contentRef = useRef<HTMLDivElement | null>(null);
+	const imgRef = useRef<HTMLImageElement | null>(null);
 
 	// Interaction state held in refs to avoid React re-renders during gestures
 	const scaleRef = useRef<number>(1);
@@ -156,6 +157,11 @@ export function ImageViewer({
 
 	// Pointer events for pan and pinch
 	const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+		// Ignore toolbar/controls so clicks like Close work normally
+		const target = e.target as Element | null;
+		if (target?.closest("[data-no-pan]")) {
+			return;
+		}
 		const el = e.currentTarget as HTMLDivElement;
 		el.setPointerCapture?.(e.pointerId);
 		pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -232,7 +238,10 @@ export function ImageViewer({
 
 	const Toolbar = useMemo(
 		() => (
-			<div className="absolute top-2 right-2 flex items-center gap-1 rounded-md bg-background/80 p-1 shadow">
+			<div
+				className="absolute top-2 right-2 flex items-center gap-1 rounded-md bg-background/80 p-1 shadow"
+				data-no-pan
+			>
 				<Button
 					variant="ghost"
 					size="icon"
@@ -264,6 +273,7 @@ export function ImageViewer({
 						target="_blank"
 						rel="noopener noreferrer"
 						aria-label="Download image"
+						data-no-pan
 					>
 						<Button asChild variant="ghost" size="icon">
 							<span>
@@ -273,13 +283,53 @@ export function ImageViewer({
 					</a>
 				) : null}
 				<DialogClose asChild>
-					<Button variant="ghost" size="icon" aria-label="Close viewer">
+					<Button
+						variant="ghost"
+						size="icon"
+						aria-label="Close viewer"
+						data-no-pan
+					>
 						<X className="h-4 w-4" />
 					</Button>
 				</DialogClose>
 			</div>
 		),
 		[downloadHref, resetView, zoomStep],
+	);
+
+	const _onSingleClick = useCallback(
+		(e: React.MouseEvent<HTMLDivElement>) => {
+			// Ignore toolbar clicks
+			const target = e.target as Element | null;
+			if (target?.closest("[data-no-pan]")) return;
+
+			// Only close when not zoomed or panned
+			if (scaleRef.current !== 1) return;
+			if (offsetRef.current.x !== 0 || offsetRef.current.y !== 0) return;
+
+			const container = containerRef.current;
+			const img = imgRef.current;
+			if (!container || !img) return;
+
+			const rect = container.getBoundingClientRect();
+			const naturalW = img.naturalWidth || 0;
+			const naturalH = img.naturalHeight || 0;
+			if (!naturalW || !naturalH) return;
+
+			const fit = Math.min(rect.width / naturalW, rect.height / naturalH);
+			const dispW = naturalW * fit;
+			const dispH = naturalH * fit;
+			const left = (rect.width - dispW) / 2;
+			const top = (rect.height - dispH) / 2;
+			const x = e.clientX - rect.left;
+			const y = e.clientY - rect.top;
+			const insideImage =
+				x >= left && x <= left + dispW && y >= top && y <= top + dispH;
+			if (!insideImage) {
+				onOpenChange(false);
+			}
+		},
+		[onOpenChange],
 	);
 
 	return (
@@ -323,6 +373,7 @@ export function ImageViewer({
 							unoptimized
 							draggable={false}
 							priority={false}
+							ref={imgRef}
 						/>
 					</div>
 					{Toolbar}

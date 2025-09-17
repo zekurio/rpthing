@@ -215,14 +215,20 @@ export const characterRouter = router({
 				});
 			}
 
+			// Presign URLs like realm icons
 			if (!row.referenceImageKey) return row;
-
-			const selectedKey = row.croppedImageKey ?? row.referenceImageKey;
 			try {
-				const url = await getFileUrl(selectedKey);
-				return { ...row, referenceImageKey: url };
+				const referenceUrl = await getFileUrl(row.referenceImageKey);
+				const croppedUrl = row.croppedImageKey
+					? await getFileUrl(row.croppedImageKey)
+					: null;
+				return {
+					...row,
+					referenceImageKey: referenceUrl,
+					croppedImageKey: croppedUrl,
+				};
 			} catch {
-				return { ...row, referenceImageKey: null };
+				return { ...row, referenceImageKey: null, croppedImageKey: null };
 			}
 		}),
 
@@ -258,15 +264,26 @@ export const characterRouter = router({
 				.leftJoin(user, eq(user.id, character.userId))
 				.where(eq(character.realmId, realmId));
 
+			// Presign URLs like realm icons
 			const withUrls = await Promise.all(
 				rows.map(async (row) => {
 					if (!row.referenceImageKey) return row;
-					const selectedKey = row.croppedImageKey ?? row.referenceImageKey;
 					try {
-						const url = await getFileUrl(selectedKey);
-						return { ...row, referenceImageKey: url };
+						const referenceUrl = await getFileUrl(row.referenceImageKey);
+						const croppedUrl = row.croppedImageKey
+							? await getFileUrl(row.croppedImageKey)
+							: null;
+						return {
+							...row,
+							referenceImageKey: referenceUrl,
+							croppedImageKey: croppedUrl,
+						};
 					} catch {
-						return { ...row, referenceImageKey: null };
+						return {
+							...row,
+							referenceImageKey: null,
+							croppedImageKey: null,
+						};
 					}
 				}),
 			);

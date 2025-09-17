@@ -75,7 +75,6 @@ export function EditCharacterDialog({
 	});
 
 	const genderOptions = useRealmGenderOptions(character?.realmId || "");
-	const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "";
 
 	const form = useForm<EditCharacterFormData>({
 		resolver: zodResolver(editCharacterSchema),
@@ -134,11 +133,14 @@ export function EditCharacterDialog({
 				} else {
 					fd.append("file", selectedFile);
 				}
-				await fetch(`${serverUrl}/api/upload/character-image/${characterId}`, {
-					method: "POST",
-					body: fd,
-					credentials: "include",
-				});
+				await fetch(
+					`${process.env.NEXT_PUBLIC_SERVER_URL}/api/upload/character-image/${characterId}`,
+					{
+						method: "POST",
+						body: fd,
+						credentials: "include",
+					},
+				);
 				queryClient.invalidateQueries({
 					queryKey: trpc.character.getById.queryKey({ id: characterId }),
 				});
@@ -146,10 +148,13 @@ export function EditCharacterDialog({
 					queryKey: trpc.character.list.queryKey(),
 				});
 			} else if (removeRequested && character?.referenceImageKey) {
-				await fetch(`${serverUrl}/api/upload/character-image/${characterId}`, {
-					method: "DELETE",
-					credentials: "include",
-				});
+				await fetch(
+					`${process.env.NEXT_PUBLIC_SERVER_URL}/api/upload/character-image/${characterId}`,
+					{
+						method: "DELETE",
+						credentials: "include",
+					},
+				);
 				queryClient.invalidateQueries({
 					queryKey: trpc.character.getById.queryKey({ id: characterId }),
 				});

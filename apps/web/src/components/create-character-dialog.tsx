@@ -1,7 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { X } from "lucide-react";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -25,8 +26,10 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useRealmGenderOptions } from "@/hooks/use-realm-gender-options";
+import { gradeForValue } from "@/lib/traits";
 import { queryClient, trpc } from "@/utils/trpc";
 
 const formSchema = z.object({
@@ -54,6 +57,11 @@ export function CreateCharacterDialog({
 	const genderOptions = useRealmGenderOptions(realmId);
 	const isPublicId = React.useId();
 
+	const { data: traits, isLoading: traitsLoading } = useQuery({
+		...trpc.trait.list.queryOptions({ realmId }),
+		enabled: !!realmId && open,
+	});
+
 	const form = useForm<FormData>({
 		resolver: zodResolver(formSchema),
 		defaultValues: { name: "", gender: "", notes: "" },
@@ -66,11 +74,16 @@ export function CreateCharacterDialog({
 			onCreated();
 			onOpenChange(false);
 			form.reset({ name: "", gender: "", notes: "" });
+			setLocalRatings({});
 		},
 		onError: (e) => toast.error(e.message || "Failed to create"),
 	});
 
-	const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "";
+	const ratingsMutation = useMutation({
+		...trpc.character.ratings.upsert.mutationOptions(),
+		onError: (e) => toast.error(e.message || "Failed to save rating"),
+	});
+
 	const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
 	const [imagePreview, setImagePreview] = React.useState<string | null>(null);
 	const [originalFile, setOriginalFile] = React.useState<File | null>(null);
@@ -81,6 +94,10 @@ export function CreateCharacterDialog({
 		width?: number;
 		height?: number;
 	} | null>(null);
+
+	const [localRatings, setLocalRatings] = React.useState<
+		Record<string, number>
+	>({});
 
 	const onSubmit = React.useCallback(
 		async (data: FormData) => {
@@ -100,17 +117,45 @@ export function CreateCharacterDialog({
 				} else {
 					fd.append("file", selectedFile);
 				}
-				await fetch(`${serverUrl}/api/upload/character-image/${created.id}`, {
-					method: "POST",
-					body: fd,
-					credentials: "include",
-				});
+				await fetch(
+					`${process.env.NEXT_PUBLIC_SERVER_URL}/api/upload/character-image/${created.id}`,
+					{
+						method: "POST",
+						body: fd,
+						credentials: "include",
+					},
+				);
 				queryClient.invalidateQueries({
 					queryKey: trpc.character.list.queryKey({ realmId }),
 				});
 			}
+
+			// Upsert initial ratings if any were set
+			const entries = Object.entries(localRatings);
+			if (entries.length > 0) {
+				await Promise.all(
+					entries.map(([traitId, value]) =>
+						ratingsMutation.mutateAsync({
+							characterId: created.id,
+							traitId,
+							value,
+						}),
+					),
+				);
+				queryClient.invalidateQueries({
+					queryKey: trpc.character.getWithRatings.queryKey({ id: created.id }),
+				});
+			}
 		},
-		[mutation, realmId, selectedFile, serverUrl, originalFile, percentCrop],
+		[
+			mutation,
+			realmId,
+			selectedFile,
+			originalFile,
+			percentCrop,
+			localRatings,
+			ratingsMutation,
+		],
 	);
 
 	return (
@@ -211,9 +256,75 @@ export function CreateCharacterDialog({
 						</div>
 						<div className="grid gap-2">
 							<FormLabel>Trait ratings</FormLabel>
-							<div className="text-muted-foreground text-xs">
-								You can set ratings after creating on the edit screen.
-							</div>
+							{traitsLoading ? (
+								<div className="text-muted-foreground text-xs">
+									Loading traits…
+								</div>
+							) : !traits || traits.length === 0 ? (
+								<div className="rounded-md border p-3 text-muted-foreground text-sm">
+									No traits in this realm yet.
+								</div>
+							) : (
+								<div className="grid gap-4">
+									{traits.map((t) => {
+										const current = localRatings[t.id] ?? 10;
+										const isSet = Object.hasOwn(localRatings, t.id);
+										const label =
+											t.displayMode === "grade"
+												? gradeForValue(current)
+												: String(current);
+										return (
+											<div key={t.id} className="grid gap-2">
+												<div className="flex items-center justify-between gap-2">
+													<div className="min-w-0">
+														<div className="truncate font-medium text-sm">
+															{t.name}
+														</div>
+														{t.description ? (
+															<div className="truncate text-muted-foreground text-xs">
+																{t.description}
+															</div>
+														) : null}
+													</div>
+													<div className="flex items-center gap-2">
+														<span className="text-muted-foreground text-xs">
+															{isSet ? label : "Not set"}
+														</span>
+														{isSet ? (
+															<Button
+																type="button"
+																variant="ghost"
+																size="sm"
+																className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+																onClick={() =>
+																	setLocalRatings((prev) => {
+																		const { [t.id]: _omit, ...rest } =
+																			prev as Record<string, number>;
+																		return rest;
+																	})
+																}
+																aria-label="Clear rating"
+															>
+																<X className="h-3 w-3" />
+															</Button>
+														) : null}
+													</div>
+												</div>
+												<Slider
+													min={1}
+													max={20}
+													step={1}
+													value={[current]}
+													onValueChange={(vals) => {
+														const v = vals[0] ?? 10;
+														setLocalRatings((prev) => ({ ...prev, [t.id]: v }));
+													}}
+												/>
+											</div>
+										);
+									})}
+								</div>
+							)}
 						</div>
 						<div className="flex items-center justify-end gap-2">
 							<Button
@@ -228,7 +339,9 @@ export function CreateCharacterDialog({
 								type="submit"
 								disabled={form.formState.isSubmitting || mutation.isPending}
 							>
-								{mutation.isPending || selectedFile ? "Creating..." : "Create"}
+								{form.formState.isSubmitting || mutation.isPending
+									? "Creating..."
+									: "Create"}
 							</Button>
 						</div>
 					</form>

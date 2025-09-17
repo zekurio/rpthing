@@ -60,7 +60,6 @@ export function EditRealmDialog({ open, onOpenChange }: EditRealmDialogProps) {
 		retry: 2,
 		retryDelay: 1000,
 	});
-	const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "";
 
 	const form = useForm<EditRealmFormData>({
 		resolver: zodResolver(editRealmSchema),
@@ -102,7 +101,7 @@ export function EditRealmDialog({ open, onOpenChange }: EditRealmDialogProps) {
 		formData.append("file", file);
 
 		const response = await fetch(
-			`${serverUrl}/api/upload/realm-icon/${realmId}`,
+			`${process.env.NEXT_PUBLIC_SERVER_URL}/api/upload/realm-icon/${realmId}`,
 			{
 				method: "POST",
 				body: formData,
@@ -118,7 +117,7 @@ export function EditRealmDialog({ open, onOpenChange }: EditRealmDialogProps) {
 
 	const deleteIcon = async (realmId: string): Promise<void> => {
 		const response = await fetch(
-			`${serverUrl}/api/upload/realm-icon/${realmId}`,
+			`${process.env.NEXT_PUBLIC_SERVER_URL}/api/upload/realm-icon/${realmId}`,
 			{
 				method: "DELETE",
 				credentials: "include",

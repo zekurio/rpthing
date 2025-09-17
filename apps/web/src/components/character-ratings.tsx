@@ -159,9 +159,7 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 						t.displayMode === "grade"
 							? gradeForValue(current)
 							: String(current);
-					const canClear = Boolean(
-						t.ratingId && t.ratingId !== "optimistic" && isSet,
-					);
+					const canClear = Boolean(isSet);
 					return (
 						<div key={t.traitId} className="grid gap-2">
 							<div className="flex items-center justify-between gap-2">
@@ -181,10 +179,23 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 									</span>
 									{canClear ? (
 										<Button
+											type="button"
 											variant="ghost"
 											size="sm"
 											className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-											onClick={() => del.mutate(t.ratingId as string)}
+											onClick={() => {
+												if (t.ratingId && t.ratingId !== "optimistic") {
+													del.mutate(t.ratingId as string);
+												} else {
+													const timer = timersRef.current[t.traitId];
+													if (timer) clearTimeout(timer);
+													timersRef.current[t.traitId] = null;
+													setLocalValues((prev) => {
+														const { [t.traitId]: _omit, ...rest } = prev;
+														return rest;
+													});
+												}
+											}}
 											disabled={del.isPending}
 											aria-label="Clear rating"
 										>

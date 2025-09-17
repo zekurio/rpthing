@@ -22,12 +22,6 @@ COPY --from=installer /app/ ./
 COPY --from=turbo-prune /repo/out/full/ ./
 WORKDIR /app/apps/web
 
-# Allow passing public envs for Next.js at build time
-ARG NEXT_PUBLIC_APP_URL
-ARG NEXT_PUBLIC_SERVER_URL
-ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
-ENV NEXT_PUBLIC_SERVER_URL=${NEXT_PUBLIC_SERVER_URL}
-
 RUN bun run build
 
 

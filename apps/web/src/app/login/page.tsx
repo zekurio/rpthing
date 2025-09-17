@@ -6,16 +6,20 @@ import { LoginForm } from "@/components/login-form";
 import { Logo } from "@/components/logo";
 import { useAuth } from "@/hooks/use-auth";
 
-export default function LoginPage() {
+function LoginPageContent() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const { isAuthenticated, isLoading } = useAuth();
-	const redirectUrl = searchParams.get("redirect") || "/realms";
+	const redirectUrl: string = searchParams.get("redirect") || "/realms";
 
 	useEffect(() => {
 		if (!isLoading && isAuthenticated) {
 			// Redirect to realms or intended destination if already authenticated
-			router.push(redirectUrl);
+			if (redirectUrl === "/realms") {
+				router.push("/realms");
+			} else {
+				router.push(redirectUrl as any);
+			}
 		}
 	}, [isAuthenticated, isLoading, router, redirectUrl]);
 
@@ -45,5 +49,13 @@ export default function LoginPage() {
 				</Suspense>
 			</div>
 		</div>
+	);
+}
+
+export default function LoginPage() {
+	return (
+		<Suspense fallback={<div>Loading...</div>}>
+			<LoginPageContent />
+		</Suspense>
 	);
 }

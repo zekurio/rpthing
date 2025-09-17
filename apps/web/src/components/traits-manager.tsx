@@ -81,8 +81,7 @@ export function TraitsManager({ realmId }: TraitsManagerProps) {
 					onClick={() => setCreateOpen(true)}
 					className="shrink-0"
 				>
-					<Plus className="mr-2 h-4 w-4" />
-					Add Trait
+					<Plus className="h-4 w-4" />
 				</Button>
 			</div>
 

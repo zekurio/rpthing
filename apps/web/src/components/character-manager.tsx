@@ -41,13 +41,12 @@ export function CharacterManager({ realmId }: { realmId: string }) {
 					onClick={() => setCreateOpen(true)}
 					className="shrink-0"
 				>
-					<Plus className="mr-2 h-4 w-4" />
-					Add Character
+					<Plus className="h-4 w-4" />
 				</Button>
 			</div>
 
 			{isLoading ? (
-				<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 					{[
 						"skeleton-1",
 						"skeleton-2",

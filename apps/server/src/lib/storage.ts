@@ -1,4 +1,4 @@
-import { S3Client } from "bun";
+// S3Client will be imported dynamically from Bun at runtime
 
 //
 // --- Environment Validation ---
@@ -19,12 +19,7 @@ if (!accessKeyId || !secretAccessKey || !bucketName) {
 //
 // --- S3 Client ---
 //
-const s3Client = new S3Client({
-	accessKeyId,
-	secretAccessKey,
-	region,
-	endpoint,
-});
+// S3Client will be created dynamically at runtime using Bun's built-in S3 driver
 
 //
 // --- Helpers ---
@@ -69,6 +64,14 @@ export const uploadFile = async (
 	const bytes = toUint8Array(data);
 
 	try {
+		// Use Bun's built-in S3 driver at runtime
+		const { S3Client } = await import("bun");
+		const s3Client = new S3Client({
+			accessKeyId,
+			secretAccessKey,
+			region,
+			endpoint,
+		});
 		const file = s3Client.file(fullPath);
 		await file.write(bytes);
 		return bytes.byteLength;
@@ -84,6 +87,14 @@ export const deleteFile = async (targetPath: string): Promise<boolean> => {
 	const fullPath = resolvePath(targetPath);
 
 	try {
+		// Use Bun's built-in S3 driver at runtime
+		const { S3Client } = await import("bun");
+		const s3Client = new S3Client({
+			accessKeyId,
+			secretAccessKey,
+			region,
+			endpoint,
+		});
 		const file = s3Client.file(fullPath);
 		await file.delete();
 		return true;
@@ -102,6 +113,14 @@ export const getFileUrl = async (
 	const fullPath = resolvePath(targetPath);
 
 	try {
+		// Use Bun's built-in S3 driver at runtime
+		const { S3Client } = await import("bun");
+		const s3Client = new S3Client({
+			accessKeyId,
+			secretAccessKey,
+			region,
+			endpoint,
+		});
 		const file = s3Client.file(fullPath);
 		return file.presign({
 			acl: "public-read",
@@ -119,6 +138,14 @@ export const existsFile = async (targetPath: string): Promise<boolean> => {
 	const fullPath = resolvePath(targetPath);
 
 	try {
+		// Use Bun's built-in S3 driver at runtime
+		const { S3Client } = await import("bun");
+		const s3Client = new S3Client({
+			accessKeyId,
+			secretAccessKey,
+			region,
+			endpoint,
+		});
 		const file = s3Client.file(fullPath);
 		const stat = await file.stat(); // Bun S3 returns metadata if exists
 		return stat !== null;

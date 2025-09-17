@@ -49,7 +49,7 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 						t.traitId === vars.traitId
 							? {
 									...t,
-									value: vars.value,
+									value: typeof vars.value === "number" ? vars.value : null,
 									ratingId: t.ratingId ?? "optimistic",
 								}
 							: t,

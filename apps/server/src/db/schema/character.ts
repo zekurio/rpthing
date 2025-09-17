@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 import { realm } from "./realm";
 
@@ -14,6 +14,7 @@ export const character = pgTable("character", {
 		.references(() => user.id, { onDelete: "cascade" }),
 	name: text("name").notNull(),
 	gender: text("gender"),
+	isPublic: boolean("is_public").default(false).notNull(),
 	referenceImageKey: text("reference_image_key"),
 	croppedImageKey: text("cropped_image_key"),
 	notes: text("notes"),

@@ -5,6 +5,7 @@ import { db } from "../db/index";
 import { user } from "../db/schema/auth";
 import { character } from "../db/schema/character";
 import { realm } from "../db/schema/realm";
+import { realmMember } from "../db/schema/realmMember";
 import { deleteFile, getFileUrl } from "../lib/storage";
 import { protectedProcedure, router } from "../lib/trpc";
 import {
@@ -33,7 +34,11 @@ export const realmRouter = router({
 				})
 				.returning();
 
-			// Icon upload is now handled via separate endpoint
+			// Ensure owner is persisted as a member
+			await db
+				.insert(realmMember)
+				.values({ realmId: created.id, userId, role: "owner" })
+				.onConflictDoNothing();
 
 			return created;
 		}),
@@ -75,7 +80,7 @@ export const realmRouter = router({
 
 	join: protectedProcedure
 		.input(realmJoinInputSchema)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ ctx, input }) => {
 			const { realmId, password } = input;
 
 			const [r] = await db
@@ -104,7 +109,12 @@ export const realmRouter = router({
 				}
 			}
 
-			// No membership persistence yet; successful validation is considered a join.
+			// Persist membership when join succeeds
+			const userId = ctx.session.user.id;
+			await db
+				.insert(realmMember)
+				.values({ realmId, userId, role: "member" })
+				.onConflictDoNothing();
 			return true;
 		}),
 

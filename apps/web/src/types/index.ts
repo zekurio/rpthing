@@ -13,6 +13,8 @@ export type CharacterListItem = {
 	name: string;
 	gender: string | null;
 	referenceImageKey: string | null;
+	ownerId?: string;
+	ownerName?: string | null;
 	createdAt?: string | Date;
 	updatedAt?: string | Date;
 };

@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db/index";
 import { character } from "../db/schema/character";
 import { realm } from "../db/schema/realm";
+import { realmMember } from "../db/schema/realmMember";
 import { characterTraitRating, trait } from "../db/schema/traits";
 import { protectedProcedure, router } from "../lib/trpc";
 import {
@@ -63,12 +64,42 @@ export const ratingRouter = router({
 				.from(realm)
 				.where(and(eq(realm.id, traitRow.realmId), eq(realm.ownerId, userId)))
 				.limit(1);
-
 			if (!ownsRealm) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Not the realm owner",
-				});
+				// New rule: character owner, or character is public and caller is realm member
+				const [charInfo] = await db
+					.select({
+						ownerId: character.userId,
+						isPublic: character.isPublic,
+						realmId: character.realmId,
+					})
+					.from(character)
+					.where(eq(character.id, characterId))
+					.limit(1);
+				const isCharacterOwner = charInfo?.ownerId === userId;
+				if (!isCharacterOwner) {
+					if (!charInfo?.isPublic) {
+						throw new TRPCError({
+							code: "FORBIDDEN",
+							message: "Not permitted",
+						});
+					}
+					const [member] = await db
+						.select({ id: realmMember.id })
+						.from(realmMember)
+						.where(
+							and(
+								eq(realmMember.realmId, charInfo.realmId),
+								eq(realmMember.userId, userId),
+							),
+						)
+						.limit(1);
+					if (!member) {
+						throw new TRPCError({
+							code: "FORBIDDEN",
+							message: "Not a realm member",
+						});
+					}
+				}
 			}
 
 			const numericValue = mapGradeToValue(value);
@@ -212,10 +243,40 @@ export const ratingRouter = router({
 				.where(and(eq(realm.id, charRow.realmId), eq(realm.ownerId, userId)))
 				.limit(1);
 			if (!ownsRealm) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Not the realm owner",
-				});
+				const [charInfo] = await db
+					.select({
+						ownerId: character.userId,
+						isPublic: character.isPublic,
+						realmId: character.realmId,
+					})
+					.from(character)
+					.where(eq(character.id, characterId))
+					.limit(1);
+				const isCharacterOwner = charInfo?.ownerId === userId;
+				if (!isCharacterOwner) {
+					if (!charInfo?.isPublic) {
+						throw new TRPCError({
+							code: "FORBIDDEN",
+							message: "Not permitted",
+						});
+					}
+					const [member] = await db
+						.select({ id: realmMember.id })
+						.from(realmMember)
+						.where(
+							and(
+								eq(realmMember.realmId, charInfo.realmId),
+								eq(realmMember.userId, userId),
+							),
+						)
+						.limit(1);
+					if (!member) {
+						throw new TRPCError({
+							code: "FORBIDDEN",
+							message: "Not a realm member",
+						});
+					}
+				}
 			}
 
 			return row;
@@ -245,12 +306,41 @@ export const ratingRouter = router({
 				.from(realm)
 				.where(and(eq(realm.id, charRow.realmId), eq(realm.ownerId, userId)))
 				.limit(1);
-
 			if (!ownsRealm) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Not the realm owner",
-				});
+				const [charInfo] = await db
+					.select({
+						ownerId: character.userId,
+						isPublic: character.isPublic,
+						realmId: character.realmId,
+					})
+					.from(character)
+					.where(eq(character.id, characterId))
+					.limit(1);
+				const isCharacterOwner = charInfo?.ownerId === userId;
+				if (!isCharacterOwner) {
+					if (!charInfo?.isPublic) {
+						throw new TRPCError({
+							code: "FORBIDDEN",
+							message: "Not permitted",
+						});
+					}
+					const [member] = await db
+						.select({ id: realmMember.id })
+						.from(realmMember)
+						.where(
+							and(
+								eq(realmMember.realmId, charInfo.realmId),
+								eq(realmMember.userId, userId),
+							),
+						)
+						.limit(1);
+					if (!member) {
+						throw new TRPCError({
+							code: "FORBIDDEN",
+							message: "Not a realm member",
+						});
+					}
+				}
 			}
 
 			return await db

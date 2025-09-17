@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -35,6 +35,7 @@ const editCharacterSchema = z.object({
 	name: z.string().min(1, "Name is required").max(200),
 	gender: z.string().max(50).optional(),
 	notes: z.string().max(10000).optional(),
+	isPublic: z.boolean().optional(),
 });
 
 type EditCharacterFormData = z.infer<typeof editCharacterSchema>;
@@ -63,6 +64,8 @@ export function EditCharacterDialog({
 		width?: number;
 		height?: number;
 	} | null>(null);
+
+	const isPublicId = useId();
 
 	const { data: character } = useQuery({
 		...trpc.character.getById.queryOptions({ id: characterId }),
@@ -101,6 +104,9 @@ export function EditCharacterDialog({
 				name: character.name || "",
 				gender: character.gender || "",
 				notes: character.notes || "",
+				isPublic: Boolean(
+					(character as unknown as { isPublic?: boolean }).isPublic,
+				),
 			});
 			setSelectedFile(null);
 			setImagePreview(null);
@@ -116,6 +122,7 @@ export function EditCharacterDialog({
 			name: data.name,
 			gender: data.gender || undefined,
 			notes: data.notes || undefined,
+			isPublic: Boolean(data.isPublic),
 		});
 
 		try {
@@ -255,6 +262,20 @@ export function EditCharacterDialog({
 									setRemoveRequested(true);
 								}}
 							/>
+						</div>
+						<div className="grid gap-2">
+							<FormLabel>Permissions</FormLabel>
+							<div className="flex items-center gap-2">
+								<input
+									id={isPublicId}
+									type="checkbox"
+									checked={!!form.watch("isPublic")}
+									onChange={(e) => form.setValue("isPublic", e.target.checked)}
+								/>
+								<label htmlFor={isPublicId} className="text-sm">
+									Public (realm members can edit)
+								</label>
+							</div>
 						</div>
 						<div className="grid gap-2">
 							<FormLabel>Trait ratings</FormLabel>

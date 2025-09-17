@@ -194,11 +194,15 @@ export function CharacterCard({ character, onChanged }: CharacterCardProps) {
 			<div className="flex items-center justify-between gap-2 p-2">
 				<div className="min-w-0">
 					<div className="truncate font-medium">{character.name}</div>
-					{character.gender ? (
-						<div className="truncate text-muted-foreground text-xs">
-							{character.gender}
-						</div>
-					) : null}
+					<div className="truncate text-muted-foreground text-xs">
+						{character.gender ? (
+							<>
+								{character.gender}
+								{character.ownerName ? " • " : null}
+							</>
+						) : null}
+						{character.ownerName ? `Owner: ${character.ownerName}` : null}
+					</div>
 				</div>
 				<div className="flex shrink-0 items-center gap-1">
 					<Button

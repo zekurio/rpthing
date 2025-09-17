@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { trpcServer } from "@hono/trpc-server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
@@ -8,6 +8,7 @@ import sharp from "sharp";
 import { db } from "./db/index";
 import { character } from "./db/schema/character";
 import { realm } from "./db/schema/realm";
+import { realmMember } from "./db/schema/realmMember";
 import { auth } from "./lib/auth";
 import { createContext } from "./lib/context";
 import { deleteFile, existsFile, getFileUrl, uploadFile } from "./lib/storage";
@@ -185,9 +186,9 @@ app.post("/api/upload/character-image/:characterId", async (c) => {
 			return c.json({ error: "Unauthorized" }, 401);
 		}
 
-		// Verify character exists and user owns the realm
+		// Verify character exists and permissions
 		const [charRow] = await db
-			.select({ realmId: character.realmId })
+			.select({ realmId: character.realmId, ownerId: character.userId })
 			.from(character)
 			.where(eq(character.id, characterId))
 			.limit(1);
@@ -199,8 +200,27 @@ app.post("/api/upload/character-image/:characterId", async (c) => {
 			.from(realm)
 			.where(eq(realm.id, charRow.realmId))
 			.limit(1);
-		if (!r || r.ownerId !== session.user.id) {
-			return c.json({ error: "Forbidden" }, 403);
+		const isRealmOwner = !!r && r.ownerId === session.user.id;
+		const isCharacterOwner = charRow.ownerId === session.user.id;
+		if (!isRealmOwner && !isCharacterOwner) {
+			// Public character can be edited by realm members
+			const [char] = await db
+				.select({ isPublic: character.isPublic, realmId: character.realmId })
+				.from(character)
+				.where(eq(character.id, characterId))
+				.limit(1);
+			if (!char?.isPublic) return c.json({ error: "Forbidden" }, 403);
+			const [member] = await db
+				.select({ id: realmMember.id })
+				.from(realmMember)
+				.where(
+					and(
+						eq(realmMember.realmId, char.realmId),
+						eq(realmMember.userId, session.user.id),
+					),
+				)
+				.limit(1);
+			if (!member) return c.json({ error: "Forbidden" }, 403);
 		}
 
 		// We will derive the extension from the uploaded file (or previously stored key)
@@ -372,10 +392,11 @@ app.delete("/api/upload/character-image/:characterId", async (c) => {
 			return c.json({ error: "Unauthorized" }, 401);
 		}
 
-		// Verify character exists and user owns the realm
+		// Verify character exists and permissions
 		const [charRow] = await db
 			.select({
 				realmId: character.realmId,
+				ownerId: character.userId,
 				imageKey: character.referenceImageKey,
 				croppedKey: character.croppedImageKey,
 			})
@@ -390,8 +411,26 @@ app.delete("/api/upload/character-image/:characterId", async (c) => {
 			.from(realm)
 			.where(eq(realm.id, charRow.realmId))
 			.limit(1);
-		if (!r || r.ownerId !== session.user.id) {
-			return c.json({ error: "Forbidden" }, 403);
+		const isRealmOwner = !!r && r.ownerId === session.user.id;
+		const isCharacterOwner = charRow.ownerId === session.user.id;
+		if (!isRealmOwner && !isCharacterOwner) {
+			const [char] = await db
+				.select({ isPublic: character.isPublic, realmId: character.realmId })
+				.from(character)
+				.where(eq(character.id, characterId))
+				.limit(1);
+			if (!char?.isPublic) return c.json({ error: "Forbidden" }, 403);
+			const [member] = await db
+				.select({ id: realmMember.id })
+				.from(realmMember)
+				.where(
+					and(
+						eq(realmMember.realmId, char.realmId),
+						eq(realmMember.userId, session.user.id),
+					),
+				)
+				.limit(1);
+			if (!member) return c.json({ error: "Forbidden" }, 403);
 		}
 
 		if (!charRow.imageKey) {
@@ -447,12 +486,13 @@ app.get("/api/character/:characterId/image", async (c) => {
 			return c.json({ error: "Unauthorized" }, 401);
 		}
 
-		// Load character and verify ownership
+		// Load character and verify access
 		const [charRow] = await db
 			.select({
 				imageKey: character.referenceImageKey,
 				croppedKey: character.croppedImageKey,
 				realmId: character.realmId,
+				ownerId: character.userId,
 			})
 			.from(character)
 			.where(eq(character.id, characterId))
@@ -466,8 +506,26 @@ app.get("/api/character/:characterId/image", async (c) => {
 			.from(realm)
 			.where(eq(realm.id, charRow.realmId))
 			.limit(1);
-		if (!r || r.ownerId !== session.user.id) {
-			return c.json({ error: "Forbidden" }, 403);
+		const isRealmOwner = !!r && r.ownerId === session.user.id;
+		const isCharacterOwner = charRow.ownerId === session.user.id;
+		if (!isRealmOwner && !isCharacterOwner) {
+			const [char] = await db
+				.select({ isPublic: character.isPublic, realmId: character.realmId })
+				.from(character)
+				.where(eq(character.id, characterId))
+				.limit(1);
+			if (!char?.isPublic) return c.json({ error: "Forbidden" }, 403);
+			const [member] = await db
+				.select({ id: realmMember.id })
+				.from(realmMember)
+				.where(
+					and(
+						eq(realmMember.realmId, char.realmId),
+						eq(realmMember.userId, session.user.id),
+					),
+				)
+				.limit(1);
+			if (!member) return c.json({ error: "Forbidden" }, 403);
 		}
 
 		// Determine actual existing keys with extension flexibility

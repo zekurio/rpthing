@@ -2,11 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Hash, Plus, Star } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { CreateTraitDialog } from "@/components/create-trait-dialog";
 import { DeleteTraitButton } from "@/components/delete-trait-button";
 import { EditTraitDialog } from "@/components/edit-trait-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Trait } from "@/types";
 import { queryClient, trpc } from "@/utils/trpc";
@@ -60,6 +61,18 @@ export function TraitsManager({ realmId }: TraitsManagerProps) {
 	});
 
 	const [createOpen, setCreateOpen] = useState(false);
+	const [search, setSearch] = useState("");
+
+	const filteredTraits = useMemo(() => {
+		if (!traits) return [];
+		const query = search.trim().toLowerCase();
+		if (!query) return traits;
+		return traits.filter(
+			(t) =>
+				t.name.toLowerCase().includes(query) ||
+				(t.description ? t.description.toLowerCase().includes(query) : false),
+		);
+	}, [traits, search]);
 
 	const invalidateList = useCallback(() => {
 		queryClient.invalidateQueries({
@@ -73,7 +86,8 @@ export function TraitsManager({ realmId }: TraitsManagerProps) {
 				<div>
 					<h3 className="font-bold text-xl tracking-tight">Traits</h3>
 					<p className="mt-1 text-muted-foreground text-sm">
-						{traits?.length || 0} trait{traits?.length === 1 ? "" : "s"} defined
+						{filteredTraits?.length || 0} trait
+						{filteredTraits?.length === 1 ? "" : "s"} found
 					</p>
 				</div>
 				<Button
@@ -81,10 +95,16 @@ export function TraitsManager({ realmId }: TraitsManagerProps) {
 					onClick={() => setCreateOpen(true)}
 					className="shrink-0"
 				>
-					<Plus className="mr-2 h-4 w-4" />
-					Add Trait
+					<Plus className="h-4 w-4" />
 				</Button>
 			</div>
+			<Input
+				value={search}
+				onChange={(e) => setSearch(e.target.value)}
+				placeholder="Search traits..."
+				aria-label="Search traits"
+				className="w-full"
+			/>
 
 			{isLoading ? (
 				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -99,9 +119,9 @@ export function TraitsManager({ realmId }: TraitsManagerProps) {
 						<Skeleton key={key} className="h-20 w-full rounded-lg" />
 					))}
 				</div>
-			) : traits && traits.length > 0 ? (
+			) : filteredTraits && filteredTraits.length > 0 ? (
 				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					{traits.map((trait) => (
+					{filteredTraits.map((trait) => (
 						<TraitCard
 							key={trait.id}
 							trait={trait}
@@ -115,10 +135,13 @@ export function TraitsManager({ realmId }: TraitsManagerProps) {
 					<div className="mb-4 rounded-full bg-muted p-3">
 						<Star className="h-6 w-6 text-muted-foreground" />
 					</div>
-					<h4 className="mb-1 font-semibold text-sm">No traits yet</h4>
+					<h4 className="mb-1 font-semibold text-sm">
+						{search ? "No matching traits" : "No traits yet"}
+					</h4>
 					<p className="mb-4 max-w-sm text-muted-foreground text-xs">
-						Create traits to define characteristics that characters can be rated
-						on.
+						{search
+							? "Try a different search term."
+							: "Create traits to define characteristics that characters can be rated on."}
 					</p>
 				</div>
 			)}

@@ -2,7 +2,7 @@
 
 import { Edit, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	ContextMenu,
@@ -42,6 +42,9 @@ export function RealmItem({
 	const router = useRouter();
 	const [isImageLoaded, setIsImageLoaded] = useState(false);
 	const [currentSrc, setCurrentSrc] = useState<string | undefined>(undefined);
+	const longPressTimerRef = useRef<number | null>(null);
+	const longPressTriggeredRef = useRef(false);
+	const buttonRef = useRef<HTMLButtonElement | null>(null);
 	const src = realm.iconKey || undefined;
 
 	// Reset loading state when image source changes
@@ -72,6 +75,45 @@ export function RealmItem({
 		setIsImageLoaded(true);
 	};
 
+	const handleTouchStart: React.TouchEventHandler<HTMLButtonElement> = () => {
+		if (!isOwner) return;
+		longPressTimerRef.current = window.setTimeout(() => {
+			longPressTriggeredRef.current = true;
+			if (buttonRef.current) {
+				const event = new MouseEvent("contextmenu", {
+					bubbles: true,
+					cancelable: true,
+					view: window,
+					clientX: 0,
+					clientY: 0,
+				});
+				buttonRef.current.dispatchEvent(event);
+			}
+		}, 450);
+	};
+
+	const handleTouchEnd: React.TouchEventHandler<HTMLButtonElement> = () => {
+		if (longPressTimerRef.current) {
+			clearTimeout(longPressTimerRef.current);
+			longPressTimerRef.current = null;
+		}
+	};
+
+	useEffect(
+		() => () => {
+			if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+		},
+		[],
+	);
+
+	const handleButtonClick = () => {
+		if (longPressTriggeredRef.current) {
+			longPressTriggeredRef.current = false;
+			return;
+		}
+		handleRealmClick(realm.id);
+	};
+
 	const realmButton = (
 		<div className="group relative">
 			<Tooltip>
@@ -79,7 +121,10 @@ export function RealmItem({
 					<button
 						className={`group/realm relative cursor-pointer ${isSelected ? "rounded-full ring-2 ring-primary" : ""}`}
 						type="button"
-						onClick={() => handleRealmClick(realm.id)}
+						onClick={handleButtonClick}
+						ref={buttonRef}
+						onTouchStart={handleTouchStart}
+						onTouchEnd={handleTouchEnd}
 					>
 						<Avatar className="h-10 w-10">
 							<AvatarImage

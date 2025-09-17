@@ -27,9 +27,9 @@ export default function RealmPage() {
 		return (
 			<div className="flex h-full min-h-0 w-full flex-col">
 				<SiteHeader />
-				<div className="flex h-full min-h-0">
+				<div className="flex h-full min-h-0 overflow-hidden">
 					<RealmSidebar />
-					<main className="flex-1 p-4">
+					<main className="flex-1 overflow-y-auto p-4">
 						<div className="space-y-4">
 							<Skeleton className="h-8 w-48" />
 							<Skeleton className="h-4 w-96" />
@@ -49,9 +49,9 @@ export default function RealmPage() {
 	return (
 		<div className="flex h-full min-h-0 w-full flex-col">
 			<SiteHeader />
-			<div className="flex h-full min-h-0">
+			<div className="flex h-full min-h-0 overflow-hidden">
 				<RealmSidebar />
-				<main className="flex-1 p-4">
+				<main className="flex-1 overflow-y-auto p-4">
 					<div className="space-y-6">
 						<div>
 							<h1 className="font-bold text-2xl">{realm.name}</h1>
@@ -64,14 +64,10 @@ export default function RealmPage() {
 								<TabsTrigger value="traits">Traits</TabsTrigger>
 							</TabsList>
 							<TabsContent value="characters" className="mt-6">
-								<div className="rounded-lg border p-6">
-									<CharacterManager realmId={realm.id} />
-								</div>
+								<CharacterManager realmId={realm.id} />
 							</TabsContent>
 							<TabsContent value="traits" className="mt-6">
-								<div className="rounded-lg border p-6">
-									<TraitsManager realmId={realm.id} />
-								</div>
+								<TraitsManager realmId={realm.id} />
 							</TabsContent>
 						</Tabs>
 					</div>

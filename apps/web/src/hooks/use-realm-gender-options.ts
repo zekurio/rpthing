@@ -9,13 +9,6 @@ const FALLBACK_GENDER_OPTIONS = [
 	"Non-binary",
 	"Genderfluid",
 	"Agender",
-	"Demiboy",
-	"Demigirl",
-	"Genderqueer",
-	"Bigender",
-	"Two-spirit",
-	"Questioning",
-	"Prefer not to say",
 	"Other",
 ] as const;
 

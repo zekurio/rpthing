@@ -1,28 +1,36 @@
 "use client";
 
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-	Download,
-	Pencil,
-	RotateCcw,
-	Trash2,
-	X,
-	ZoomIn,
-	ZoomOut,
-} from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+
+// Custom throttle hook for smooth animations
+function _useThrottle<T>(value: T, delay: number): T {
+	const [throttledValue, setThrottledValue] = useState<T>(value);
+	const lastExecuted = useRef<number>(Date.now());
+
+	useEffect(() => {
+		if (Date.now() >= lastExecuted.current + delay) {
+			lastExecuted.current = Date.now();
+			setThrottledValue(value);
+		} else {
+			const timer = setTimeout(() => {
+				lastExecuted.current = Date.now();
+				setThrottledValue(value);
+			}, delay);
+
+			return () => clearTimeout(timer);
+		}
+	}, [value, delay]);
+
+	return throttledValue;
+}
+
 import { toast } from "sonner";
 import { EditCharacterDialog } from "@/components/edit-character-dialog";
+import { ImageViewer } from "@/components/image-viewer";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogClose,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
 import { gradeForValue } from "@/lib/traits";
 import type { CharacterListItem } from "@/types";
 import { queryClient, trpc } from "@/utils/trpc";
@@ -32,17 +40,12 @@ interface CharacterCardProps {
 	onChanged: () => void;
 }
 
-export function CharacterCard({ character, onChanged }: CharacterCardProps) {
+export const CharacterCard = memo(function CharacterCard({
+	character,
+	onChanged,
+}: CharacterCardProps) {
 	const [open, setOpen] = useState(false);
 	const [viewerOpen, setViewerOpen] = useState(false);
-	const [scale, setScale] = useState(1);
-	const [offset, setOffset] = useState({ x: 0, y: 0 });
-	const [isPanning, setIsPanning] = useState(false);
-	const [lastPointer, setLastPointer] = useState<{
-		x: number;
-		y: number;
-	} | null>(null);
-	const viewerRef = useRef<HTMLDivElement | null>(null);
 	const del = useMutation({
 		...trpc.character.delete.mutationOptions(),
 		onSuccess: () => {
@@ -75,97 +78,10 @@ export function CharacterCard({ character, onChanged }: CharacterCardProps) {
 	}, [realmId, traitSnapshot, character.id]);
 
 	const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "";
-	const fullImageSrc = `${serverUrl}/api/character/${character.id}/image?raw=1`;
-
-	// Reset zoom/pan when the viewer closes
-	useEffect(() => {
-		if (!viewerOpen) {
-			setScale(1);
-			setOffset({ x: 0, y: 0 });
-			setIsPanning(false);
-			setLastPointer(null);
-		}
-	}, [viewerOpen]);
-
-	const clampScale = (value: number) => Math.min(5, Math.max(1, value));
-
-	const zoomTo = (newScale: number, anchor: { x: number; y: number }) => {
-		const clampedScale = clampScale(newScale);
-		const dx = anchor.x - offset.x;
-		const dy = anchor.y - offset.y;
-		const ratio = clampedScale / scale;
-		const newOffset = { x: anchor.x - dx * ratio, y: anchor.y - dy * ratio };
-		setOffset(clampedScale === 1 ? { x: 0, y: 0 } : newOffset);
-		setScale(clampedScale);
-	};
-
-	const handleWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
-		if (!character.referenceImageKey) return;
-		e.preventDefault();
-		const delta = -e.deltaY; // natural: wheel up zooms in
-		const zoomIntensity = 0.0015;
-		const newScale = clampScale(scale * (1 + delta * zoomIntensity));
-		// Keep the point under cursor stable: adjust offset accordingly
-		const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-		const cx = e.clientX - rect.left;
-		const cy = e.clientY - rect.top;
-		const dx = cx - offset.x;
-		const dy = cy - offset.y;
-		const scaleRatio = newScale / scale;
-		setOffset({ x: cx - dx * scaleRatio, y: cy - dy * scaleRatio });
-		setScale(newScale);
-	};
-
-	const handleMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
-		if (!character.referenceImageKey) return;
-		setIsPanning(true);
-		setLastPointer({ x: e.clientX, y: e.clientY });
-	};
-
-	const handleMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
-		if (!isPanning || !lastPointer) return;
-		const dx = e.clientX - lastPointer.x;
-		const dy = e.clientY - lastPointer.y;
-		setOffset((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
-		setLastPointer({ x: e.clientX, y: e.clientY });
-	};
-
-	const endPan = () => {
-		setIsPanning(false);
-		setLastPointer(null);
-	};
-
-	const handleDoubleClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
-		if (!character.referenceImageKey) return;
-		const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-		const cx = e.clientX - rect.left;
-		const cy = e.clientY - rect.top;
-		const targetScale = scale < 2 ? 2 : 1;
-		const scaleRatio = targetScale / scale;
-		const dx = cx - offset.x;
-		const dy = cy - offset.y;
-		setOffset({ x: cx - dx * scaleRatio, y: cy - dy * scaleRatio });
-		setScale(targetScale);
-	};
-
-	const zoomIn = () => {
-		const el = viewerRef.current;
-		if (!el) return;
-		const rect = el.getBoundingClientRect();
-		const center = { x: rect.width / 2, y: rect.height / 2 };
-		zoomTo(scale * 1.2, center);
-	};
-	const zoomOut = () => {
-		const el = viewerRef.current;
-		if (!el) return;
-		const rect = el.getBoundingClientRect();
-		const center = { x: rect.width / 2, y: rect.height / 2 };
-		zoomTo(scale / 1.2, center);
-	};
-	const resetView = () => {
-		setScale(1);
-		setOffset({ x: 0, y: 0 });
-	};
+	const fullImageSrc = useMemo(
+		() => `${serverUrl}/api/character/${character.id}/image?raw=1`,
+		[serverUrl, character.id],
+	);
 
 	return (
 		<div className="group overflow-hidden rounded-lg border">
@@ -252,103 +168,18 @@ export function CharacterCard({ character, onChanged }: CharacterCardProps) {
 				onChanged={onChanged}
 			/>
 
-			{/* Full image viewer */}
-			<Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
-				<DialogContent
-					showCloseButton={false}
-					className="w-[96vw] max-w-none border-0 bg-transparent p-0 shadow-none sm:w-[95vw] sm:max-w-[95vw] md:w-[90vw] md:max-w-[90vw] lg:w-[85vw] lg:max-w-[85vw] xl:w-[80vw] xl:max-w-[80vw]"
-				>
-					<DialogHeader>
-						<VisuallyHidden>
-							<DialogTitle>{character.name} full image</DialogTitle>
-						</VisuallyHidden>
-					</DialogHeader>
-					<div
-						className="relative h-[90vh] w-full overflow-hidden"
-						ref={viewerRef}
-						onWheel={handleWheel}
-						onMouseDown={handleMouseDown}
-						onMouseMove={handleMouseMove}
-						onMouseUp={endPan}
-						onMouseLeave={endPan}
-						onDoubleClick={handleDoubleClick}
-						role="img"
-						aria-label="Zoomable image viewer"
-					>
-						{character.referenceImageKey ? (
-							<div
-								className={"relative h-full w-full"}
-								style={{
-									transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-									transformOrigin: "0 0",
-									cursor: isPanning
-										? "grabbing"
-										: scale > 1
-											? "grab"
-											: "default",
-								}}
-							>
-								<Image
-									src={fullImageSrc}
-									alt={character.name}
-									fill
-									sizes="100vw"
-									className="select-none object-contain"
-									unoptimized
-									draggable={false}
-								/>
-							</div>
-						) : null}
-
-						{character.referenceImageKey ? (
-							<div className="absolute top-2 right-2 flex items-center gap-1 rounded-md bg-background/80 p-1 shadow">
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={zoomOut}
-									aria-label="Zoom out"
-								>
-									<ZoomOut className="h-4 w-4" />
-								</Button>
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={resetView}
-									aria-label="Reset view"
-								>
-									<RotateCcw className="h-4 w-4" />
-								</Button>
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={zoomIn}
-									aria-label="Zoom in"
-								>
-									<ZoomIn className="h-4 w-4" />
-								</Button>
-								<a
-									href={fullImageSrc}
-									download
-									target="_blank"
-									rel="noopener noreferrer"
-									aria-label="Download image"
-								>
-									<Button asChild variant="ghost" size="icon">
-										<span>
-											<Download className="h-4 w-4" />
-										</span>
-									</Button>
-								</a>
-								<DialogClose asChild>
-									<Button variant="ghost" size="icon" aria-label="Close viewer">
-										<X className="h-4 w-4" />
-									</Button>
-								</DialogClose>
-							</div>
-						) : null}
-					</div>
-				</DialogContent>
-			</Dialog>
+			{/* New high-performance image viewer */}
+			{character.referenceImageKey ? (
+				<ImageViewer
+					open={viewerOpen}
+					onOpenChange={setViewerOpen}
+					src={fullImageSrc}
+					alt={`${character.name} full image`}
+					downloadHref={fullImageSrc}
+					maxScale={5}
+					minScale={1}
+				/>
+			) : null}
 		</div>
 	);
-}
+});

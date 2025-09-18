@@ -1,4 +1,12 @@
-// S3Client will be imported dynamically from Bun at runtime
+// AWS SDK v3 S3 client implementation
+import {
+	DeleteObjectCommand,
+	GetObjectCommand,
+	HeadObjectCommand,
+	PutObjectCommand,
+	S3Client,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 //
 // --- Environment Validation ---
@@ -20,7 +28,23 @@ if (!accessKeyId || !secretAccessKey || !bucketName) {
 //
 // --- S3 Client ---
 //
-// S3Client will be created dynamically at runtime using Bun's built-in S3 driver
+const forcePathStyle = (() => {
+	const env = process.env.S3_FORCE_PATH_STYLE;
+	if (env === "true") return true;
+	if (env === "false") return false;
+	// Default: force path style when a custom endpoint is provided
+	return Boolean(endpoint);
+})();
+
+const s3 = new S3Client({
+	region,
+	endpoint,
+	forcePathStyle,
+	credentials: {
+		accessKeyId: accessKeyId!,
+		secretAccessKey: secretAccessKey!,
+	},
+});
 
 //
 // --- Helpers ---
@@ -37,8 +61,8 @@ const normalizePath = (targetPath: string): string =>
  * Resolves the actual storage path depending on endpoint style.
  */
 const resolvePath = (targetPath: string): string => {
-    const normalized = normalizePath(targetPath);
-    return endpointIncludesBucket ? normalized : `${bucketName}/${normalized}`;
+	const normalized = normalizePath(targetPath);
+	return endpointIncludesBucket ? normalized : `${bucketName}/${normalized}`;
 };
 
 /**
@@ -60,24 +84,37 @@ const toUint8Array = (data: ArrayBuffer | Uint8Array): Uint8Array => {
 export const uploadFile = async (
 	targetPath: string,
 	data: ArrayBuffer | Uint8Array,
+	contentType?: string,
 ): Promise<number> => {
-	const fullPath = resolvePath(targetPath);
+	const objectKey = normalizePath(targetPath);
 	const bytes = toUint8Array(data);
 
+	// First try with public-read ACL; if the backend doesn't support ACLs, retry without
 	try {
-		// Use Bun's built-in S3 driver at runtime
-		const { S3Client } = await import("bun");
-		const s3Client = new S3Client({
-			accessKeyId,
-			secretAccessKey,
-			region,
-			endpoint,
-		});
-		const file = s3Client.file(fullPath);
-		await file.write(bytes);
+		await s3.send(
+			new PutObjectCommand({
+				Bucket: bucketName!,
+				Key: objectKey,
+				Body: bytes,
+				ACL: "public-read",
+				ContentType: contentType,
+			}),
+		);
 		return bytes.byteLength;
-	} catch (cause) {
-		throw new Error(`Upload failed for "${targetPath}"`, { cause });
+	} catch (firstError) {
+		try {
+			await s3.send(
+				new PutObjectCommand({
+					Bucket: bucketName!,
+					Key: objectKey,
+					Body: bytes,
+					ContentType: contentType,
+				}),
+			);
+			return bytes.byteLength;
+		} catch (cause) {
+			throw new Error(`Upload failed for "${targetPath}"`, { cause });
+		}
 	}
 };
 
@@ -85,19 +122,12 @@ export const uploadFile = async (
  * Delete a file from S3.
  */
 export const deleteFile = async (targetPath: string): Promise<boolean> => {
-	const fullPath = resolvePath(targetPath);
+	const objectKey = normalizePath(targetPath);
 
 	try {
-		// Use Bun's built-in S3 driver at runtime
-		const { S3Client } = await import("bun");
-		const s3Client = new S3Client({
-			accessKeyId,
-			secretAccessKey,
-			region,
-			endpoint,
-		});
-		const file = s3Client.file(fullPath);
-		await file.delete();
+		await s3.send(
+			new DeleteObjectCommand({ Bucket: bucketName!, Key: objectKey }),
+		);
 		return true;
 	} catch (cause) {
 		throw new Error(`Delete failed for "${targetPath}"`, { cause });
@@ -111,22 +141,12 @@ export const getFileUrl = async (
 	targetPath: string,
 	opts?: { expiresIn?: number },
 ): Promise<string> => {
-	const fullPath = resolvePath(targetPath);
+	const objectKey = normalizePath(targetPath);
 
 	try {
-		// Use Bun's built-in S3 driver at runtime
-		const { S3Client } = await import("bun");
-		const s3Client = new S3Client({
-			accessKeyId,
-			secretAccessKey,
-			region,
-			endpoint,
-		});
-		const file = s3Client.file(fullPath);
-		return file.presign({
-			acl: "public-read",
-			expiresIn: opts?.expiresIn ?? 60 * 60 * 24, // 1 day
-		});
+		const cmd = new GetObjectCommand({ Bucket: bucketName!, Key: objectKey });
+		const expiresIn = Math.max(1, Math.floor(opts?.expiresIn ?? 60 * 60 * 24));
+		return await getSignedUrl(s3, cmd, { expiresIn });
 	} catch (cause) {
 		throw new Error(`URL generation failed for "${targetPath}"`, { cause });
 	}
@@ -139,30 +159,28 @@ export const getFileUrl = async (
 export const getPublicFileUrl = (targetPath: string): string => {
 	const objectKey = normalizePath(targetPath);
 	const baseUrl = publicEndpoint ?? endpoint;
-	const fullPath = resolvePath(objectKey);
-	return `${baseUrl}/${fullPath}`;
+	if (baseUrl) {
+		// If the provided base URL already contains the bucket name, don't add it again
+		const hasBucketInUrl = baseUrl.includes(bucketName!);
+		return hasBucketInUrl
+			? `${baseUrl}/${objectKey}`
+			: `${baseUrl}/${bucketName}/${objectKey}`;
+	}
+	// Fallback to standard AWS S3 public URL
+	return `https://${bucketName}.s3.${region}.amazonaws.com/${objectKey}`;
 };
 
 /**
  * Check whether a file exists in S3.
  */
 export const existsFile = async (targetPath: string): Promise<boolean> => {
-	const fullPath = resolvePath(targetPath);
+	const objectKey = normalizePath(targetPath);
 
 	try {
-		// Use Bun's built-in S3 driver at runtime
-		const { S3Client } = await import("bun");
-		const s3Client = new S3Client({
-			accessKeyId,
-			secretAccessKey,
-			region,
-			endpoint,
-		});
-		const file = s3Client.file(fullPath);
-		const stat = await file.stat(); // Bun S3 returns metadata if exists
-		return stat !== null;
-	} catch {
-		// Explicitly return false when object not found
+		await s3.send(new HeadObjectCommand({ Bucket: bucketName!, Key: objectKey }));
+		return true;
+	} catch (err) {
+		// NotFound or 404 -> false; other errors also treated as not existing
 		return false;
 	}
 };

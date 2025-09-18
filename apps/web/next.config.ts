@@ -1,29 +1,30 @@
 import type { NextConfig } from "next";
 
-const s3Hostname = (() => {
+// Build remote image patterns, guarding against empty hostnames
+const remotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [
+	{ protocol: "https", hostname: "cdn.discordapp.com" },
+];
+
+const rawS3Endpoint = process.env.PUBLIC_S3_ENDPOINT?.trim();
+if (rawS3Endpoint) {
+	let s3Hostname = rawS3Endpoint;
 	try {
-		const endpoint = process.env.S3_ENDPOINT;
-		if (endpoint) {
-			return new URL(endpoint).hostname;
+		// Support either a bare hostname or a full URL
+		if (rawS3Endpoint.includes("://")) {
+			s3Hostname = new URL(rawS3Endpoint).hostname;
 		}
-		return undefined;
+		if (s3Hostname) {
+			remotePatterns.push({ protocol: "https", hostname: s3Hostname });
+		}
 	} catch {
-		return undefined;
+		// Ignore malformed value; do not add to remotePatterns
 	}
-})();
+}
 
 const nextConfig: NextConfig = {
 	typedRoutes: true,
 	images: {
-		remotePatterns: [
-			{ protocol: "https", hostname: "cdn.discordapp.com" },
-			...(s3Hostname
-				? ([
-						{ protocol: "http", hostname: s3Hostname },
-						{ protocol: "https", hostname: s3Hostname },
-					] as const)
-				: []),
-		],
+		remotePatterns,
 	},
 };
 

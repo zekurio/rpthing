@@ -8,6 +8,7 @@ const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY;
 const bucketName = process.env.S3_BUCKET_NAME;
 const endpoint = process.env.S3_ENDPOINT;
 const region = process.env.S3_REGION || "us-east-1";
+const publicEndpoint = process.env.PUBLIC_S3_ENDPOINT;
 
 if (!accessKeyId || !secretAccessKey || !bucketName) {
 	throw new Error(
@@ -36,8 +37,8 @@ const normalizePath = (targetPath: string): string =>
  * Resolves the actual storage path depending on endpoint style.
  */
 const resolvePath = (targetPath: string): string => {
-	const normalized = normalizePath(targetPath);
-	return endpointIncludesBucket ? normalized : `${bucketName}/${normalized}`;
+    const normalized = normalizePath(targetPath);
+    return endpointIncludesBucket ? normalized : `${bucketName}/${normalized}`;
 };
 
 /**
@@ -136,10 +137,9 @@ export const getFileUrl = async (
  * This is suitable for frequently accessed images that don't need temporary access.
  */
 export const getPublicFileUrl = (targetPath: string): string => {
-	const fullPath = resolvePath(targetPath);
-	
-	// Construct the public URL directly using the endpoint
-	const baseUrl = endpoint?.endsWith('/') ? endpoint.slice(0, -1) : endpoint;
+	const objectKey = normalizePath(targetPath);
+	const baseUrl = publicEndpoint ?? endpoint;
+	const fullPath = resolvePath(objectKey);
 	return `${baseUrl}/${fullPath}`;
 };
 

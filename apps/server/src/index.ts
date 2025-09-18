@@ -106,8 +106,8 @@ app.post("/api/upload/realm-icon/:realmId", async (c) => {
 		// Update database
 		await db.update(realm).set({ iconKey }).where(eq(realm.id, realmId));
 
-		// Return public URL
-		const url = getPublicFileUrl(iconKey);
+		// Return signed URL for immediate access
+		const url = await getFileUrl(iconKey);
 		return c.json({ success: true, iconKey, url });
 	} catch (error) {
 		console.error("File upload failed:", error);
@@ -366,7 +366,7 @@ app.post("/api/upload/character-image/:characterId", async (c) => {
 			.set({ referenceImageKey: finalOriginalKey, croppedImageKey: croppedKey })
 			.where(eq(character.id, characterId));
 
-		const url = getPublicFileUrl(croppedKey ?? finalOriginalKey);
+		const url = await getFileUrl(croppedKey ?? finalOriginalKey);
 		return c.json({
 			success: true,
 			imageKey: finalOriginalKey,

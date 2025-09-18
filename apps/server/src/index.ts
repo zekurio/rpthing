@@ -101,24 +101,7 @@ app.post("/api/upload/realm-icon/:realmId", async (c) => {
 
 		// Upload file in its original format
 		const iconKey = `realm-icons/${realmId}.${ext}`;
-		const iconContentType = mime || (() => {
-			switch (ext) {
-				case "png":
-					return "image/png";
-				case "jpg":
-				case "jpeg":
-					return "image/jpeg";
-				case "webp":
-					return "image/webp";
-				case "avif":
-					return "image/avif";
-				case "gif":
-					return "image/gif";
-				default:
-					return "application/octet-stream";
-			}
-		})();
-		await uploadFile(iconKey, originalBuffer, iconContentType);
+		await uploadFile(iconKey, originalBuffer);
 
 		// Update database
 		await db.update(realm).set({ iconKey }).where(eq(realm.id, realmId));
@@ -274,24 +257,7 @@ app.post("/api/upload/character-image/:characterId", async (c) => {
 
 			const originalKey = `character-images/${characterId}.${originalExt}`;
 			// Upload original as-is
-			const originalContentType = mime || (() => {
-				switch (originalExt) {
-					case "png":
-						return "image/png";
-					case "jpg":
-					case "jpeg":
-						return "image/jpeg";
-					case "webp":
-						return "image/webp";
-					case "avif":
-						return "image/avif";
-					case "gif":
-						return "image/gif";
-					default:
-						return "application/octet-stream";
-				}
-			})();
-			await uploadFile(originalKey, baseBuffer, originalContentType);
+			await uploadFile(originalKey, baseBuffer);
 		} else {
 			// No file provided, ensure original exists and fetch it
 			// Try known common extensions to locate the existing original
@@ -386,24 +352,7 @@ app.post("/api/upload/character-image/:characterId", async (c) => {
 								originalExt = "png";
 						}
 						croppedKey = `character-images/${characterId}-cropped.${originalExt}`;
-						const croppedContentType = (() => {
-							switch ((originalExt || "").toLowerCase()) {
-								case "png":
-									return "image/png";
-								case "jpg":
-								case "jpeg":
-									return "image/jpeg";
-								case "webp":
-									return "image/webp";
-								case "avif":
-									return "image/avif";
-								case "gif":
-									return "image/gif";
-								default:
-									return "application/octet-stream";
-							}
-						})();
-						await uploadFile(croppedKey, croppedBuf, croppedContentType);
+						await uploadFile(croppedKey, croppedBuf);
 					}
 				}
 			} catch {}

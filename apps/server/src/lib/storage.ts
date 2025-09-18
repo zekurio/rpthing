@@ -1,4 +1,12 @@
-// Bun S3 client implementation
+// AWS SDK v3 S3 client implementation
+import {
+	DeleteObjectCommand,
+	GetObjectCommand,
+	HeadObjectCommand,
+	PutObjectCommand,
+	S3Client,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 //
 // --- Environment Validation ---
@@ -20,9 +28,18 @@ if (!accessKeyId || !secretAccessKey || !bucketName) {
 //
 // --- S3 Client ---
 //
-const s3 = new Bun.S3Client({
+const forcePathStyle = (() => {
+	const env = process.env.S3_FORCE_PATH_STYLE;
+	if (env === "true") return true;
+	if (env === "false") return false;
+	// Default: force path style when a custom endpoint is provided
+	return Boolean(endpoint);
+})();
+
+const s3 = new S3Client({
 	region,
 	endpoint,
+	forcePathStyle,
 	credentials: {
 		accessKeyId: accessKeyId!,
 		secretAccessKey: secretAccessKey!,
@@ -67,28 +84,30 @@ const toUint8Array = (data: ArrayBuffer | Uint8Array): Uint8Array => {
 export const uploadFile = async (
 	targetPath: string,
 	data: ArrayBuffer | Uint8Array,
-	contentType?: string,
 ): Promise<number> => {
 	const objectKey = normalizePath(targetPath);
 	const bytes = toUint8Array(data);
 
+	// First try with public-read ACL; if the backend doesn't support ACLs, retry without
 	try {
-		await s3.putObject({
-			Bucket: bucketName!,
-			Key: objectKey,
-			Body: bytes,
-			ACL: "public-read",
-			ContentType: contentType,
-		});
-		return bytes.byteLength;
-	} catch (firstError) {
-		try {
-			await s3.putObject({
+		await s3.send(
+			new PutObjectCommand({
 				Bucket: bucketName!,
 				Key: objectKey,
 				Body: bytes,
-				ContentType: contentType,
-			});
+				ACL: "public-read",
+			}),
+		);
+		return bytes.byteLength;
+	} catch (firstError) {
+		try {
+			await s3.send(
+				new PutObjectCommand({
+					Bucket: bucketName!,
+					Key: objectKey,
+					Body: bytes,
+				}),
+			);
 			return bytes.byteLength;
 		} catch (cause) {
 			throw new Error(`Upload failed for "${targetPath}"`, { cause });
@@ -103,10 +122,9 @@ export const deleteFile = async (targetPath: string): Promise<boolean> => {
 	const objectKey = normalizePath(targetPath);
 
 	try {
-		await s3.deleteObject({
-			Bucket: bucketName!,
-			Key: objectKey,
-		});
+		await s3.send(
+			new DeleteObjectCommand({ Bucket: bucketName!, Key: objectKey }),
+		);
 		return true;
 	} catch (cause) {
 		throw new Error(`Delete failed for "${targetPath}"`, { cause });
@@ -123,12 +141,9 @@ export const getFileUrl = async (
 	const objectKey = normalizePath(targetPath);
 
 	try {
+		const cmd = new GetObjectCommand({ Bucket: bucketName!, Key: objectKey });
 		const expiresIn = Math.max(1, Math.floor(opts?.expiresIn ?? 60 * 60 * 24));
-		return await s3.getSignedUrl({
-			Bucket: bucketName!,
-			Key: objectKey,
-			Expires: expiresIn,
-		});
+		return await getSignedUrl(s3, cmd, { expiresIn });
 	} catch (cause) {
 		throw new Error(`URL generation failed for "${targetPath}"`, { cause });
 	}
@@ -159,10 +174,7 @@ export const existsFile = async (targetPath: string): Promise<boolean> => {
 	const objectKey = normalizePath(targetPath);
 
 	try {
-		await s3.headObject({
-			Bucket: bucketName!,
-			Key: objectKey,
-		});
+		await s3.send(new HeadObjectCommand({ Bucket: bucketName!, Key: objectKey }));
 		return true;
 	} catch (err) {
 		// NotFound or 404 -> false; other errors also treated as not existing

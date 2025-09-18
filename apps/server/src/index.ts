@@ -5,6 +5,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import sharp from "sharp";
+import { eventBus, type RealtimeEvent } from "./lib/events";
 import { db } from "./db/index";
 import { character } from "./db/schema/character";
 import { realm } from "./db/schema/realm";
@@ -15,6 +16,8 @@ import { deleteFile, existsFile, getFileUrl, uploadFile } from "./lib/storage";
 import { appRouter } from "./routers/index";
 
 const app = new Hono();
+
+// Realtime types and bus moved to lib/events
 
 app.use(logger());
 app.use(
@@ -38,6 +41,55 @@ app.use(
 		},
 	}),
 );
+
+// Server-Sent Events endpoint per realm
+app.get("/api/events/:realmId", async (c) => {
+  const realmId = c.req.param("realmId");
+
+  // Authenticate session (only members should subscribe). We reuse the same auth as uploads.
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  if (!session?.user) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  // Hono Response for SSE
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      const encoder = new TextEncoder();
+      const send = (event: RealtimeEvent) => {
+        if (event.realmId !== realmId) return;
+        const data = JSON.stringify(event);
+        controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+      };
+      // Send initial ping to open stream
+      controller.enqueue(encoder.encode(`event: ping\ndata: connected\n\n`));
+      eventBus.on("event", send as (e: unknown) => void);
+      const keepAlive = setInterval(() => {
+        controller.enqueue(encoder.encode(`event: ping\ndata: keepalive\n\n`));
+      }, 25000);
+      // Cleanup
+      (controller as unknown as { _cleanup?: () => void })._cleanup = () => {
+        clearInterval(keepAlive);
+        eventBus.off("event", send as (e: unknown) => void);
+      };
+    },
+    cancel() {
+      const anyThis = this as unknown as { _cleanup?: () => void };
+      anyThis._cleanup?.();
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+      "Access-Control-Allow-Origin": process.env.CORS_ORIGIN || "",
+      "Access-Control-Allow-Credentials": "true",
+    },
+  });
+});
 
 app.post("/api/upload/realm-icon/:realmId", async (c) => {
 	try {
@@ -108,6 +160,8 @@ app.post("/api/upload/realm-icon/:realmId", async (c) => {
 
 		// Return URL
 		const url = await getFileUrl(iconKey);
+		// Notify realm updated (icon changed)
+		eventBus.emit("event", { type: "realm.updated", realmId });
 		return c.json({ success: true, iconKey, url });
 	} catch (error) {
 		console.error("File upload failed:", error);
@@ -158,6 +212,8 @@ app.delete("/api/upload/realm-icon/:realmId", async (c) => {
 		// Remove icon from database
 		await db.update(realm).set({ iconKey: null }).where(eq(realm.id, realmId));
 
+		// Broadcast realm updated (icon removed)
+		eventBus.emit("event", { type: "realm.updated", realmId });
 		return c.json({ success: true });
 	} catch (error) {
 		console.error("Icon deletion failed:", error);
@@ -367,6 +423,12 @@ app.post("/api/upload/character-image/:characterId", async (c) => {
 			.where(eq(character.id, characterId));
 
 		const url = await getFileUrl(croppedKey ?? finalOriginalKey);
+		// Notify character image updated
+		eventBus.emit("event", {
+			type: "character.image.updated",
+			realmId: charRow.realmId,
+			characterId,
+		});
 		return c.json({
 			success: true,
 			imageKey: finalOriginalKey,
@@ -454,6 +516,13 @@ app.delete("/api/upload/character-image/:characterId", async (c) => {
 			.update(character)
 			.set({ referenceImageKey: null, croppedImageKey: null })
 			.where(eq(character.id, characterId));
+
+		// Notify character image removed
+		eventBus.emit("event", {
+			type: "character.image.deleted",
+			realmId: charRow.realmId,
+			characterId,
+		});
 
 		return c.json({ success: true });
 	} catch (error) {

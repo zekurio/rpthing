@@ -5,6 +5,7 @@ import { character } from "../db/schema/character";
 import { realmMember } from "../db/schema/realmMember";
 import { characterTraitRating, trait } from "../db/schema/traits";
 import { protectedProcedure, router } from "../lib/trpc";
+import { publish } from "../lib/events";
 import {
 	ratingCreateOrUpdateInputSchema,
 	ratingGetByPairInputSchema,
@@ -111,6 +112,7 @@ export const ratingRouter = router({
 					.update(characterTraitRating)
 					.set({ value: numericValue })
 					.where(eq(characterTraitRating.id, existing.id));
+				publish({ type: "rating.updated", realmId: charRow.realmId, characterId });
 				return { success: true, id: existing.id };
 			}
 
@@ -118,6 +120,7 @@ export const ratingRouter = router({
 				.insert(characterTraitRating)
 				.values({ characterId, traitId, value: numericValue })
 				.returning();
+			publish({ type: "rating.updated", realmId: charRow.realmId, characterId });
 			return created;
 		}),
 
@@ -329,6 +332,7 @@ export const ratingRouter = router({
 			await db
 				.delete(characterTraitRating)
 				.where(eq(characterTraitRating.id, input));
+			publish({ type: "rating.deleted", realmId: charRow.realmId, characterId: row.characterId });
 			return true;
 		}),
 });

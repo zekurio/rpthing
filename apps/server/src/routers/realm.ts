@@ -8,6 +8,7 @@ import { realm } from "../db/schema/realm";
 import { realmMember } from "../db/schema/realmMember";
 import { deleteFile, getFileUrl } from "../lib/storage";
 import { protectedProcedure, router } from "../lib/trpc";
+import { publish } from "../lib/events";
 import {
 	realmCreateInputSchema,
 	realmIdSchema,
@@ -247,6 +248,7 @@ export const realmRouter = router({
 			// Delete the realm
 			await db.delete(realm).where(eq(realm.id, input));
 
+			publish({ type: "realm.deleted", realmId: input });
 			return true;
 		}),
 
@@ -288,6 +290,7 @@ export const realmRouter = router({
 
 			await db.update(realm).set(updateData).where(eq(realm.id, id));
 
+			publish({ type: "realm.updated", realmId: id });
 			return { success: true };
 		}),
 

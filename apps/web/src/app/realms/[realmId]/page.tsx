@@ -9,6 +9,7 @@ import { TraitsManager } from "@/components/traits-manager";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRealmAccess } from "@/hooks/use-realm-access";
+import { useRealtime } from "@/hooks/use-realtime";
 
 export default function RealmPage() {
 	const params = useParams();
@@ -16,6 +17,9 @@ export default function RealmPage() {
 
 	const { realm, isLoading, hasAccess, shouldShowNotFound } =
 		useRealmAccess(realmId);
+
+	// Subscribe to realm-scoped realtime updates to invalidate caches precisely
+	useRealtime(realm?.id);
 
 	// If access is denied, render the not-found page
 	if (shouldShowNotFound) {

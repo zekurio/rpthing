@@ -20,6 +20,7 @@ import {
 	characterPermissionUpsertInputSchema,
 } from "../schemas/permissions";
 import { ratingRouter } from "./characterTraitRating";
+import { publish } from "../lib/events";
 
 // Helper function to check if user is a realm member (including owner)
 async function isRealmMember(userId: string, realmId: string) {
@@ -174,6 +175,7 @@ export const characterRouter = router({
 				.insert(character)
 				.values({ realmId, userId, ...rest })
 				.returning();
+			publish({ type: "character.created", realmId });
 			return created;
 		}),
 
@@ -322,6 +324,7 @@ export const characterRouter = router({
 			}
 
 			await db.update(character).set(updates).where(eq(character.id, id));
+			publish({ type: "character.updated", realmId: row.realmId, characterId: id });
 			return { success: true };
 		}),
 
@@ -382,6 +385,7 @@ export const characterRouter = router({
 			}
 
 			await db.delete(character).where(eq(character.id, input.id));
+			publish({ type: "character.deleted", realmId: row.realmId, characterId: input.id });
 			return true;
 		}),
 

@@ -6,6 +6,7 @@ import { user as userTable } from "../db/schema/auth";
 import { realmMember } from "../db/schema/realmMember";
 import { trait } from "../db/schema/traits";
 import { protectedProcedure, router } from "../lib/trpc";
+import { publish } from "../lib/events";
 
 // Helper function to check if user is a realm member (including owner)
 async function isRealmMember(userId: string, realmId: string) {
@@ -55,6 +56,8 @@ export const traitRouter = router({
 				.returning();
 			const created = result[0];
 
+			// Emit realtime event for other clients in the realm
+			publish({ type: "trait.created", realmId });
 			return created;
 		}),
 
@@ -158,6 +161,7 @@ export const traitRouter = router({
 
 			await db.update(trait).set(updates).where(eq(trait.id, id));
 
+			publish({ type: "trait.updated", realmId: t.realmId });
 			return { success: true };
 		}),
 
@@ -188,6 +192,7 @@ export const traitRouter = router({
 
 			await db.delete(trait).where(eq(trait.id, input));
 
+			publish({ type: "trait.deleted", realmId: t.realmId });
 			return true;
 		}),
 });

@@ -106,8 +106,8 @@ app.post("/api/upload/realm-icon/:realmId", async (c) => {
 		// Update database
 		await db.update(realm).set({ iconKey }).where(eq(realm.id, realmId));
 
-		// Return URL
-		const url = await getFileUrl(iconKey);
+		// Return public URL
+		const url = getPublicFileUrl(iconKey);
 		return c.json({ success: true, iconKey, url });
 	} catch (error) {
 		console.error("File upload failed:", error);

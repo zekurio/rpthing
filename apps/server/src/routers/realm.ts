@@ -6,7 +6,7 @@ import { user } from "../db/schema/auth";
 import { character } from "../db/schema/character";
 import { realm } from "../db/schema/realm";
 import { realmMember } from "../db/schema/realmMember";
-import { deleteFile, getFileUrl } from "../lib/storage";
+import { deleteFile, getFileUrl, getPublicFileUrl } from "../lib/storage";
 import { protectedProcedure, router } from "../lib/trpc";
 import {
 	realmCreateInputSchema,
@@ -60,21 +60,11 @@ export const realmRouter = router({
 			.innerJoin(realmMember, eq(realm.id, realmMember.realmId))
 			.where(eq(realmMember.userId, userId));
 
-		// Generate S3 URLs for icons
-		const rowsWithUrls = await Promise.all(
-			rows.map(async (row) => {
-				if (row.iconKey) {
-					try {
-						const iconUrl = await getFileUrl(row.iconKey);
-						return { ...row, iconKey: iconUrl };
-					} catch (error) {
-						console.error(`Failed to get URL for icon ${row.iconKey}:`, error);
-						return { ...row, iconKey: null };
-					}
-				}
-				return row;
-			}),
-		);
+		// Generate public URLs for icons
+		const rowsWithUrls = rows.map((row) => {
+			const iconUrl = row.iconKey ? getPublicFileUrl(row.iconKey) : null;
+			return { ...row, iconKey: iconUrl };
+		});
 
 		return rowsWithUrls;
 	}),
@@ -149,18 +139,9 @@ export const realmRouter = router({
 				});
 			}
 
-			// Generate S3 URL for icon if it exists
-			if (result.iconKey) {
-				try {
-					const iconUrl = await getFileUrl(result.iconKey);
-					return { ...result, iconKey: iconUrl };
-				} catch (error) {
-					console.error(`Failed to get URL for icon ${result.iconKey}:`, error);
-					return { ...result, iconKey: null };
-				}
-			}
-
-			return result;
+			// Generate public URL for icon if it exists
+			const iconUrl = result.iconKey ? getPublicFileUrl(result.iconKey) : null;
+			return { ...result, iconKey: iconUrl };
 		}),
 
 	delete: protectedProcedure

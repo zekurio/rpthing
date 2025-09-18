@@ -18,6 +18,14 @@ const endpoint = process.env.S3_ENDPOINT;
 const region = process.env.S3_REGION || "us-east-1";
 const publicEndpoint = process.env.PUBLIC_S3_ENDPOINT;
 
+// Normalize public endpoint to include scheme and no trailing slash
+const normalizedPublicBaseUrl = (() => {
+    const value = publicEndpoint?.trim();
+    if (!value) return undefined;
+    const withScheme = value.includes("://") ? value : `https://${value}`;
+    return withScheme.replace(/\/+$/, "");
+})();
+
 if (!accessKeyId || !secretAccessKey || !bucketName) {
 	throw new Error(
 		"Missing required S3 environment variables: " +
@@ -82,22 +90,25 @@ const toUint8Array = (data: ArrayBuffer | Uint8Array): Uint8Array => {
  * Upload file content to S3.
  */
 export const uploadFile = async (
-	targetPath: string,
-	data: ArrayBuffer | Uint8Array,
+    targetPath: string,
+    data: ArrayBuffer | Uint8Array,
+    options?: { contentType?: string; cacheControl?: string },
 ): Promise<number> => {
 	const objectKey = normalizePath(targetPath);
 	const bytes = toUint8Array(data);
 
 	// First try with public-read ACL; if the backend doesn't support ACLs, retry without
 	try {
-		await s3.send(
-			new PutObjectCommand({
-				Bucket: bucketName!,
-				Key: objectKey,
-				Body: bytes,
-				ACL: "public-read",
-			}),
-		);
+        await s3.send(
+            new PutObjectCommand({
+                Bucket: bucketName!,
+                Key: objectKey,
+                Body: bytes,
+                ACL: "public-read",
+                ContentType: options?.contentType,
+                CacheControl: options?.cacheControl,
+            }),
+        );
 		return bytes.byteLength;
 	} catch (firstError) {
 		try {
@@ -105,7 +116,9 @@ export const uploadFile = async (
 				new PutObjectCommand({
 					Bucket: bucketName!,
 					Key: objectKey,
-					Body: bytes,
+                    Body: bytes,
+                    ContentType: options?.contentType,
+                    CacheControl: options?.cacheControl,
 				}),
 			);
 			return bytes.byteLength;
@@ -155,7 +168,7 @@ export const getFileUrl = async (
  */
 export const getPublicFileUrl = (targetPath: string): string => {
 	const objectKey = normalizePath(targetPath);
-	const baseUrl = publicEndpoint ?? endpoint;
+    const baseUrl = normalizedPublicBaseUrl ?? endpoint;
 	if (baseUrl) {
 		// If the provided base URL already contains the bucket name, don't add it again
 		const hasBucketInUrl = baseUrl.includes(bucketName!);

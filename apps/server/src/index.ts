@@ -73,9 +73,12 @@ app.post("/api/upload/realm-icon/:realmId", async (c) => {
 			return c.json({ error: "Forbidden" }, 403);
 		}
 
-		// Derive extension without converting the image
-		const originalBuffer = await file.arrayBuffer();
-		const mime = file.type || "";
+        // Derive extension without converting the image, validate type (no GIFs)
+        const originalBuffer = await file.arrayBuffer();
+        const mime = file.type || "";
+        if (!mime.startsWith("image/") || mime === "image/gif") {
+            return c.json({ error: "Only non-GIF image uploads are allowed" }, 415);
+        }
 		const nameExt = (() => {
 			const name = (file as unknown as { name?: string }).name || "";
 			const idx = name.lastIndexOf(".");
@@ -97,11 +100,14 @@ app.post("/api/upload/realm-icon/:realmId", async (c) => {
 					return "";
 			}
 		})();
-		const ext = (extFromMime || nameExt || "bin").toLowerCase();
+        const ext = (extFromMime || nameExt || "bin").toLowerCase();
 
-		// Upload file in its original format
-		const iconKey = `realm-icons/${realmId}.${ext}`;
-		await uploadFile(iconKey, originalBuffer);
+        // Upload file in its original format with metadata
+        const iconKey = `realm-icons/${realmId}.${ext}`;
+        await uploadFile(iconKey, originalBuffer, {
+            contentType: mime || undefined,
+            cacheControl: "public, max-age=31536000, immutable",
+        });
 
 		// Update database
 		await db.update(realm).set({ iconKey }).where(eq(realm.id, realmId));
@@ -174,7 +180,7 @@ app.post("/api/upload/character-image/:characterId", async (c) => {
 		const file = (formData.get("file") as File) ?? null;
 		const cropJson = formData.get("crop") as string | null;
 
-		if (!file && !cropJson) {
+        if (!file && !cropJson) {
 			return c.json({ error: "No file or crop provided" }, 400);
 		}
 
@@ -228,10 +234,13 @@ app.post("/api/upload/character-image/:characterId", async (c) => {
 
 		// Prepare base (original) image buffer
 		let baseBuffer: Uint8Array | null = null;
-		if (file) {
+        if (file) {
 			const buffer = await file.arrayBuffer();
 			baseBuffer = new Uint8Array(buffer);
-			const mime = file.type || "";
+            const mime = file.type || "";
+            if (!mime.startsWith("image/") || mime === "image/gif") {
+                return c.json({ error: "Only non-GIF image uploads are allowed" }, 415);
+            }
 			const name = (file as unknown as { name?: string }).name || "";
 			const nameExt = (() => {
 				const idx = name.lastIndexOf(".");
@@ -255,9 +264,12 @@ app.post("/api/upload/character-image/:characterId", async (c) => {
 			})();
 			originalExt = (extFromMime || nameExt || "bin").toLowerCase();
 
-			const originalKey = `character-images/${characterId}.${originalExt}`;
-			// Upload original as-is
-			await uploadFile(originalKey, baseBuffer);
+            const originalKey = `character-images/${characterId}.${originalExt}`;
+            // Upload original as-is
+            await uploadFile(originalKey, baseBuffer, {
+                contentType: mime || undefined,
+                cacheControl: "public, max-age=31536000, immutable",
+            });
 		} else {
 			// No file provided, ensure original exists and fetch it
 			// Try known common extensions to locate the existing original
@@ -328,7 +340,7 @@ app.post("/api/upload/character-image/:characterId", async (c) => {
 						});
 						// Write in the same format as original (no conversion)
 						let croppedBuf: Uint8Array;
-						switch ((originalExt || "").toLowerCase()) {
+                        switch ((originalExt || "").toLowerCase()) {
 							case "jpg":
 							case "jpeg":
 								croppedBuf = await pipeline.jpeg().toBuffer();
@@ -351,8 +363,26 @@ app.post("/api/upload/character-image/:characterId", async (c) => {
 								croppedBuf = await pipeline.png().toBuffer();
 								originalExt = "png";
 						}
-						croppedKey = `character-images/${characterId}-cropped.${originalExt}`;
-						await uploadFile(croppedKey, croppedBuf);
+                        croppedKey = `character-images/${characterId}-cropped.${originalExt}`;
+                        const croppedMime = (() => {
+                            switch ((originalExt || "").toLowerCase()) {
+                                case "jpg":
+                                case "jpeg":
+                                    return "image/jpeg";
+                                case "png":
+                                    return "image/png";
+                                case "webp":
+                                    return "image/webp";
+                                case "avif":
+                                    return "image/avif";
+                                default:
+                                    return "image/png";
+                            }
+                        })();
+                        await uploadFile(croppedKey, croppedBuf, {
+                            contentType: croppedMime,
+                            cacheControl: "public, max-age=31536000, immutable",
+                        });
 					}
 				}
 			} catch {}

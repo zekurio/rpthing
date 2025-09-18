@@ -28,6 +28,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { queryClient, trpc } from "@/utils/trpc";
+import { uploadWithProgress } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
 const createRealmSchema = z.object({
 	name: z
@@ -70,6 +72,8 @@ export function CreateOrJoinRealmDialog({
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 	const [activeTab, setActiveTab] = useState<"create" | "join">("create");
+	const [uploadProgress, setUploadProgress] = useState<number>(0);
+	const [isUploading, setIsUploading] = useState<boolean>(false);
 
 	const createForm = useForm<CreateRealmFormData>({
 		resolver: zodResolver(createRealmSchema),
@@ -120,23 +124,26 @@ export function CreateOrJoinRealmDialog({
 			const formData = new FormData();
 			formData.append("file", file);
 
+			setIsUploading(true);
+			setUploadProgress(0);
 			try {
-				const response = await fetch(
-					`${serverUrl}/api/upload/realm-icon/${realmId}`,
-					{
-						method: "POST",
-						body: formData,
-						credentials: "include",
-					},
-				);
-
+				const response = await uploadWithProgress({
+					url: `${serverUrl}/api/upload/realm-icon/${realmId}`,
+					formData,
+					onProgress: (p) => setUploadProgress(p < 0 ? 0 : p),
+					withCredentials: true,
+				});
 				if (!response.ok) {
-					const error = await response.json();
-					throw new Error(error.error || "Failed to upload icon");
+					let errMsg = "Failed to upload icon";
+					try {
+						const json = await response.json();
+						errMsg = json?.error || errMsg;
+					} catch {}
+					throw new Error(errMsg);
 				}
-			} catch (error) {
-				console.error("Upload error:", error);
-				throw error;
+			} finally {
+				setIsUploading(false);
+				setUploadProgress(0);
 			}
 		},
 		[serverUrl],
@@ -148,6 +155,8 @@ export function CreateOrJoinRealmDialog({
 		joinForm.reset();
 		setSelectedFile(null);
 		setImagePreview(null);
+		setIsUploading(false);
+		setUploadProgress(0);
 		setActiveTab("create");
 	}, [onOpenChange, createForm, joinForm]);
 
@@ -284,7 +293,7 @@ export function CreateOrJoinRealmDialog({
 								/>
 								<div className="grid gap-2">
 									<FormLabel>Icon (optional)</FormLabel>
-									<ImageUpload
+										<ImageUpload
 										previewSrc={imagePreview || undefined}
 										onSelect={(file, preview) => {
 											setSelectedFile(file);
@@ -292,6 +301,14 @@ export function CreateOrJoinRealmDialog({
 										}}
 										onRemove={handleRemoveIcon}
 									/>
+										{isUploading ? (
+											<div className="flex items-center gap-2">
+												<Progress value={uploadProgress} className="h-2 w-full" />
+												<span className="text-muted-foreground text-xs">
+													{Math.max(0, Math.round(uploadProgress))}%
+												</span>
+											</div>
+										) : null}
 								</div>
 								<div className="flex items-center justify-end gap-2 pt-2">
 									<Button

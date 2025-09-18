@@ -30,6 +30,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useRealmGenderOptions } from "@/hooks/use-realm-gender-options";
 import { queryClient, trpc } from "@/utils/trpc";
+import { uploadWithProgress } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
 const editCharacterSchema = z.object({
 	name: z.string().min(1, "Name is required").max(200),
@@ -64,6 +66,8 @@ export function EditCharacterDialog({
 		width?: number;
 		height?: number;
 	} | null>(null);
+	const [isUploading, setIsUploading] = useState(false);
+	const [uploadProgress, setUploadProgress] = useState(0);
 
 	const isPublicId = useId();
 
@@ -133,14 +137,17 @@ export function EditCharacterDialog({
 				} else {
 					fd.append("file", selectedFile);
 				}
-				await fetch(
-					`${process.env.NEXT_PUBLIC_SERVER_URL}/api/upload/character-image/${characterId}`,
-					{
-						method: "POST",
-						body: fd,
-						credentials: "include",
-					},
-				);
+				setIsUploading(true);
+				setUploadProgress(0);
+				const response = await uploadWithProgress({
+					url: `${process.env.NEXT_PUBLIC_SERVER_URL}/api/upload/character-image/${characterId}`,
+					formData: fd,
+					onProgress: (p) => setUploadProgress(p < 0 ? 0 : p),
+					withCredentials: true,
+				});
+				if (!response.ok) {
+					throw new Error("Failed to upload character image");
+				}
 				queryClient.invalidateQueries({
 					queryKey: trpc.character.getById.queryKey({ id: characterId }),
 				});
@@ -164,6 +171,9 @@ export function EditCharacterDialog({
 			}
 		} catch (err) {
 			console.error("Character image update failed", err);
+		} finally {
+			setIsUploading(false);
+			setUploadProgress(0);
 		}
 	};
 
@@ -267,6 +277,14 @@ export function EditCharacterDialog({
 									setRemoveRequested(true);
 								}}
 							/>
+									{isUploading ? (
+										<div className="flex items-center gap-2">
+											<Progress value={uploadProgress} className="h-2 w-full" />
+											<span className="text-muted-foreground text-xs">
+												{Math.max(0, Math.round(uploadProgress))}%
+											</span>
+										</div>
+									) : null}
 						</div>
 						<div className="grid gap-2">
 							<FormLabel>Permissions</FormLabel>

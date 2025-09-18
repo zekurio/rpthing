@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
 	Dialog,
 	DialogContent,
@@ -28,6 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { queryClient, trpc } from "@/utils/trpc";
+import { uploadWithProgress } from "@/lib/utils";
 
 const editRealmSchema = z.object({
 	name: z.string().min(1, "Name is required"),
@@ -47,6 +49,8 @@ export function EditRealmDialog({ open, onOpenChange }: EditRealmDialogProps) {
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 	const [removeIcon, setRemoveIcon] = useState(false);
+	const [isUploading, setIsUploading] = useState(false);
+	const [uploadProgress, setUploadProgress] = useState(0);
 
 	// Get current realm ID from pathname (e.g., /realms/123 -> "123")
 	const realmId = useMemo(() => {
@@ -99,19 +103,26 @@ export function EditRealmDialog({ open, onOpenChange }: EditRealmDialogProps) {
 	const uploadFile = async (realmId: string, file: File): Promise<void> => {
 		const formData = new FormData();
 		formData.append("file", file);
-
-		const response = await fetch(
-			`${process.env.NEXT_PUBLIC_SERVER_URL}/api/upload/realm-icon/${realmId}`,
-			{
-				method: "POST",
-				body: formData,
-				credentials: "include",
-			},
-		);
-
-		if (!response.ok) {
-			const error = await response.json();
-			throw new Error(error.error || "Failed to upload icon");
+		setIsUploading(true);
+		setUploadProgress(0);
+		try {
+			const response = await uploadWithProgress({
+				url: `${process.env.NEXT_PUBLIC_SERVER_URL}/api/upload/realm-icon/${realmId}`,
+				formData,
+				onProgress: (p) => setUploadProgress(p < 0 ? 0 : p),
+				withCredentials: true,
+			});
+			if (!response.ok) {
+				let errMsg = "Failed to upload icon";
+				try {
+					const json = await response.json();
+					errMsg = json?.error || errMsg;
+				} catch {}
+				throw new Error(errMsg);
+			}
+		} finally {
+			setIsUploading(false);
+			setUploadProgress(0);
 		}
 	};
 
@@ -228,7 +239,7 @@ export function EditRealmDialog({ open, onOpenChange }: EditRealmDialogProps) {
 						/>
 						<div className="grid gap-2">
 							<FormLabel>Icon (optional)</FormLabel>
-							<ImageUpload
+									<ImageUpload
 								previewSrc={
 									removeIcon
 										? undefined
@@ -241,6 +252,14 @@ export function EditRealmDialog({ open, onOpenChange }: EditRealmDialogProps) {
 								}}
 								onRemove={handleRemoveIcon}
 							/>
+									{isUploading ? (
+										<div className="flex items-center gap-2">
+											<Progress value={uploadProgress} className="h-2 w-full" />
+											<span className="text-muted-foreground text-xs">
+												{Math.max(0, Math.round(uploadProgress))}%
+											</span>
+										</div>
+									) : null}
 						</div>
 						<DialogFooter>
 							<Button variant="outline" type="button" onClick={onClose}>

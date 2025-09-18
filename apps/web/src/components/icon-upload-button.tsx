@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ImageCropDialog } from "./image-crop-dialog";
+import { toast } from "sonner";
 
 interface IconUploadButtonProps {
 	previewSrc?: string | null;
@@ -50,12 +51,28 @@ export function IconUploadButton({
 		height?: number;
 	} | null>(null);
 
+	const resetInput = () => {
+		if (fileInputRef.current) fileInputRef.current.value = "";
+	};
+
 	const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0] || null;
 		if (!file) {
 			onSelect?.(null, null, { originalFile: null, percentCrop: null });
-			// Clear input value so selecting same file later still triggers change
-			if (fileInputRef.current) fileInputRef.current.value = "";
+			resetInput();
+			return;
+		}
+
+		// Client-side validation: only images, block GIFs
+		const mime = file.type || "";
+		const name = (file as unknown as { name?: string }).name || "";
+		const lowerName = name.toLowerCase();
+		const isImage = mime.startsWith("image/");
+		const isGif = mime === "image/gif" || lowerName.endsWith(".gif");
+		if (!isImage || isGif) {
+			toast.error(isGif ? "GIF images are not supported." : "Please select an image file.");
+			onSelect?.(null, null, { originalFile: null, percentCrop: null });
+			resetInput();
 			return;
 		}
 
@@ -68,12 +85,11 @@ export function IconUploadButton({
 				setSelectedImageSrc(result);
 				setCropDialogOpen(true);
 			}
-			// Clear to allow re-selecting the same file
-			if (fileInputRef.current) fileInputRef.current.value = "";
+			resetInput();
 		};
 		reader.onerror = () => {
 			onSelect?.(null, null, { originalFile: null, percentCrop: null });
-			if (fileInputRef.current) fileInputRef.current.value = "";
+			resetInput();
 		};
 		reader.readAsDataURL(file);
 	};

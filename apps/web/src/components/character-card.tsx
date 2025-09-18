@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Pencil, Trash2 } from "lucide-react";
-import Image from "next/image";
+// Removed next/image
 import { memo, useEffect, useRef, useState } from "react";
 
 // Custom throttle hook for smooth animations
@@ -90,12 +90,11 @@ export const CharacterCard = memo(function CharacterCard({
 					aria-label="View full image"
 					type="button"
 				>
-					<Image
+					<img
 						src={previewSrc}
 						alt={character.name}
-						fill
-						sizes="(max-width:640px) 45vw, (max-width:1024px) 18vw, 12vw"
-						className="object-cover"
+						className="absolute inset-0 h-full w-full object-cover"
+						loading="lazy"
 					/>
 				</button>
 			) : (

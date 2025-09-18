@@ -2,7 +2,7 @@
 
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Activity, Crown, Eye, Sword, Users } from "lucide-react";
-import Image from "next/image";
+// Removed next/image
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,12 +49,11 @@ function RealmOverviewCard({
 		<Card className="group overflow-hidden transition-shadow hover:shadow-md">
 			<div className="relative aspect-square bg-muted">
 				{realm.iconKey ? (
-					<Image
+					<img
 						src={realm.iconKey}
 						alt={realm.name}
-						fill
-						sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-						className="object-cover transition-transform duration-200 group-hover:scale-105"
+						className="absolute inset-0 h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+						loading="lazy"
 					/>
 				) : (
 					<div className="flex h-full w-full items-center justify-center text-muted-foreground">

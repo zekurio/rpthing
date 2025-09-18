@@ -2,7 +2,7 @@
 
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Download, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
-import Image from "next/image";
+// Removed next/image
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -364,16 +364,14 @@ export function ImageViewer({
 							backfaceVisibility: "hidden",
 						}}
 					>
-						<Image
+						<img
 							src={src}
 							alt={alt}
-							fill
-							sizes="100vw"
-							className="object-contain"
-							unoptimized
+							className="absolute inset-0 h-full w-full object-contain"
 							draggable={false}
-							priority={false}
 							ref={imgRef}
+							loading="eager"
+							decoding="async"
 						/>
 					</div>
 					{Toolbar}

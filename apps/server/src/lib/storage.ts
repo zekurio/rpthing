@@ -15,7 +15,7 @@ const accessKeyId = process.env.S3_ACCESS_KEY_ID;
 const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY;
 const bucketName = process.env.S3_BUCKET_NAME;
 const endpoint = process.env.S3_ENDPOINT;
-const region = process.env.S3_REGION || "us-east-1";
+const region = process.env.S3_REGION || "auto";
 const publicEndpoint = process.env.PUBLIC_S3_ENDPOINT;
 
 // Normalize public endpoint to include scheme and no trailing slash

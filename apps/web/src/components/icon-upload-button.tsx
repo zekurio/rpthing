@@ -1,7 +1,7 @@
 "use client";
 
 import { Camera, Plus, Trash2 } from "lucide-react";
-import Image from "next/image";
+// Removed next/image
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ImageCropDialog } from "./image-crop-dialog";
@@ -128,13 +128,11 @@ export function IconUploadButton({
 					title={title}
 				>
 					{previewSrc ? (
-						<Image
+						<img
 							src={previewSrc}
 							alt="Preview"
-							width={64}
-							height={64}
-							sizes="64px"
 							className="h-16 w-16 rounded-full object-cover"
+							loading="lazy"
 						/>
 					) : (
 						<Camera className="size-5" />

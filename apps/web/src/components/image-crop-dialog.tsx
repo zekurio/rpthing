@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+// Removed next/image
 import { useCallback, useRef, useState } from "react";
 import ReactCrop, {
 	type Crop,
@@ -170,15 +170,14 @@ export function ImageCropDialog({
 						minWidth={64}
 						minHeight={64}
 					>
-						<Image
+						<img
 							ref={imgRef}
 							alt="Crop me"
 							src={imageSrc}
-							onLoad={onImageLoad}
+							onLoad={onImageLoad as unknown as React.ReactEventHandler<HTMLImageElement>}
 							className="max-h-80 max-w-full"
-							width={400}
-							height={400}
-							unoptimized
+							loading="eager"
+							decoding="async"
 						/>
 					</ReactCrop>
 				</div>

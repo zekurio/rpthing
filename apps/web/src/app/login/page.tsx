@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect } from "react";
 import { LoginForm } from "@/components/login-form";
 import { Logo } from "@/components/logo";
 import { useAuth } from "@/hooks/use-auth";

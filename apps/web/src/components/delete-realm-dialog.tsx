@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -19,6 +20,7 @@ interface DeleteRealmDialogProps {
 	onOpenChange: (open: boolean) => void;
 	realmId: string | null;
 	realmName?: string;
+	currentRealmId?: string | null;
 }
 
 export function DeleteRealmDialog({
@@ -26,13 +28,21 @@ export function DeleteRealmDialog({
 	onOpenChange,
 	realmId,
 	realmName,
+	currentRealmId,
 }: DeleteRealmDialogProps) {
+	const router = useRouter();
+
 	const deleteMutation = useMutation({
 		...trpc.realm.delete.mutationOptions(),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: trpc.realm.list.queryKey() });
 			toast.success("Realm deleted.");
 			onOpenChange(false);
+
+			// If the deleted realm is the current realm, redirect to /realms
+			if (realmId && currentRealmId && realmId === currentRealmId) {
+				router.push("/realms");
+			}
 		},
 		onError: (err) => toast.error(err.message),
 	});

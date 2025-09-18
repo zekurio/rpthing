@@ -1,12 +1,17 @@
 import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { nanoid } from "nanoid";
+import { customAlphabet } from "nanoid";
 import { user } from "./auth";
+
+// Custom alphabet for realm IDs: letters and numbers only (no underscores or hyphens)
+const realmIdAlphabet =
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+const generateRealmId = customAlphabet(realmIdAlphabet, 7);
 
 // Realm acts as a universe container
 export const realm = pgTable("realm", {
 	id: text("id")
 		.primaryKey()
-		.$defaultFn(() => nanoid(7)),
+		.$defaultFn(() => generateRealmId()),
 	name: text("name").notNull(),
 	description: text("description"),
 	password: text("password"),

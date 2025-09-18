@@ -74,6 +74,7 @@ export function RealmSidebar() {
 					onOpenChange={setDeleteDialogOpen}
 					realmId={selectedRealmId}
 					realmName={selectedRealmName}
+					currentRealmId={currentRealmId}
 				/>
 			</aside>
 		</TooltipProvider>

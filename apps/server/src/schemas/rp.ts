@@ -4,7 +4,10 @@ import { z } from "zod";
 export const idSchema = z.string().min(1);
 
 // Realm
-export const realmIdSchema = z.string().length(7);
+export const realmIdSchema = z
+	.string()
+	.length(7)
+	.regex(/^[A-Za-z0-9]+$/, "Realm ID must contain only letters and numbers");
 export const realmNameSchema = z.string().min(1).max(200);
 export const realmDescriptionSchema = z.string().max(2000).nullish();
 export const realmPasswordSchema = z.string().min(1).max(32).nullish();

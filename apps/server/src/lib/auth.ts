@@ -1,6 +1,5 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { randomUUID } from "crypto";
 import { db } from "../db/index";
 import * as schema from "../db/schema/auth";
 
@@ -29,7 +28,7 @@ export const auth = betterAuth({
 			httpOnly: true,
 		},
 		database: {
-			generateId: () => randomUUID(),
+			generateId: () => Bun.randomUUIDv7(),
 		},
 	},
 });

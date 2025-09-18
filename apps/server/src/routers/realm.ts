@@ -1,7 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import bcrypt from "bcrypt";
 import { db } from "../db/index";
 import { user } from "../db/schema/auth";
 import { character } from "../db/schema/character";
@@ -29,7 +28,7 @@ export const realmRouter = router({
 					name: input.name,
 					description: input.description ?? null,
 					password: input.password
-						? await bcrypt.hash(input.password, 12)
+						? await Bun.password.hash(input.password)
 						: null,
 					ownerId: userId,
 				})
@@ -92,7 +91,7 @@ export const realmRouter = router({
 						message: "Password required",
 					});
 				}
-				const ok = await bcrypt.compare(password, r.password);
+				const ok = await Bun.password.verify(password, r.password);
 				if (!ok) {
 					throw new TRPCError({
 						code: "UNAUTHORIZED",
@@ -260,7 +259,7 @@ export const realmRouter = router({
 			const updateData: Record<string, unknown> = { ...updates };
 			if (updates.password !== undefined) {
 				if (updates.password) {
-					updateData.password = await bcrypt.hash(updates.password, 12);
+					updateData.password = await Bun.password.hash(updates.password);
 				} else {
 					updateData.password = null;
 				}

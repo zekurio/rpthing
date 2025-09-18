@@ -5,8 +5,7 @@
 	"scripts": {
 		"dev": "next dev --turbopack --port=3001",
 		"build": "next build",
-		"start": "next start --port=3001",
-		"start:prod": "NODE_ENV=production next start --port=3001"
+		"start": "next start --port=3001"
 	},
 	"dependencies": {
 		"@hookform/resolvers": "^5.2.1",

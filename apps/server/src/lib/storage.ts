@@ -132,6 +132,18 @@ export const getFileUrl = async (
 };
 
 /**
+ * Generate a public URL for a file (no expiration, no query parameters).
+ * This is suitable for frequently accessed images that don't need temporary access.
+ */
+export const getPublicFileUrl = (targetPath: string): string => {
+	const fullPath = resolvePath(targetPath);
+	
+	// Construct the public URL directly using the endpoint
+	const baseUrl = endpoint?.endsWith('/') ? endpoint.slice(0, -1) : endpoint;
+	return `${baseUrl}/${fullPath}`;
+};
+
+/**
  * Check whether a file exists in S3.
  */
 export const existsFile = async (targetPath: string): Promise<boolean> => {

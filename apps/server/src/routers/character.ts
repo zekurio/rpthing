@@ -6,7 +6,7 @@ import { character } from "../db/schema/character";
 import { characterPermission } from "../db/schema/permissions";
 import { realmMember } from "../db/schema/realmMember";
 import { characterTraitRating, trait } from "../db/schema/traits";
-import { deleteFile, getFileUrl } from "../lib/storage";
+import { deleteFile, getFileUrl, getPublicFileUrl } from "../lib/storage";
 import { protectedProcedure, router } from "../lib/trpc";
 import {
 	characterCreateInputSchema,
@@ -215,21 +215,18 @@ export const characterRouter = router({
 				});
 			}
 
-			// Presign URLs like realm icons
-			if (!row.referenceImageKey) return row;
-			try {
-				const referenceUrl = await getFileUrl(row.referenceImageKey);
-				const croppedUrl = row.croppedImageKey
-					? await getFileUrl(row.croppedImageKey)
-					: null;
-				return {
-					...row,
-					referenceImageKey: referenceUrl,
-					croppedImageKey: croppedUrl,
-				};
-			} catch {
-				return { ...row, referenceImageKey: null, croppedImageKey: null };
-			}
+			// Generate public URLs for character images
+			const referenceUrl = row.referenceImageKey
+				? getPublicFileUrl(row.referenceImageKey)
+				: null;
+			const croppedUrl = row.croppedImageKey
+				? getPublicFileUrl(row.croppedImageKey)
+				: null;
+			return {
+				...row,
+				referenceImageKey: referenceUrl,
+				croppedImageKey: croppedUrl,
+			};
 		}),
 
 	list: protectedProcedure
@@ -264,29 +261,20 @@ export const characterRouter = router({
 				.leftJoin(user, eq(user.id, character.userId))
 				.where(eq(character.realmId, realmId));
 
-			// Presign URLs like realm icons
-			const withUrls = await Promise.all(
-				rows.map(async (row) => {
-					if (!row.referenceImageKey) return row;
-					try {
-						const referenceUrl = await getFileUrl(row.referenceImageKey);
-						const croppedUrl = row.croppedImageKey
-							? await getFileUrl(row.croppedImageKey)
-							: null;
-						return {
-							...row,
-							referenceImageKey: referenceUrl,
-							croppedImageKey: croppedUrl,
-						};
-					} catch {
-						return {
-							...row,
-							referenceImageKey: null,
-							croppedImageKey: null,
-						};
-					}
-				}),
-			);
+			// Generate public URLs for character images
+			const withUrls = rows.map((row) => {
+				const referenceUrl = row.referenceImageKey
+					? getPublicFileUrl(row.referenceImageKey)
+					: null;
+				const croppedUrl = row.croppedImageKey
+					? getPublicFileUrl(row.croppedImageKey)
+					: null;
+				return {
+					...row,
+					referenceImageKey: referenceUrl,
+					croppedImageKey: croppedUrl,
+				};
+			});
 
 			return withUrls;
 		}),

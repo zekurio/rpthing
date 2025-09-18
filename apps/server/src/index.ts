@@ -11,7 +11,7 @@ import { realm } from "./db/schema/realm";
 import { realmMember } from "./db/schema/realmMember";
 import { auth } from "./lib/auth";
 import { createContext } from "./lib/context";
-import { deleteFile, existsFile, getFileUrl, uploadFile } from "./lib/storage";
+import { deleteFile, existsFile, getFileUrl, getPublicFileUrl, uploadFile } from "./lib/storage";
 import { appRouter } from "./routers/index";
 
 const app = new Hono();
@@ -366,7 +366,7 @@ app.post("/api/upload/character-image/:characterId", async (c) => {
 			.set({ referenceImageKey: finalOriginalKey, croppedImageKey: croppedKey })
 			.where(eq(character.id, characterId));
 
-		const url = await getFileUrl(croppedKey ?? finalOriginalKey);
+		const url = getPublicFileUrl(croppedKey ?? finalOriginalKey);
 		return c.json({
 			success: true,
 			imageKey: finalOriginalKey,

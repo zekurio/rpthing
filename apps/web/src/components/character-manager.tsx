@@ -10,10 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryClient, trpc } from "@/utils/trpc";
 
-export function CharacterManager({ realmId }: { realmId: string }) {
-	const { data: characters, isLoading } = useQuery({
-		...trpc.character.list.queryOptions({ realmId }),
-	});
+export function CharacterManager({ realmId, enabled = true }: { realmId: string; enabled?: boolean }) {
+    const { data: characters, isLoading } = useQuery({
+        ...trpc.character.list.queryOptions({ realmId }),
+        enabled,
+    });
 
 	const invalidate = useCallback(() => {
 		queryClient.invalidateQueries({

@@ -1,39 +1,14 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { Pencil, Trash2 } from "lucide-react";
-// Removed next/image
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useState } from "react";
 
-// Custom throttle hook for smooth animations
-function _useThrottle<T>(value: T, delay: number): T {
-	const [throttledValue, setThrottledValue] = useState<T>(value);
-	const lastExecuted = useRef<number>(Date.now());
-
-	useEffect(() => {
-		if (Date.now() >= lastExecuted.current + delay) {
-			lastExecuted.current = Date.now();
-			setThrottledValue(value);
-		} else {
-			const timer = setTimeout(() => {
-				lastExecuted.current = Date.now();
-				setThrottledValue(value);
-			}, delay);
-
-			return () => clearTimeout(timer);
-		}
-	}, [value, delay]);
-
-	return throttledValue;
-}
-
-import { toast } from "sonner";
 import { EditCharacterDialog } from "@/components/edit-character-dialog";
-import { ImageViewer } from "@/components/image-viewer";
+import { ImageViewer } from	 "@/components/image-viewer";
 import { Button } from "@/components/ui/button";
 import { gradeForValue } from "@/lib/traits";
 import type { CharacterListItem } from "@/types";
-import { queryClient, trpc } from "@/utils/trpc";
+import { DeleteCharacterDialog } from "@/components/delete-character-dialog";
 
 interface CharacterCardProps {
 	character: CharacterListItem;
@@ -44,38 +19,12 @@ export const CharacterCard = memo(function CharacterCard({
 	character,
 	onChanged,
 }: CharacterCardProps) {
-	const [open, setOpen] = useState(false);
 	const [viewerOpen, setViewerOpen] = useState(false);
-	const del = useMutation({
-		...trpc.character.delete.mutationOptions(),
-		onSuccess: () => {
-			toast.success("Character deleted");
-			onChanged();
-			setOpen(false);
-		},
-		onError: (e) => toast.error(e.message || "Failed to delete"),
-	});
+	const [editOpen, setEditOpen] = useState(false);
+	
 
-	const { data: withRatings } = useQuery({
-		...trpc.character.getWithRatings.queryOptions({ id: character.id }),
-	});
-	const ratedTraits =
-		withRatings?.traits?.filter((t) => typeof t.value === "number") ?? [];
-
-	// Subscribe to the realm trait list and invalidate character ratings when traits change
-	const realmId = withRatings?.realmId;
-	const { data: traitSnapshot } = useQuery({
-		...trpc.trait.list.queryOptions({ realmId: (realmId ?? "") as string }),
-		enabled: !!realmId,
-	});
-	useEffect(() => {
-		if (!realmId) return;
-		if (traitSnapshot) {
-			queryClient.invalidateQueries({
-				queryKey: trpc.character.getWithRatings.queryKey({ id: character.id }),
-			});
-		}
-	}, [realmId, traitSnapshot, character.id]);
+    const ratedTraits =
+        character.ratingsSummary?.filter((t) => typeof t.value === "number") ?? [];
 
 	const previewSrc =
 		character.croppedImageKey || character.referenceImageKey || undefined;
@@ -121,21 +70,15 @@ export const CharacterCard = memo(function CharacterCard({
 					<Button
 						variant="ghost"
 						size="sm"
-						onClick={() => setOpen(true)}
+					onClick={() => setEditOpen(true)}
 						aria-label="Edit character"
 					>
 						<Pencil className="h-3 w-3" />
 					</Button>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="text-destructive"
-						onClick={() => del.mutate({ id: character.id })}
-						disabled={del.isPending}
-						aria-label="Delete character"
-					>
-						<Trash2 className="h-3 w-3" />
-					</Button>
+				<DeleteCharacterDialog
+						id={character.id}
+						onDeleted={onChanged}
+					/>
 				</div>
 			</div>
 			{ratedTraits.length > 0 ? (
@@ -159,8 +102,8 @@ export const CharacterCard = memo(function CharacterCard({
 			) : null}
 
 			<EditCharacterDialog
-				open={open}
-				onOpenChange={setOpen}
+				open={editOpen}
+				onOpenChange={setEditOpen}
 				characterId={character.id}
 				onChanged={onChanged}
 			/>

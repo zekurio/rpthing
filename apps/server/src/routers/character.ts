@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../db/index";
 import { user } from "../db/schema/auth";
 import { character } from "../db/schema/character";
@@ -244,7 +244,7 @@ export const characterRouter = router({
 				});
 			}
 
-			const rows = await db
+				const rows = await db
 				.select({
 					id: character.id,
 					name: character.name,
@@ -261,22 +261,72 @@ export const characterRouter = router({
 				.leftJoin(user, eq(user.id, character.userId))
 				.where(eq(character.realmId, realmId));
 
-			// Generate public URLs for character images
-			const withUrls = rows.map((row) => {
-				const referenceUrl = row.referenceImageKey
-					? getPublicFileUrl(row.referenceImageKey)
-					: null;
-				const croppedUrl = row.croppedImageKey
-					? getPublicFileUrl(row.croppedImageKey)
-					: null;
-				return {
-					...row,
-					referenceImageKey: referenceUrl,
-					croppedImageKey: croppedUrl,
-				};
-			});
+				// Gather ratings summary for all characters in one query to avoid N+1
+				const characterIds = rows.map((r) => r.id);
+				let ratingsByCharacter: Record<string, Array<{
+					traitId: string;
+					traitName: string;
+					description: string | null;
+					displayMode: "number" | "grade";
+					ratingId: string | null;
+					value: number | null;
+				}>> = {};
+				if (characterIds.length > 0) {
+					const ratingRows = await db
+						.select({
+							characterId: characterTraitRating.characterId,
+							traitId: trait.id,
+							traitName: trait.name,
+							description: trait.description,
+							displayMode: trait.displayMode,
+							ratingId: characterTraitRating.id,
+							value: characterTraitRating.value,
+						})
+						.from(trait)
+						.leftJoin(
+							characterTraitRating,
+							and(
+								eq(characterTraitRating.traitId, trait.id),
+								inArray(characterTraitRating.characterId, characterIds),
+							),
+						)
+						.where(eq(trait.realmId, realmId));
 
-			return withUrls;
+					ratingsByCharacter = ratingRows
+						.filter((row) => row.characterId !== null)
+						.reduce((acc, row) => {
+							const key = String(row.characterId);
+							const list = acc[key] || [];
+							list.push({
+								traitId: row.traitId,
+								traitName: row.traitName,
+								description: row.description ?? null,
+								displayMode: row.displayMode,
+								ratingId: row.ratingId ?? null,
+								value: row.value ?? null,
+							});
+							acc[key] = list;
+							return acc;
+						}, {} as typeof ratingsByCharacter);
+				}
+
+				// Generate public URLs for character images and attach ratings summary
+				const withUrls = rows.map((row) => {
+					const referenceUrl = row.referenceImageKey
+						? getPublicFileUrl(row.referenceImageKey)
+						: null;
+					const croppedUrl = row.croppedImageKey
+						? getPublicFileUrl(row.croppedImageKey)
+						: null;
+					return {
+						...row,
+						referenceImageKey: referenceUrl,
+						croppedImageKey: croppedUrl,
+						ratingsSummary: ratingsByCharacter[row.id] ?? [],
+					};
+				});
+
+				return withUrls;
 		}),
 
 	update: protectedProcedure

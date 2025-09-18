@@ -13,7 +13,8 @@ import type { Trait } from "@/types";
 import { queryClient, trpc } from "@/utils/trpc";
 
 interface TraitsManagerProps {
-	realmId: string;
+    realmId: string;
+    enabled?: boolean;
 }
 
 function TraitCard({
@@ -55,10 +56,11 @@ function TraitCard({
 	);
 }
 
-export function TraitsManager({ realmId }: TraitsManagerProps) {
-	const { data: traits, isLoading } = useQuery({
-		...trpc.trait.list.queryOptions({ realmId }),
-	});
+export function TraitsManager({ realmId, enabled = true }: TraitsManagerProps) {
+    const { data: traits, isLoading } = useQuery({
+        ...trpc.trait.list.queryOptions({ realmId }),
+        enabled,
+    });
 
 	const [createOpen, setCreateOpen] = useState(false);
 	const [search, setSearch] = useState("");

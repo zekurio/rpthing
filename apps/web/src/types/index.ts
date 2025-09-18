@@ -20,6 +20,8 @@ export type CharacterListItem = {
 	ownerName?: string | null;
 	createdAt?: string | Date;
 	updatedAt?: string | Date;
+	// Optional precomputed ratings summary for displaying badges without extra requests
+	ratingsSummary?: CharacterTraitRating[];
 };
 
 export type CharacterTraitRating = {

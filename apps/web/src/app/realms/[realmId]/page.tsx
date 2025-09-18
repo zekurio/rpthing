@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { useState } from "react";
 import NotFound from "@/app/not-found";
 import { CharacterManager } from "@/components/character-manager";
 import { RealmSidebar } from "@/components/realm-sidebar";
@@ -16,6 +17,9 @@ export default function RealmPage() {
 
 	const { realm, isLoading, hasAccess, shouldShowNotFound } =
 		useRealmAccess(realmId);
+
+	// Keep hook order stable across renders
+	const [tab, setTab] = useState("characters");
 
 	// If access is denied, render the not-found page
 	if (shouldShowNotFound) {
@@ -58,16 +62,16 @@ export default function RealmPage() {
 							<p className="text-muted-foreground">{realm.description}</p>
 						</div>
 
-						<Tabs defaultValue="characters" className="w-full">
+						<Tabs value={tab} onValueChange={setTab} className="w-full">
 							<TabsList className="grid w-full grid-cols-2">
 								<TabsTrigger value="characters">Characters</TabsTrigger>
 								<TabsTrigger value="traits">Traits</TabsTrigger>
 							</TabsList>
 							<TabsContent value="characters" className="mt-6">
-								<CharacterManager realmId={realm.id} />
+								<CharacterManager realmId={realm.id} enabled={tab === "characters"} />
 							</TabsContent>
 							<TabsContent value="traits" className="mt-6">
-								<TraitsManager realmId={realm.id} />
+								<TraitsManager realmId={realm.id} enabled={tab === "traits"} />
 							</TabsContent>
 						</Tabs>
 					</div>

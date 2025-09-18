@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { BsDiscord } from "react-icons/bs";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -22,9 +22,14 @@ export function LoginForm({
 	const [loading, setLoading] = useState(false);
 	const { signInWithProvider } = useAuth();
 	const searchParams = useSearchParams();
-	const redirectUrl = searchParams.get("redirect") || "/realms";
+	
+	// Memoize redirectUrl to prevent unnecessary rerenders
+	const redirectUrl = useMemo(() => {
+		return searchParams.get("redirect") || "/realms";
+	}, [searchParams]);
 
-	async function handleSignIn(provider: "discord", callbackURL: string) {
+	// Memoize handleSignIn to prevent unnecessary rerenders
+	const handleSignIn = useCallback(async (provider: "discord", callbackURL: string) => {
 		try {
 			setLoading(true);
 			await signInWithProvider(provider, callbackURL);
@@ -35,7 +40,7 @@ export function LoginForm({
 		} finally {
 			setLoading(false);
 		}
-	}
+	}, [signInWithProvider]);
 
 	return (
 		<div className={cn("flex flex-col gap-2", className)} {...props}>

@@ -14,7 +14,8 @@
   ],
   "addons": [
     "biome",
-    "turborepo"
+    "turborepo",
+    "husky"
   ],
   "examples": [],
   "auth": "better-auth",

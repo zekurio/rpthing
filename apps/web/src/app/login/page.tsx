@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import type { Route } from "next";
 import { Suspense, useEffect, useState } from "react";
 import { LoginForm } from "@/components/login-form";
 import { Logo } from "@/components/logo";
@@ -23,16 +24,18 @@ function LoginPageContent() {
 	useEffect(() => {
 		if (hasInitiallyLoaded && isAuthenticated) {
 			// Redirect to realms or intended destination if already authenticated
-			if (redirectUrl === "/realms") {
-				router.push("/realms");
-			} else {
-				try {
-					const url = new URL(redirectUrl, window.location.origin);
-					router.push(url.pathname + url.search + url.hash);
-				} catch {
-					router.push("/realms");
-				}
-			}
+            if (redirectUrl === "/realms") {
+                router.push("/realms");
+            } else {
+                try {
+                    const url = new URL(redirectUrl, window.location.origin);
+                    // Only allow same-origin redirects
+                    if (url.origin !== window.location.origin) throw new Error("external");
+                    router.push(url.pathname as Route);
+                } catch {
+                    router.push("/realms");
+                }
+            }
 		}
 	}, [isAuthenticated, hasInitiallyLoaded, router, redirectUrl]);
 

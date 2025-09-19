@@ -22,12 +22,14 @@
 		"db:migrate": "turbo -F server db:migrate",
 		"start": "turbo start",
 		"start:web": "turbo -F web start",
-		"start:server": "turbo -F server start"
+		"start:server": "turbo -F server start",
+		"prepare": "husky"
 	},
 	"dependencies": {},
 	"devDependencies": {
-		"turbo": "^2.5.4",
-		"@biomejs/biome": "^2.2.0"
+		"@biomejs/biome": "^2.2.0",
+		"husky": "^9.1.7",
+		"turbo": "^2.5.4"
 	},
 	"packageManager": "bun@1.2.21"
 }

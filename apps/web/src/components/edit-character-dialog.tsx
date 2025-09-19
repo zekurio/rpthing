@@ -14,7 +14,6 @@ import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
-	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
@@ -307,8 +306,13 @@ export function EditCharacterDialog({
 							<FormLabel>Trait ratings</FormLabel>
 							<CharacterRatings characterId={characterId} />
 						</div>
-						<DialogFooter className="sticky bottom-0 border-t bg-background pt-3">
-							<Button variant="outline" type="button" onClick={onClose}>
+						<div className="sticky flex items-center justify-end gap-2 border-t bg-background pt-3">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => onOpenChange(false)}
+								disabled={updateMutation.isPending}
+							>
 								Cancel
 							</Button>
 							<Button
@@ -317,9 +321,11 @@ export function EditCharacterDialog({
 									form.formState.isSubmitting || updateMutation.isPending
 								}
 							>
-								{updateMutation.isPending ? "Updating..." : "Update"}
+								{form.formState.isSubmitting || updateMutation.isPending
+									? "Updating..."
+									: "Update"}
 							</Button>
-						</DialogFooter>
+						</div>
 					</form>
 				</Form>
 			</DialogContent>

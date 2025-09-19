@@ -329,7 +329,7 @@ export function CreateCharacterDialog({
 								</div>
 							)}
 						</div>
-						<div className="sticky bottom-0 flex items-center justify-end gap-2 border-t bg-background pt-3">
+						<div className="sticky flex items-center justify-end gap-2 border-t bg-background pt-3">
 							<Button
 								type="button"
 								variant="outline"

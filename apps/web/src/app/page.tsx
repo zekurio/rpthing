@@ -17,7 +17,7 @@ export default function Home() {
 				<div className="mx-auto grid max-w-5xl items-center gap-8 pt-12 pb-8 text-center md:gap-10 md:pt-20 md:pb-12">
 					<div className="flex justify-center">
 						<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-							<Dices className="size-4 text-neutral-900" />
+							<Dices className="size-4" />
 						</div>
 						<div className="flex flex-col gap-0.5 leading-none">
 							<span className="font-bold font-lg">rpthing</span>

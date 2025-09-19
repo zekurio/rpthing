@@ -35,8 +35,8 @@ export function LoginForm({
 			return `${baseUrl}${redirect.startsWith("/") ? "" : "/"}${redirect}`;
 		}
 
-		// Default to base URL
-		return baseUrl;
+		// Default to realms page
+		return `${baseUrl}/realms`;
 	};
 
 	async function handleSignIn(provider: "discord", callbackURL: string) {

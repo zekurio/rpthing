@@ -77,7 +77,7 @@ export const CharacterCard = memo(function CharacterCard({
 	const fullImageSrc = character.referenceImageKey || undefined;
 
 	return (
-		<div className="group overflow-hidden rounded-lg border">
+		<div className="group overflow-hidden rounded-lg border border-border">
 			{previewSrc ? (
 				<div className="relative aspect-square w-full bg-muted">
 					<button

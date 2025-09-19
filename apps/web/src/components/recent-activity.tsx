@@ -36,15 +36,15 @@ function ActivityIcon({ type, className }: ActivityIconProps) {
 
 	switch (type) {
 		case "character_created":
-			return <Plus className={`${iconClass} text-green-500`} />;
+			return <Plus className={`${iconClass} text-green-300`} />;
 		case "character_updated":
-			return <Edit className={`${iconClass} text-blue-500`} />;
+			return <Edit className={`${iconClass} text-blue-300`} />;
 		case "trait_created":
-			return <Target className={`${iconClass} text-purple-500`} />;
+			return <Target className={`${iconClass} text-purple-300`} />;
 		case "trait_updated":
-			return <Edit className={`${iconClass} text-orange-500`} />;
+			return <Edit className={`${iconClass} text-orange-300`} />;
 		case "realm_joined":
-			return <UserPlus className={`${iconClass} text-cyan-500`} />;
+			return <UserPlus className={`${iconClass} text-cyan-300`} />;
 		default:
 			return <Sword className={iconClass} />;
 	}

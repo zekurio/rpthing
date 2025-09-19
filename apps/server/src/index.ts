@@ -2,6 +2,7 @@ import "dotenv/config";
 import { trpcServer } from "@hono/trpc-server";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import sharp from "sharp";
@@ -501,5 +502,7 @@ app.delete("/api/upload/character-image/:characterId", async (c) => {
 app.get("/", (c) => {
 	return c.text("OK");
 });
+
+app.use("/favicon.ico", serveStatic({ path: "./public/favicon.ico" }));
 
 export default app;

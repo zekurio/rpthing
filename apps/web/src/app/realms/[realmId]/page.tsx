@@ -46,7 +46,7 @@ export default function RealmPage() {
 		<SidebarProvider>
 			<AppSidebar />
 			<SidebarInset>
-				<div className="sticky top-0 z-10 flex h-14 items-center gap-2 border-b bg-background/60 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+				<div className="sticky top-0 z-10 flex h-14 items-center gap-2 border-border border-b bg-background/60 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:overflow-hidden md:rounded-t-xl">
 					<SidebarTrigger />
 					<div className="font-semibold">{realm.name}</div>
 					{realm.description ? (

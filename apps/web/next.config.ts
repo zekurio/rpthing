@@ -1,11 +1,11 @@
 import type { NextConfig } from "next";
 
-// Build remote image patterns: allow Discord CDN plus optional PUBLIC_S3_ENDPOINT hostname
+// Build remote image patterns: allow Discord CDN plus optional NEXT_PUBLIC_S3_ENDPOINT hostname
 const remotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [
 	{ protocol: "https", hostname: "cdn.discordapp.com" },
 ];
 
-const s3Hostname = process.env.PUBLIC_S3_ENDPOINT?.trim();
+const s3Hostname = process.env.NEXT_PUBLIC_S3_ENDPOINT?.trim();
 if (s3Hostname) {
 	remotePatterns.push({ protocol: "https", hostname: s3Hostname });
 }
@@ -17,6 +17,6 @@ const nextConfig: NextConfig = {
 	},
 };
 
-console.log("PUBLIC_S3_ENDPOINT:", process.env.PUBLIC_S3_ENDPOINT);
+console.log("NEXT_PUBLIC_S3_ENDPOINT:", process.env.NEXT_PUBLIC_S3_ENDPOINT);
 
 export default nextConfig;

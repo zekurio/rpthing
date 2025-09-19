@@ -8,6 +8,8 @@
 	],
 	"scripts": {
 		"check": "biome check --write .",
+		"lint:ci": "biome ci .",
+		"lint:ci:github": "biome ci --reporter=github .",
 		"dev": "turbo dev",
 		"build": "turbo build",
 		"build:server": "turbo -F server build",
@@ -29,11 +31,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "^2.2.0",
 		"turbo": "^2.5.4",
-		"husky": "^9.1.7",
-		"lint-staged": "^16.1.2"
+		"husky": "^9.1.7"
 	},
-	"packageManager": "bun@1.2.21",
-	"lint-staged": {
-		"**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx,vue,astro,svelte}": ""
-	}
+	"packageManager": "bun@1.2.21"
 }

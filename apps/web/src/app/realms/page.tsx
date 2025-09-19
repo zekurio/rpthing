@@ -110,8 +110,8 @@ export default function RealmsPage() {
 					</div>
 
 					<div className="space-y-6">
-						<CharacterOverview />
-						<RecentActivity />
+						<CharacterOverview unstyled />
+						<RecentActivity unstyled />
 					</div>
 				</main>
 			</div>

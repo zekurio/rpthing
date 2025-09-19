@@ -26,6 +26,6 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Run Biome (ci)
-        run: bunx -y @biomejs/biome ci --reporter=github .
+        run: bun run lint:ci:github
 
 

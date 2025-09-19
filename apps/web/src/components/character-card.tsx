@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { Pencil, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { memo, useCallback, useState } from "react";
 import { toast } from "sonner";
@@ -18,6 +18,12 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { gradeForValue } from "@/lib/traits";
 import type { CharacterListItem } from "@/types";
 import { queryClient, trpc } from "@/utils/trpc";
@@ -34,6 +40,7 @@ export const CharacterCard = memo(function CharacterCard({
 	const [viewerOpen, setViewerOpen] = useState(false);
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
+	const [dropdownOpen, setDropdownOpen] = useState(false);
 
 	const deleteMutation = useMutation({
 		...trpc.character.delete.mutationOptions(),
@@ -52,6 +59,16 @@ export const CharacterCard = memo(function CharacterCard({
 		await deleteMutation.mutateAsync({ id: character.id });
 	}, [deleteMutation, character.id]);
 
+	const handleEditClick = useCallback(() => {
+		setDropdownOpen(false);
+		setEditOpen(true);
+	}, []);
+
+	const handleDeleteClick = useCallback(() => {
+		setDropdownOpen(false);
+		setDeleteOpen(true);
+	}, []);
+
 	const ratedTraits =
 		character.ratingsSummary?.filter((t) => typeof t.value === "number") ?? [];
 
@@ -62,29 +79,85 @@ export const CharacterCard = memo(function CharacterCard({
 	return (
 		<div className="group overflow-hidden rounded-lg border">
 			{previewSrc ? (
-				<button
-					className="relative aspect-square w-full cursor-pointer bg-muted"
-					onClick={() => setViewerOpen(true)}
-					aria-label="View full image"
-					type="button"
-				>
-					<Image
-						src={previewSrc}
-						alt={character.name}
-						fill
-						className="object-cover"
-						sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-						priority={false}
-					/>
-				</button>
+				<div className="relative aspect-square w-full bg-muted">
+					<button
+						className="absolute inset-0 h-full w-full cursor-pointer"
+						onClick={() => setViewerOpen(true)}
+						aria-label="View full image"
+						type="button"
+					>
+						<Image
+							src={previewSrc}
+							alt={character.name}
+							fill
+							className="object-cover"
+							sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+							priority={false}
+						/>
+					</button>
+					<div className="absolute top-2 right-2">
+						<DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="secondary"
+									size="sm"
+									className="h-8 w-8 rounded-full bg-black/50 p-0 text-white hover:bg-black/70"
+									aria-label="Character options"
+								>
+									<MoreVertical className="h-4 w-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem onClick={handleEditClick}>
+									<Pencil className="mr-2 h-4 w-4" />
+									Edit
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={handleDeleteClick}
+									className="text-destructive focus:text-destructive"
+								>
+									<Trash2 className="mr-2 h-4 w-4" />
+									Delete
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				</div>
 			) : (
 				<div className="relative aspect-square w-full bg-muted">
 					<div className="grid h-full w-full place-items-center text-muted-foreground text-xs">
 						No image
 					</div>
+					<div className="absolute top-2 right-2">
+						<DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="secondary"
+									size="sm"
+									className="h-8 w-8 rounded-full bg-black/50 p-0 text-white hover:bg-black/70"
+									aria-label="Character options"
+								>
+									<MoreVertical className="h-4 w-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuItem onClick={handleEditClick}>
+									<Pencil className="mr-2 h-4 w-4" />
+									Edit
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onClick={handleDeleteClick}
+									className="text-destructive focus:text-destructive"
+								>
+									<Trash2 className="mr-2 h-4 w-4" />
+									Delete
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
 				</div>
 			)}
-			<div className="flex items-center justify-between gap-2 p-2">
+			<div className="p-2">
 				<div className="min-w-0">
 					<div className="truncate font-medium">{character.name}</div>
 					<div className="truncate text-muted-foreground text-xs">
@@ -96,25 +169,6 @@ export const CharacterCard = memo(function CharacterCard({
 						) : null}
 						{character.ownerName ? `Owner: ${character.ownerName}` : null}
 					</div>
-				</div>
-				<div className="flex shrink-0 items-center gap-1">
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => setEditOpen(true)}
-						aria-label="Edit character"
-					>
-						<Pencil className="h-3 w-3" />
-					</Button>
-					<Button
-						variant="ghost"
-						size="sm"
-						className="text-destructive"
-						onClick={() => setDeleteOpen(true)}
-						aria-label="Delete character"
-					>
-						<Trash2 className="h-3 w-3" />
-					</Button>
 				</div>
 			</div>
 			{ratedTraits.length > 0 ? (

@@ -16,6 +16,7 @@ interface RealmListProps {
 	onEdit: (realmId: string) => void;
 	onDelete: (realmId: string) => void;
 	currentUserId?: string;
+	footer?: React.ReactNode;
 }
 
 export function RealmList({
@@ -25,6 +26,7 @@ export function RealmList({
 	onEdit,
 	onDelete,
 	currentUserId,
+	footer,
 }: RealmListProps) {
 	return (
 		<div className="flex min-h-0 w-full flex-1 flex-col items-center gap-2 overflow-y-auto py-3">
@@ -42,6 +44,7 @@ export function RealmList({
 					/>
 				))
 			)}
+			{footer ? <div className="pt-1">{footer}</div> : null}
 		</div>
 	);
 }

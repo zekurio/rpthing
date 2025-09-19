@@ -58,7 +58,7 @@ function ActivityDescription({ activity }: { activity: ActivityItem }) {
 			case "character_updated":
 				return `updated character "${activity.entityName}"`;
 			case "trait_created":
-					return `created trait "${activity.entityName}"`;
+				return `created trait "${activity.entityName}"`;
 			case "trait_updated":
 				return `updated trait "${activity.entityName}"`;
 			case "realm_joined":
@@ -96,7 +96,11 @@ function ActivityDescription({ activity }: { activity: ActivityItem }) {
 	);
 }
 
-export function RecentActivity() {
+interface RecentActivityProps {
+	unstyled?: boolean;
+}
+
+export function RecentActivity({ unstyled = false }: RecentActivityProps) {
 	const { data: realms, isPending: realmsLoading } = useQuery({
 		...trpc.realm.list.queryOptions(),
 	});
@@ -211,6 +215,25 @@ export function RecentActivity() {
 		.slice(0, 5);
 
 	if (isLoading) {
+		if (unstyled) {
+			return (
+				<div className="space-y-4">
+					{[0, 1, 2, 3, 4].map((idx) => (
+						<div
+							key={`recent-activity-skeleton-${idx}`}
+							className="flex items-center gap-3"
+						>
+							<Skeleton className="h-4 w-4 rounded-full" />
+							<div className="flex-1 space-y-2">
+								<Skeleton className="h-4 w-3/4" />
+								<Skeleton className="h-3 w-1/2" />
+							</div>
+							<Skeleton className="h-8 w-8 rounded-full" />
+						</div>
+					))}
+				</div>
+			);
+		}
 		return (
 			<Card>
 				<CardHeader>
@@ -235,6 +258,24 @@ export function RecentActivity() {
 					))}
 				</CardContent>
 			</Card>
+		);
+	}
+
+	if (unstyled) {
+		return recentActivities.length === 0 ? (
+			<div className="py-8 text-center text-muted-foreground">
+				<Clock className="mx-auto mb-2 h-12 w-12 opacity-50" />
+				<p>No recent activity</p>
+			</div>
+		) : (
+			<div className="space-y-4">
+				{recentActivities.map((activity, index) => (
+					<ActivityDescription
+						key={`${activity.type}-${activity.entityId}-${index}`}
+						activity={activity}
+					/>
+				))}
+			</div>
 		);
 	}
 

@@ -33,7 +33,7 @@ export default function RealmPage() {
 				<SiteHeader />
 				<div className="flex h-full min-h-0 overflow-hidden">
 					<RealmSidebar />
-					<main className="flex-1 overflow-y-auto p-4">
+					<main className="flex-1 overflow-y-auto p-6">
 						<div className="space-y-4">
 							<Skeleton className="h-8 w-48" />
 							<Skeleton className="h-4 w-96" />
@@ -55,11 +55,11 @@ export default function RealmPage() {
 			<SiteHeader />
 			<div className="flex h-full min-h-0 overflow-hidden">
 				<RealmSidebar />
-				<main className="flex-1 overflow-y-auto p-4">
+				<main className="flex-1 overflow-y-auto p-6">
 					<div className="space-y-6">
 						<div>
-							<h1 className="font-bold text-2xl">{realm.name}</h1>
-							<p className="text-muted-foreground">{realm.description}</p>
+							<h1 className="font-bold text-3xl">{realm.name}</h1>
+							<p className="mt-2 text-muted-foreground">{realm.description}</p>
 						</div>
 
 						<Tabs value={tab} onValueChange={setTab} className="w-full">

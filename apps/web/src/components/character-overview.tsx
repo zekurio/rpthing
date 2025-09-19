@@ -36,7 +36,13 @@ function CharacterOverviewSkeleton() {
 	);
 }
 
-export function CharacterOverview() {
+interface CharacterOverviewProps {
+	unstyled?: boolean;
+}
+
+export function CharacterOverview({
+	unstyled = false,
+}: CharacterOverviewProps) {
 	const { user } = useAuth();
 	const { data: realms, isPending: realmsLoading } = useQuery({
 		...trpc.realm.list.queryOptions(),
@@ -74,6 +80,9 @@ export function CharacterOverview() {
 	};
 
 	if (isLoading) {
+		if (unstyled) {
+			return <CharacterOverviewSkeleton />;
+		}
 		return (
 			<Card>
 				<CardHeader>
@@ -86,6 +95,28 @@ export function CharacterOverview() {
 					<CharacterOverviewSkeleton />
 				</CardContent>
 			</Card>
+		);
+	}
+
+	if (unstyled) {
+		return allCharacters.length === 0 ? (
+			<div className="py-12 text-center text-muted-foreground">
+				<Users className="mx-auto mb-4 h-16 w-16 opacity-50" />
+				<h3 className="mb-2 font-medium text-lg">No characters yet</h3>
+				<p className="text-sm">
+					Create your first character in one of your realms to get started.
+				</p>
+			</div>
+		) : (
+			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+				{allCharacters.map((character) => (
+					<CharacterCard
+						key={character.id}
+						character={character}
+						onChanged={handleCharacterChanged}
+					/>
+				))}
+			</div>
 		);
 	}
 

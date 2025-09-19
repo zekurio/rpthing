@@ -54,15 +54,15 @@ function ActivityDescription({ activity }: { activity: ActivityItem }) {
 	const getDescription = () => {
 		switch (activity.type) {
 			case "character_created":
-				return `Created character "${activity.entityName}"`;
+				return `created character "${activity.entityName}"`;
 			case "character_updated":
-				return `Updated character "${activity.entityName}"`;
+				return `updated character "${activity.entityName}"`;
 			case "trait_created":
-				return `Created trait "${activity.entityName}"`;
+					return `created trait "${activity.entityName}"`;
 			case "trait_updated":
-				return `Updated trait "${activity.entityName}"`;
+				return `updated trait "${activity.entityName}"`;
 			case "realm_joined":
-				return `Joined realm "${activity.realmName}"`;
+				return `joined realm "${activity.realmName}"`;
 			default:
 				return "Unknown activity";
 		}

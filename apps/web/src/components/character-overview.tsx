@@ -6,7 +6,6 @@ import { CharacterCard } from "@/components/character-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
-import type { CharacterListItem } from "@/types";
 import { trpc } from "@/utils/trpc";
 
 const CHARACTER_SKELETON_KEYS = Array.from(
@@ -57,17 +56,27 @@ export function CharacterOverview({
 		})),
 	});
 
-	const allCharacters: CharacterListItem[] = characterQueries
-		.flatMap((query) => query.data || [])
-		// Show only characters owned by the current user
-		.filter((c) => !user || c.ownerId === user.id)
-		.sort((a, b) => {
-			// Sort by most recently updated
-			const aDate = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-			const bDate = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-			return bDate - aDate;
+	// Group characters by realm
+	const charactersByRealm = characterQueries
+		.map((query, index) => {
+			const realmId = realmIds[index];
+			const realm = realms?.find((r) => r.id === realmId);
+			const characters = (query.data || [])
+				.filter((c) => !user || c.ownerId === user.id)
+				.sort((a, b) => {
+					// Sort by most recently updated
+					const aDate = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+					const bDate = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+					return bDate - aDate;
+				})
+				.slice(0, 4); // Show only the 4 most recent per realm
+
+			return {
+				realm,
+				characters,
+			};
 		})
-		.slice(0, 8); // Show only the 8 most recent
+		.filter((group) => group.characters.length > 0 && group.realm);
 
 	const isLoading = realmsLoading || characterQueries.some((q) => q.isPending);
 
@@ -99,7 +108,7 @@ export function CharacterOverview({
 	}
 
 	if (unstyled) {
-		return allCharacters.length === 0 ? (
+		return charactersByRealm.length === 0 ? (
 			<div className="py-12 text-center text-muted-foreground">
 				<Users className="mx-auto mb-4 h-16 w-16 opacity-50" />
 				<h3 className="mb-2 font-medium text-lg">No characters yet</h3>
@@ -108,13 +117,26 @@ export function CharacterOverview({
 				</p>
 			</div>
 		) : (
-			<div className="grid gap-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-				{allCharacters.map((character) => (
-					<CharacterCard
-						key={character.id}
-						character={character}
-						onChanged={handleCharacterChanged}
-					/>
+			<div className="space-y-6">
+				{charactersByRealm.map((group) => (
+					<div key={group.realm?.id}>
+						<div className="mb-3 flex items-center gap-2">
+							<h3 className="font-medium text-lg">{group.realm?.name}</h3>
+							<span className="text-muted-foreground text-sm">
+								({group.characters.length} character
+								{group.characters.length !== 1 ? "s" : ""})
+							</span>
+						</div>
+						<div className="grid gap-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+							{group.characters.map((character) => (
+								<CharacterCard
+									key={character.id}
+									character={character}
+									onChanged={handleCharacterChanged}
+								/>
+							))}
+						</div>
+					</div>
 				))}
 			</div>
 		);
@@ -129,7 +151,7 @@ export function CharacterOverview({
 				</CardTitle>
 			</CardHeader>
 			<CardContent>
-				{allCharacters.length === 0 ? (
+				{charactersByRealm.length === 0 ? (
 					<div className="py-12 text-center text-muted-foreground">
 						<Users className="mx-auto mb-4 h-16 w-16 opacity-50" />
 						<h3 className="mb-2 font-medium text-lg">No characters yet</h3>
@@ -138,13 +160,26 @@ export function CharacterOverview({
 						</p>
 					</div>
 				) : (
-					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-						{allCharacters.map((character) => (
-							<CharacterCard
-								key={character.id}
-								character={character}
-								onChanged={handleCharacterChanged}
-							/>
+					<div className="space-y-6">
+						{charactersByRealm.map((group) => (
+							<div key={group.realm?.id}>
+								<div className="mb-3 flex items-center gap-2">
+									<h3 className="font-medium text-lg">{group.realm?.name}</h3>
+									<span className="text-muted-foreground text-sm">
+										({group.characters.length} character
+										{group.characters.length !== 1 ? "s" : ""})
+									</span>
+								</div>
+								<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+									{group.characters.map((character) => (
+										<CharacterCard
+											key={character.id}
+											character={character}
+											onChanged={handleCharacterChanged}
+										/>
+									))}
+								</div>
+							</div>
 						))}
 					</div>
 				)}

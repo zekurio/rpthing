@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { Dices, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { CreateOrJoinRealmDialog } from "@/components/create-or-join-realm-dialog";
+import { Logo } from "@/components/logo";
 import { SidebarRealmList } from "@/components/sidebar-realm-list";
 import {
 	Sidebar,
@@ -41,12 +42,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					<SidebarMenuItem>
 						<SidebarMenuButton size="lg" asChild>
 							<a href="/realms">
-								<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-									<Dices className="size-4" />
-								</div>
-								<div className="flex flex-col gap-0.5 leading-none">
-									<span className="font-bold font-lg">rpthing</span>
-								</div>
+								<Logo />
 							</a>
 						</SidebarMenuButton>
 					</SidebarMenuItem>

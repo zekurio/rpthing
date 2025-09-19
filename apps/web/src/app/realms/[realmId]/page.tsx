@@ -70,10 +70,8 @@ export default function RealmPage() {
 					<div className="flex h-full min-h-0 overflow-hidden">
 						<main className="flex-1 overflow-y-auto p-6">
 							<div className="space-y-6">
-								{/* Description moved to header */}
-
 								<Tabs value={tab} onValueChange={setTab} className="w-full">
-									<TabsList className="grid w-full grid-cols-2">
+									<TabsList className="grid w-full grid-cols-2 bg-muted">
 										<TabsTrigger value="characters">Characters</TabsTrigger>
 										<TabsTrigger value="traits">Traits</TabsTrigger>
 									</TabsList>

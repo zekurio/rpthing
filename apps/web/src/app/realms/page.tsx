@@ -80,14 +80,18 @@ export default function RealmsPage() {
 				</div>
 				<div className="flex h-full min-h-0 w-full flex-col">
 					<div className="flex h-full min-h-0 overflow-hidden">
-						<main className="flex-1 space-y-6 overflow-y-auto p-6">
-							<p className="mt-2 text-muted-foreground">
+						<main className="flex-1 overflow-y-auto p-6">
+							<p className="mb-6 text-muted-foreground">
 								Quick access to your recent characters and activity.
 							</p>
 
-							<div className="space-y-6">
-								<CharacterOverview unstyled />
-								<RecentActivity unstyled />
+							<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+								<div className="lg:col-span-2">
+									<CharacterOverview unstyled />
+								</div>
+								<div className="lg:col-span-1">
+									<RecentActivity unstyled />
+								</div>
 							</div>
 						</main>
 					</div>

@@ -17,4 +17,6 @@ const nextConfig: NextConfig = {
 	},
 };
 
+console.log("PUBLIC_S3_ENDPOINT:", process.env.PUBLIC_S3_ENDPOINT);
+
 export default nextConfig;

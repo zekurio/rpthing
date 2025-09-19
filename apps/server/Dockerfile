@@ -24,7 +24,7 @@ RUN bun run build
 FROM oven/bun:1.2.21 AS prod-deps
 WORKDIR /app
 COPY --from=turbo-prune /repo/out/json/ ./
-RUN bun install --frozen-lockfile --production
+RUN bun install --frozen-lockfile --production --ignore-scripts
 
 FROM oven/bun:1.2.21 AS runner
 ENV NODE_ENV=production

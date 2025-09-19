@@ -3,7 +3,6 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db } from "../db/index";
 import { user } from "../db/schema/auth";
 import { character } from "../db/schema/character";
-import { characterPermission } from "../db/schema/permissions";
 import { realmMember } from "../db/schema/realmMember";
 import { characterTraitRating, trait } from "../db/schema/traits";
 import { deleteFile, getPublicFileUrl } from "../lib/storage";
@@ -14,11 +13,6 @@ import {
 	characterListInputSchema,
 	characterUpdateInputSchema,
 } from "../schemas";
-import {
-	characterPermissionDeleteInputSchema,
-	characterPermissionListInputSchema,
-	characterPermissionUpsertInputSchema,
-} from "../schemas/permissions";
 import { ratingRouter } from "./characterTraitRating";
 
 // Helper function to check if user is a realm member (including owner)
@@ -35,126 +29,6 @@ async function isRealmMember(userId: string, realmId: string) {
 
 export const characterRouter = router({
 	ratings: ratingRouter,
-	permissions: router({
-		list: protectedProcedure
-			.input(characterPermissionListInputSchema)
-			.query(async ({ ctx, input }) => {
-				const userId = ctx.session.user.id;
-				const { characterId } = input;
-
-				const [charRow] = await db
-					.select({ realmId: character.realmId, ownerId: character.userId })
-					.from(character)
-					.where(eq(character.id, characterId))
-					.limit(1);
-				if (!charRow) {
-					throw new TRPCError({
-						code: "NOT_FOUND",
-						message: "Character not found",
-					});
-				}
-				// Only realm member or character owner can see permissions
-				const isMember = await isRealmMember(userId, charRow.realmId);
-				if (!isMember && charRow.ownerId !== userId) {
-					throw new TRPCError({ code: "FORBIDDEN", message: "Not permitted" });
-				}
-
-				return await db
-					.select({
-						id: characterPermission.id,
-						granteeUserId: characterPermission.granteeUserId,
-						scope: characterPermission.scope,
-						createdAt: characterPermission.createdAt,
-						updatedAt: characterPermission.updatedAt,
-					})
-					.from(characterPermission)
-					.where(eq(characterPermission.characterId, characterId));
-			}),
-		upsert: protectedProcedure
-			.input(characterPermissionUpsertInputSchema)
-			.mutation(async ({ ctx, input }) => {
-				const userId = ctx.session.user.id;
-				const { characterId, granteeUserId, scope } = input;
-
-				if (granteeUserId === userId) {
-					throw new TRPCError({
-						code: "BAD_REQUEST",
-						message: "Cannot grant to self",
-					});
-				}
-
-				const [charRow] = await db
-					.select({ realmId: character.realmId, ownerId: character.userId })
-					.from(character)
-					.where(eq(character.id, characterId))
-					.limit(1);
-				if (!charRow) {
-					throw new TRPCError({
-						code: "NOT_FOUND",
-						message: "Character not found",
-					});
-				}
-				// Only realm member or character owner can grant
-				const isMember = await isRealmMember(userId, charRow.realmId);
-				if (!isMember && charRow.ownerId !== userId) {
-					throw new TRPCError({ code: "FORBIDDEN", message: "Not permitted" });
-				}
-
-				const [existing] = await db
-					.select({ id: characterPermission.id })
-					.from(characterPermission)
-					.where(
-						and(
-							eq(characterPermission.characterId, characterId),
-							eq(characterPermission.granteeUserId, granteeUserId),
-							eq(characterPermission.scope, scope),
-						),
-					)
-					.limit(1);
-
-				if (existing) return { success: true, id: existing.id };
-
-				const [created] = await db
-					.insert(characterPermission)
-					.values({ characterId, granteeUserId, scope })
-					.returning();
-				return { success: true, id: created.id };
-			}),
-		delete: protectedProcedure
-			.input(characterPermissionDeleteInputSchema)
-			.mutation(async ({ ctx, input }) => {
-				const userId = ctx.session.user.id;
-				const { characterId, granteeUserId, scope } = input;
-
-				const [charRow] = await db
-					.select({ realmId: character.realmId, ownerId: character.userId })
-					.from(character)
-					.where(eq(character.id, characterId))
-					.limit(1);
-				if (!charRow) {
-					throw new TRPCError({
-						code: "NOT_FOUND",
-						message: "Character not found",
-					});
-				}
-				// Only realm member or character owner can delete permissions
-				const isMember = await isRealmMember(userId, charRow.realmId);
-				if (!isMember && charRow.ownerId !== userId) {
-					throw new TRPCError({ code: "FORBIDDEN", message: "Not permitted" });
-				}
-
-				await db
-					.delete(characterPermission)
-					.where(
-						and(
-							eq(characterPermission.characterId, characterId),
-							eq(characterPermission.granteeUserId, granteeUserId),
-							eq(characterPermission.scope, scope),
-						),
-					);
-				return { success: true };
-			}),
-	}),
 	create: protectedProcedure
 		.input(characterCreateInputSchema)
 		.mutation(async ({ ctx, input }) => {

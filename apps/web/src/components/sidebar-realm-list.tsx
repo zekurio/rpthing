@@ -56,6 +56,19 @@ export function SidebarRealmList({
 		);
 	}
 
+	// Handle empty realms gracefully
+	if (!realms || realms.length === 0) {
+		return (
+			<SidebarMenu>
+				<SidebarMenuItem>
+					<SidebarMenuButton className="h-9 text-muted-foreground" disabled>
+						<span className="text-sm">No realms yet</span>
+					</SidebarMenuButton>
+				</SidebarMenuItem>
+			</SidebarMenu>
+		);
+	}
+
 	return (
 		<>
 			<SidebarMenu>

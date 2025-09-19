@@ -70,7 +70,9 @@ export const CharacterCard = memo(function CharacterCard({
 	}, []);
 
 	const ratedTraits =
-		character.ratingsSummary?.filter((t) => typeof t.value === "number") ?? [];
+		character.ratingsSummary
+			?.filter((t) => typeof t.value === "number")
+			.sort((a, b) => a.traitName.localeCompare(b.traitName)) ?? [];
 
 	const previewSrc =
 		character.croppedImageKey || character.referenceImageKey || undefined;

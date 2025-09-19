@@ -145,6 +145,9 @@ export function CreateCharacterDialog({
 				queryClient.invalidateQueries({
 					queryKey: trpc.character.getWithRatings.queryKey({ id: created.id }),
 				});
+				queryClient.invalidateQueries({
+					queryKey: trpc.character.list.queryKey({ realmId }),
+				});
 			}
 		},
 		[

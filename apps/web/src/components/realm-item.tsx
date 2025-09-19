@@ -44,6 +44,7 @@ export function RealmItem({
 	const [currentSrc, setCurrentSrc] = useState<string | undefined>(undefined);
 	const longPressTimerRef = useRef<number | null>(null);
 	const longPressTriggeredRef = useRef(false);
+	const contextMenuUsedRef = useRef(false);
 	const buttonRef = useRef<HTMLButtonElement | null>(null);
 	const src = realm.iconKey || undefined;
 
@@ -107,8 +108,9 @@ export function RealmItem({
 	);
 
 	const handleButtonClick = () => {
-		if (longPressTriggeredRef.current) {
+		if (longPressTriggeredRef.current || contextMenuUsedRef.current) {
 			longPressTriggeredRef.current = false;
+			contextMenuUsedRef.current = false;
 			return;
 		}
 		handleRealmClick(realm.id);
@@ -156,12 +158,24 @@ export function RealmItem({
 			<ContextMenu>
 				<ContextMenuTrigger asChild>{realmButton}</ContextMenuTrigger>
 				<ContextMenuContent>
-					<ContextMenuItem onClick={() => onEdit(realm.id)}>
+					<ContextMenuItem
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							contextMenuUsedRef.current = true;
+							onEdit(realm.id);
+						}}
+					>
 						<Edit className="mr-2 h-4 w-4" />
 						Edit
 					</ContextMenuItem>
 					<ContextMenuItem
-						onClick={() => onDelete(realm.id)}
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							contextMenuUsedRef.current = true;
+							onDelete(realm.id);
+						}}
 						className="text-destructive focus:text-destructive"
 					>
 						<Trash className="mr-2 h-4 w-4" />

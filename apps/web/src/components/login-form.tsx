@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { BsDiscord } from "react-icons/bs";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { useAuth } from "@/hooks/use-auth";
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
 export function LoginForm({
@@ -20,35 +20,48 @@ export function LoginForm({
 	...props
 }: React.ComponentPropsWithoutRef<"div">) {
 	const [loading, setLoading] = useState(false);
-	const { signInWithProvider } = useAuth();
 	const searchParams = useSearchParams();
 
-	// Memoize redirectUrl to prevent unnecessary rerenders
-	const redirectUrl = useMemo(() => {
-		return searchParams.get("redirect") || "/realms";
-	}, [searchParams]);
+	const getRedirectUrl = () => {
+		const redirect = searchParams?.get("redirect") ?? null;
+		const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "";
 
-	// Memoize handleSignIn to prevent unnecessary rerenders
-	const handleSignIn = useCallback(
-		async (provider: "discord", callbackURL: string) => {
-			try {
-				setLoading(true);
-				await signInWithProvider(provider, callbackURL);
-			} catch (err) {
-				toast.error(`Failed to login with ${provider}`, {
-					description: err instanceof Error ? err.message : "Please try again.",
-				});
-			} finally {
-				setLoading(false);
+		if (redirect) {
+			// If redirect is already a full URL, use it as is
+			if (redirect.startsWith("http")) {
+				return redirect;
 			}
-		},
-		[signInWithProvider],
-	);
+			// If redirect is a path, prepend the base URL
+			return `${baseUrl}${redirect.startsWith("/") ? "" : "/"}${redirect}`;
+		}
+
+		// Default to base URL
+		return baseUrl;
+	};
+
+	async function handleSignIn(provider: "discord", callbackURL: string) {
+		await authClient.signIn.social(
+			{
+				provider,
+				callbackURL,
+			},
+			{
+				onRequest: () => {
+					setLoading(true);
+				},
+				onError: (ctx: { error: { message: string } }) => {
+					toast.error(`Failed to login with ${provider}`, {
+						description: ctx.error.message,
+					});
+				},
+			},
+		);
+	}
 
 	return (
 		<div className={cn("flex flex-col gap-2", className)} {...props}>
-			<Card>
-				<CardHeader className="text-left">
+			<Card className="bg-card">
+				<CardHeader className="text-center">
 					<CardTitle className="text-xl">Welcome back</CardTitle>
 					<CardDescription>Login with your Discord account</CardDescription>
 				</CardHeader>
@@ -57,17 +70,12 @@ export function LoginForm({
 						<div className="flex flex-col gap-4">
 							<Button
 								variant="outline"
-								className="w-full"
+								className="h-12 w-full font-medium text-base"
 								type="button"
-								onClick={() =>
-									handleSignIn(
-										"discord",
-										`${process.env.NEXT_PUBLIC_APP_URL}${redirectUrl}`,
-									)
-								}
+								onClick={() => handleSignIn("discord", getRedirectUrl())}
 								disabled={loading}
 							>
-								<BsDiscord />
+								<BsDiscord className="mr-2 h-5 w-5" />
 								Login with Discord
 							</Button>
 						</div>

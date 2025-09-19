@@ -1,7 +1,6 @@
 "use client";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Dices } from "lucide-react";
 import Link from "next/link";
-import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
@@ -17,7 +16,12 @@ export default function Home() {
 			<section className="container mx-auto px-4">
 				<div className="mx-auto grid max-w-5xl items-center gap-8 pt-12 pb-8 text-center md:gap-10 md:pt-20 md:pb-12">
 					<div className="flex justify-center">
-						<Logo />
+						<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+							<Dices className="size-4 text-neutral-900" />
+						</div>
+						<div className="flex flex-col gap-0.5 leading-none">
+							<span className="font-bold font-lg">rpthing</span>
+						</div>
 					</div>
 					<h1 className="text-balance font-bold text-4xl leading-tight tracking-tight md:text-6xl">
 						Run your tabletop campaigns, together.

@@ -8,7 +8,7 @@ import { useAuth } from "./use-auth";
  * Hook to check realm access and indicate if not-found should be shown
  * Returns realm data if access is granted, indicates not-found should be shown if not
  */
-export function useRealmAccess(realmId: string) {
+export function useRealmAccess(realmId: string | null | undefined) {
 	const _router = useRouter();
 	const [shouldShowNotFound, setShouldShowNotFound] = useState(false);
 
@@ -17,7 +17,8 @@ export function useRealmAccess(realmId: string) {
 		isLoading,
 		error,
 	} = useQuery({
-		...trpc.realm.getById.queryOptions({ realmId }),
+		...trpc.realm.getById.queryOptions({ realmId: realmId ?? "" }),
+		enabled: Boolean(realmId),
 		retry: false, // Don't retry on authorization errors
 		refetchOnWindowFocus: false,
 	});

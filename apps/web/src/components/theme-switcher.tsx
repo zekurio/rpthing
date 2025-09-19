@@ -13,15 +13,12 @@ export function ThemeSwitcher() {
 			<TabsList className="grid w-full grid-cols-3">
 				<TabsTrigger value="light" className="flex items-center gap-1">
 					<Sun className="h-3 w-3" />
-					Light
 				</TabsTrigger>
 				<TabsTrigger value="dark" className="flex items-center gap-1">
 					<Moon className="h-3 w-3" />
-					Dark
 				</TabsTrigger>
 				<TabsTrigger value="system" className="flex items-center gap-1">
 					<Monitor className="h-3 w-3" />
-					System
 				</TabsTrigger>
 			</TabsList>
 		</Tabs>

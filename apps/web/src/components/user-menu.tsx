@@ -1,9 +1,9 @@
 "use client";
 
-import { Home, Link, LogOut, Settings } from "lucide-react";
+import { LogOut, MoreVertical, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
-import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,12 +15,19 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	SidebarMenu,
+	SidebarMenuButton,
+	SidebarMenuItem,
+} from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
 import { authClient } from "@/lib/auth-client";
+import { SettingsDialog } from "./settings-dialog";
 
 export function UserMenu() {
 	const router = useRouter();
 	const { user, isLoading } = useAuth();
+	const [settingsOpen, setSettingsOpen] = useState(false);
 
 	const handleSignOut = async () => {
 		try {
@@ -37,69 +44,76 @@ export function UserMenu() {
 	}
 
 	return (
-		<div className="flex items-center">
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					{isLoading ? (
-						<div className="h-10 w-10 rounded-full bg-accent" />
-					) : (
-						<Avatar className="h-10 w-10 cursor-pointer rounded-full">
-							<AvatarImage src={user?.image || ""} alt={user?.name || ""} />
-							<AvatarFallback className="rounded-lg">
-								{user?.name ? user.name.charAt(0) : "U"}
-							</AvatarFallback>
-						</Avatar>
-					)}
-				</DropdownMenuTrigger>
-				<DropdownMenuContent
-					className="min-w-56 rounded-lg"
-					align="end"
-					sideOffset={4}
-				>
-					<DropdownMenuLabel className="p-0 font-normal">
-						<div className="flex flex-col gap-1 px-3 py-2 text-left">
+		<SidebarMenu>
+			<SidebarMenuItem>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<SidebarMenuButton
+							size="lg"
+							className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+						>
 							{isLoading ? (
 								<>
-									<div className="h-5 w-24 rounded-md bg-accent" />
-									<div className="mt-1 h-3 w-32 rounded-md bg-accent" />
+									<div className="h-8 w-8 rounded-lg bg-accent grayscale" />
+									<div className="grid flex-1 text-left text-sm leading-tight">
+										<span className="h-4 w-24 rounded bg-accent" />
+										<span className="mt-1 h-3 w-32 rounded bg-accent" />
+									</div>
+									<MoreVertical className="ml-auto size-4 text-muted-foreground" />
 								</>
 							) : (
 								<>
-									<span className="truncate font-medium">
-										{user?.name || "User"}
-									</span>
+									<Avatar className="h-8 w-8 rounded-lg">
+										<AvatarImage
+											src={user?.image || ""}
+											alt={user?.name || ""}
+										/>
+										<AvatarFallback className="rounded-lg">
+											{user?.name ? user.name.charAt(0) : "U"}
+										</AvatarFallback>
+									</Avatar>
+									<div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+										<span className="truncate font-medium">
+											{user?.name || "User"}
+										</span>
+									</div>
+									<MoreVertical className="ml-auto size-4" />
+								</>
+							)}
+						</SidebarMenuButton>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent
+						className="box-border w-(--radix-dropdown-menu-trigger-width) min-w-0 rounded-lg"
+						side="top"
+						align="end"
+						sideOffset={6}
+						collisionPadding={8}
+					>
+						<DropdownMenuLabel className="p-0 font-normal">
+							<div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+								<div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
 									<span className="truncate text-muted-foreground text-xs">
 										{user?.email || ""}
 									</span>
-								</>
-							)}
-						</div>
-					</DropdownMenuLabel>
-					<DropdownMenuSeparator />
-					<DropdownMenuGroup>
-						<DropdownMenuItem onClick={() => router.push("/")}>
-							<Home className="mr-2 size-4" />
-							Home
-						</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => router.push("/realms")}>
-							<Link className="mr-2 size-4" />
-							Realms
-						</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => router.push("/settings")}>
-							<Settings className="mr-2 size-4" />
-							Settings
-						</DropdownMenuItem>
+								</div>
+							</div>
+						</DropdownMenuLabel>
+						<DropdownMenuSeparator />
+						<DropdownMenuGroup>
+							<DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+								<Settings />
+								Settings
+							</DropdownMenuItem>
+						</DropdownMenuGroup>
+						<DropdownMenuSeparator />
 						<DropdownMenuItem onClick={handleSignOut}>
-							<LogOut className="mr-2 size-4" />
+							<LogOut />
 							Log out
 						</DropdownMenuItem>
-					</DropdownMenuGroup>
-					<DropdownMenuSeparator />
-					<div className="px-3 py-2">
-						<ThemeSwitcher />
-					</div>
-				</DropdownMenuContent>
-			</DropdownMenu>
-		</div>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</SidebarMenuItem>
+			<SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+		</SidebarMenu>
 	);
 }

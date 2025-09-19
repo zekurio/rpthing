@@ -45,7 +45,7 @@ interface EditRealmDialogProps {
 }
 
 export function EditRealmDialog({ open, onOpenChange }: EditRealmDialogProps) {
-	const pathname = usePathname();
+	const pathname = usePathname() ?? "";
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 	const [removeIcon, setRemoveIcon] = useState(false);

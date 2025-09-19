@@ -1,78 +1,23 @@
 "use client";
 
-import type { Route } from "next";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Dices } from "lucide-react";
+import { Suspense } from "react";
 import { LoginForm } from "@/components/login-form";
-import { Logo } from "@/components/logo";
-import { useAuth } from "@/hooks/use-auth";
 
-function LoginPageContent() {
-	const router = useRouter();
-	const searchParams = useSearchParams();
-	const { isAuthenticated, isLoading } = useAuth();
-	const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
-	const redirectUrl: string = searchParams.get("redirect") || "/realms";
-
-	// Track when we've completed the initial auth check
-	useEffect(() => {
-		if (!isLoading && !hasInitiallyLoaded) {
-			setHasInitiallyLoaded(true);
-		}
-	}, [isLoading, hasInitiallyLoaded]);
-
-	useEffect(() => {
-		if (hasInitiallyLoaded && isAuthenticated) {
-			// Redirect to realms or intended destination if already authenticated
-			if (redirectUrl === "/realms") {
-				router.push("/realms");
-			} else {
-				try {
-					const url = new URL(redirectUrl, window.location.origin);
-					// Only allow same-origin redirects
-					if (url.origin !== window.location.origin)
-						throw new Error("external");
-					router.push(url.pathname as Route);
-				} catch {
-					router.push("/realms");
-				}
-			}
-		}
-	}, [isAuthenticated, hasInitiallyLoaded, router, redirectUrl]);
-
-	// Show loading only during initial auth check, not during OAuth flow
-	if (!hasInitiallyLoaded) {
-		return (
-			<div className="bg flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-				<div className="flex w-full max-w-sm flex-col gap-6">
-					<Logo />
-					<div className="text-center">Loading...</div>
-				</div>
-			</div>
-		);
-	}
-
-	// Don't render login form if user is authenticated (will redirect)
-	if (isAuthenticated) {
-		return null;
-	}
-
+export default function LoginPage() {
 	return (
-		<div className="bg flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+		<div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
 			<div className="flex w-full max-w-sm flex-col gap-6">
-				<Logo />
-				<Suspense fallback={<div>Loading...</div>}>
+				<div className="flex items-center justify-center gap-3">
+					<div className="flex aspect-square size-8 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground">
+						<Dices className="size-4" />
+					</div>
+					<span className="font-bold text-2xl">rpthing</span>
+				</div>
+				<Suspense>
 					<LoginForm />
 				</Suspense>
 			</div>
 		</div>
-	);
-}
-
-export default function LoginPage() {
-	return (
-		<Suspense fallback={<div>Loading...</div>}>
-			<LoginPageContent />
-		</Suspense>
 	);
 }

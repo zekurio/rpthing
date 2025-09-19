@@ -5,7 +5,7 @@ const accessKeyId = process.env.S3_ACCESS_KEY_ID;
 const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY;
 const bucketName = process.env.S3_BUCKET_NAME;
 const endpoint = process.env.S3_ENDPOINT;
-const region = process.env.S3_REGION || "auto";
+const region = process.env.S3_REGION || "us-east-1";
 const publicEndpoint = process.env.PUBLIC_S3_ENDPOINT;
 
 // Normalize public endpoint to include scheme and no trailing slash
@@ -122,15 +122,21 @@ export const getFileUrl = async (
  */
 export const getPublicFileUrl = (targetPath: string): string => {
 	const objectKey = normalizePath(targetPath);
-	const baseUrl = normalizedPublicBaseUrl ?? endpoint;
-	if (baseUrl) {
-		// If the provided base URL already contains the bucket name, don't add it again
-		const hasBucketInUrl = baseUrl.includes(bucketName);
-		return hasBucketInUrl
-			? `${baseUrl}/${objectKey}`
-			: `${baseUrl}/${bucketName}/${objectKey}`;
+
+	// Priority: use public endpoint if available
+	if (normalizedPublicBaseUrl) {
+		return `${normalizedPublicBaseUrl}/${objectKey}`;
 	}
-	// Fallback to standard AWS S3 public URL
+
+	// Fallback: use configured endpoint if available
+	if (endpoint) {
+		const hasBucketInUrl = endpoint.includes(bucketName);
+		return hasBucketInUrl
+			? `${endpoint}/${objectKey}`
+			: `${endpoint}/${bucketName}/${objectKey}`;
+	}
+
+	// Last resort: standard AWS S3 public URL
 	return `https://${bucketName}.s3.${region}.amazonaws.com/${objectKey}`;
 };
 

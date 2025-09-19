@@ -1,11 +1,21 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { Hash, Plus, Star } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Hash, Plus, Star, Trash2 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { CreateTraitDialog } from "@/components/create-trait-dialog";
-import { DeleteTraitButton } from "@/components/delete-trait-button";
 import { EditTraitDialog } from "@/components/edit-trait-dialog";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,8 +23,8 @@ import type { Trait } from "@/types";
 import { queryClient, trpc } from "@/utils/trpc";
 
 interface TraitsManagerProps {
-    realmId: string;
-    enabled?: boolean;
+	realmId: string;
+	enabled?: boolean;
 }
 
 function TraitCard({
@@ -26,41 +36,92 @@ function TraitCard({
 	onUpdated: () => void;
 	onDeleted: () => void;
 }) {
+	const [deleteOpen, setDeleteOpen] = useState(false);
 	const DisplayModeIcon = trait.displayMode === "grade" ? Star : Hash;
 
+	const deleteMutation = useMutation({
+		...trpc.trait.delete.mutationOptions(),
+		onSuccess: () => {
+			onDeleted();
+			// Invalidate characters with ratings so UI reflects removal
+			queryClient.invalidateQueries({
+				predicate: (q) =>
+					JSON.stringify(q.queryKey).includes("character.getWithRatings"),
+			});
+			toast.success("Trait deleted");
+			setDeleteOpen(false);
+		},
+		onError: (err) => toast.error(err.message || "Failed to delete trait"),
+	});
+
+	const confirmDelete = useCallback(async () => {
+		await deleteMutation.mutateAsync(trait.id);
+	}, [deleteMutation, trait.id]);
+
 	return (
-		<div className="group relative min-h-[5rem] overflow-hidden rounded-lg border bg-gradient-to-br from-card to-card/80 p-4 shadow-sm transition-all duration-200 hover:shadow-md">
-			<div className="flex h-full items-start justify-between gap-3">
-				<div className="min-w-0 flex-1 space-y-2">
-					<div className="flex flex-wrap items-center gap-2">
-						<h4 className="break-words font-semibold text-sm leading-tight">
-							{trait.name}
-						</h4>
-						<div className="flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs">
-							<DisplayModeIcon className="h-3 w-3" />
-							<span className="capitalize">{trait.displayMode}</span>
+		<>
+			<div className="group relative min-h-[5rem] overflow-hidden rounded-lg border bg-gradient-to-br from-card to-card/80 p-4 shadow-sm transition-all duration-200 hover:shadow-md">
+				<div className="flex h-full items-start justify-between gap-3">
+					<div className="min-w-0 flex-1 space-y-2">
+						<div className="flex flex-wrap items-center gap-2">
+							<h4 className="break-words font-semibold text-sm leading-tight">
+								{trait.name}
+							</h4>
+							<div className="flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs">
+								<DisplayModeIcon className="h-3 w-3" />
+								<span className="capitalize">{trait.displayMode}</span>
+							</div>
 						</div>
+						{trait.description && (
+							<p className="break-words text-muted-foreground text-xs leading-relaxed">
+								{trait.description}
+							</p>
+						)}
 					</div>
-					{trait.description && (
-						<p className="break-words text-muted-foreground text-xs leading-relaxed">
-							{trait.description}
-						</p>
-					)}
-				</div>
-				<div className="flex shrink-0 items-start gap-1">
-					<EditTraitDialog trait={trait} onUpdated={onUpdated} />
-					<DeleteTraitButton id={trait.id} onDeleted={onDeleted} />
+					<div className="flex shrink-0 items-start gap-1">
+						<EditTraitDialog trait={trait} onUpdated={onUpdated} />
+						<Button
+							variant="ghost"
+							size="sm"
+							className="text-destructive"
+							onClick={() => setDeleteOpen(true)}
+							aria-label="Delete trait"
+						>
+							<Trash2 className="h-3 w-3" />
+						</Button>
+					</div>
 				</div>
 			</div>
-		</div>
+			<AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete trait?</AlertDialogTitle>
+						<AlertDialogDescription>
+							This action cannot be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={deleteMutation.isPending}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={confirmDelete}
+							disabled={deleteMutation.isPending}
+						>
+							{deleteMutation.isPending ? "Deleting..." : "Delete"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</>
 	);
 }
 
 export function TraitsManager({ realmId, enabled = true }: TraitsManagerProps) {
-    const { data: traits, isLoading } = useQuery({
-        ...trpc.trait.list.queryOptions({ realmId }),
-        enabled,
-    });
+	const { data: traits, isLoading } = useQuery({
+		...trpc.trait.list.queryOptions({ realmId }),
+		enabled,
+	});
 
 	const [createOpen, setCreateOpen] = useState(false);
 	const [search, setSearch] = useState("");

@@ -170,11 +170,14 @@ export function ImageCropDialog({
 						minWidth={64}
 						minHeight={64}
 					>
+						{/* biome-ignore lint/performance/noImgElement: cropper needs native img for canvas operations */}
 						<img
 							ref={imgRef}
 							alt="Crop me"
 							src={imageSrc}
-							onLoad={onImageLoad as unknown as React.ReactEventHandler<HTMLImageElement>}
+							onLoad={
+								onImageLoad as unknown as React.ReactEventHandler<HTMLImageElement>
+							}
 							className="max-h-80 max-w-full"
 							loading="eager"
 							decoding="async"

@@ -26,7 +26,12 @@ function LoginPageContent() {
 			if (redirectUrl === "/realms") {
 				router.push("/realms");
 			} else {
-				router.push(redirectUrl as any);
+				try {
+					const url = new URL(redirectUrl, window.location.origin);
+					router.push(url.pathname + url.search + url.hash);
+				} catch {
+					router.push("/realms");
+				}
 			}
 		}
 	}, [isAuthenticated, hasInitiallyLoaded, router, redirectUrl]);

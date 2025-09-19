@@ -6,7 +6,7 @@ import { character } from "../db/schema/character";
 import { characterPermission } from "../db/schema/permissions";
 import { realmMember } from "../db/schema/realmMember";
 import { characterTraitRating, trait } from "../db/schema/traits";
-import { deleteFile, getFileUrl, getPublicFileUrl } from "../lib/storage";
+import { deleteFile, getPublicFileUrl } from "../lib/storage";
 import { protectedProcedure, router } from "../lib/trpc";
 import {
 	characterCreateInputSchema,
@@ -244,7 +244,7 @@ export const characterRouter = router({
 				});
 			}
 
-				const rows = await db
+			const rows = await db
 				.select({
 					id: character.id,
 					name: character.name,
@@ -261,40 +261,44 @@ export const characterRouter = router({
 				.leftJoin(user, eq(user.id, character.userId))
 				.where(eq(character.realmId, realmId));
 
-				// Gather ratings summary for all characters in one query to avoid N+1
-				const characterIds = rows.map((r) => r.id);
-				let ratingsByCharacter: Record<string, Array<{
+			// Gather ratings summary for all characters in one query to avoid N+1
+			const characterIds = rows.map((r) => r.id);
+			let ratingsByCharacter: Record<
+				string,
+				Array<{
 					traitId: string;
 					traitName: string;
 					description: string | null;
 					displayMode: "number" | "grade";
 					ratingId: string | null;
 					value: number | null;
-				}>> = {};
-				if (characterIds.length > 0) {
-					const ratingRows = await db
-						.select({
-							characterId: characterTraitRating.characterId,
-							traitId: trait.id,
-							traitName: trait.name,
-							description: trait.description,
-							displayMode: trait.displayMode,
-							ratingId: characterTraitRating.id,
-							value: characterTraitRating.value,
-						})
-						.from(trait)
-						.leftJoin(
-							characterTraitRating,
-							and(
-								eq(characterTraitRating.traitId, trait.id),
-								inArray(characterTraitRating.characterId, characterIds),
-							),
-						)
-						.where(eq(trait.realmId, realmId));
+				}>
+			> = {};
+			if (characterIds.length > 0) {
+				const ratingRows = await db
+					.select({
+						characterId: characterTraitRating.characterId,
+						traitId: trait.id,
+						traitName: trait.name,
+						description: trait.description,
+						displayMode: trait.displayMode,
+						ratingId: characterTraitRating.id,
+						value: characterTraitRating.value,
+					})
+					.from(trait)
+					.leftJoin(
+						characterTraitRating,
+						and(
+							eq(characterTraitRating.traitId, trait.id),
+							inArray(characterTraitRating.characterId, characterIds),
+						),
+					)
+					.where(eq(trait.realmId, realmId));
 
-					ratingsByCharacter = ratingRows
-						.filter((row) => row.characterId !== null)
-						.reduce((acc, row) => {
+				ratingsByCharacter = ratingRows
+					.filter((row) => row.characterId !== null)
+					.reduce(
+						(acc, row) => {
 							const key = String(row.characterId);
 							const list = acc[key] || [];
 							list.push({
@@ -307,26 +311,28 @@ export const characterRouter = router({
 							});
 							acc[key] = list;
 							return acc;
-						}, {} as typeof ratingsByCharacter);
-				}
+						},
+						{} as typeof ratingsByCharacter,
+					);
+			}
 
-				// Generate public URLs for character images and attach ratings summary
-				const withUrls = rows.map((row) => {
-					const referenceUrl = row.referenceImageKey
-						? getPublicFileUrl(row.referenceImageKey)
-						: null;
-					const croppedUrl = row.croppedImageKey
-						? getPublicFileUrl(row.croppedImageKey)
-						: null;
-					return {
-						...row,
-						referenceImageKey: referenceUrl,
-						croppedImageKey: croppedUrl,
-						ratingsSummary: ratingsByCharacter[row.id] ?? [],
-					};
-				});
+			// Generate public URLs for character images and attach ratings summary
+			const withUrls = rows.map((row) => {
+				const referenceUrl = row.referenceImageKey
+					? getPublicFileUrl(row.referenceImageKey)
+					: null;
+				const croppedUrl = row.croppedImageKey
+					? getPublicFileUrl(row.croppedImageKey)
+					: null;
+				return {
+					...row,
+					referenceImageKey: referenceUrl,
+					croppedImageKey: croppedUrl,
+					ratingsSummary: ratingsByCharacter[row.id] ?? [],
+				};
+			});
 
-				return withUrls;
+			return withUrls;
 		}),
 
 	update: protectedProcedure

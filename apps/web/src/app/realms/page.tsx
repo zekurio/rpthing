@@ -26,9 +26,9 @@ export default function RealmsPage() {
 		return (
 			<div className="flex h-full min-h-0 w-full flex-col">
 				<SiteHeader />
-				<div className="flex h-full min-h-0">
+				<div className="flex h-full min-h-0 overflow-hidden">
 					<RealmSidebar />
-					<main className="flex-1 p-4">
+					<main className="flex-1 overflow-y-auto p-4">
 						<div className="space-y-4">
 							<Skeleton className="h-8 w-48" />
 							<Skeleton className="h-4 w-96" />
@@ -49,9 +49,9 @@ export default function RealmsPage() {
 		return (
 			<div className="flex h-full min-h-0 w-full flex-col">
 				<SiteHeader />
-				<div className="flex h-full min-h-0">
+				<div className="flex h-full min-h-0 overflow-hidden">
 					<RealmSidebar />
-					<main className="flex-1 p-4">
+					<main className="flex-1 overflow-y-auto p-4">
 						<div className="space-y-4">
 							<Skeleton className="h-8 w-56" />
 							<Skeleton className="h-4 w-[28rem]" />
@@ -71,9 +71,9 @@ export default function RealmsPage() {
 		return (
 			<div className="flex h-full min-h-0 w-full flex-col">
 				<SiteHeader />
-				<div className="flex h-full min-h-0">
+				<div className="flex h-full min-h-0 overflow-hidden">
 					<RealmSidebar />
-					<main className="flex-1 p-6">
+					<main className="flex-1 overflow-y-auto p-6">
 						<div className="flex h-full flex-col items-center justify-center text-center">
 							<div className="mb-4 text-6xl">🧹</div>
 							<h1 className="font-bold text-2xl">It's quite empty in here.</h1>
@@ -99,9 +99,9 @@ export default function RealmsPage() {
 	return (
 		<div className="flex h-full min-h-0 w-full flex-col">
 			<SiteHeader />
-			<div className="flex h-full min-h-0">
+			<div className="flex h-full min-h-0 overflow-hidden">
 				<RealmSidebar />
-				<main className="flex-1 space-y-6 p-6">
+				<main className="flex-1 space-y-6 overflow-y-auto p-6">
 					<div className="mb-6">
 						<h1 className="font-bold text-3xl">Dashboard</h1>
 						<p className="mt-2 text-muted-foreground">

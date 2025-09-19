@@ -25,11 +25,11 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { queryClient, trpc } from "@/utils/trpc";
 import { uploadWithProgress } from "@/lib/utils";
-import { Progress } from "@/components/ui/progress";
+import { queryClient, trpc } from "@/utils/trpc";
 
 const createRealmSchema = z.object({
 	name: z
@@ -293,7 +293,7 @@ export function CreateOrJoinRealmDialog({
 								/>
 								<div className="grid gap-2">
 									<FormLabel>Icon (optional)</FormLabel>
-										<ImageUpload
+									<ImageUpload
 										previewSrc={imagePreview || undefined}
 										onSelect={(file, preview) => {
 											setSelectedFile(file);
@@ -301,14 +301,14 @@ export function CreateOrJoinRealmDialog({
 										}}
 										onRemove={handleRemoveIcon}
 									/>
-										{isUploading ? (
-											<div className="flex items-center gap-2">
-												<Progress value={uploadProgress} className="h-2 w-full" />
-												<span className="text-muted-foreground text-xs">
-													{Math.max(0, Math.round(uploadProgress))}%
-												</span>
-											</div>
-										) : null}
+									{isUploading ? (
+										<div className="flex items-center gap-2">
+											<Progress value={uploadProgress} className="h-2 w-full" />
+											<span className="text-muted-foreground text-xs">
+												{Math.max(0, Math.round(uploadProgress))}%
+											</span>
+										</div>
+									) : null}
 								</div>
 								<div className="flex items-center justify-end gap-2 pt-2">
 									<Button

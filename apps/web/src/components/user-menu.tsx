@@ -3,7 +3,9 @@
 import { Home, Link, LogOut, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -15,8 +17,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 import { authClient } from "@/lib/auth-client";
-import { ThemeSwitcher } from "./theme-switcher";
-import { Button } from "./ui/button";
 
 export function UserMenu() {
 	const router = useRouter();

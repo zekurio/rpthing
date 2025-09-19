@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import {
 	Dialog,
 	DialogContent,
@@ -27,9 +26,10 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
-import { queryClient, trpc } from "@/utils/trpc";
 import { uploadWithProgress } from "@/lib/utils";
+import { queryClient, trpc } from "@/utils/trpc";
 
 const editRealmSchema = z.object({
 	name: z.string().min(1, "Name is required"),
@@ -239,7 +239,7 @@ export function EditRealmDialog({ open, onOpenChange }: EditRealmDialogProps) {
 						/>
 						<div className="grid gap-2">
 							<FormLabel>Icon (optional)</FormLabel>
-									<ImageUpload
+							<ImageUpload
 								previewSrc={
 									removeIcon
 										? undefined
@@ -252,14 +252,14 @@ export function EditRealmDialog({ open, onOpenChange }: EditRealmDialogProps) {
 								}}
 								onRemove={handleRemoveIcon}
 							/>
-									{isUploading ? (
-										<div className="flex items-center gap-2">
-											<Progress value={uploadProgress} className="h-2 w-full" />
-											<span className="text-muted-foreground text-xs">
-												{Math.max(0, Math.round(uploadProgress))}%
-											</span>
-										</div>
-									) : null}
+							{isUploading ? (
+								<div className="flex items-center gap-2">
+									<Progress value={uploadProgress} className="h-2 w-full" />
+									<span className="text-muted-foreground text-xs">
+										{Math.max(0, Math.round(uploadProgress))}%
+									</span>
+								</div>
+							) : null}
 						</div>
 						<DialogFooter>
 							<Button variant="outline" type="button" onClick={onClose}>

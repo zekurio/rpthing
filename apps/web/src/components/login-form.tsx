@@ -22,30 +22,33 @@ export function LoginForm({
 	const [loading, setLoading] = useState(false);
 	const { signInWithProvider } = useAuth();
 	const searchParams = useSearchParams();
-	
+
 	// Memoize redirectUrl to prevent unnecessary rerenders
 	const redirectUrl = useMemo(() => {
 		return searchParams.get("redirect") || "/realms";
 	}, [searchParams]);
 
 	// Memoize handleSignIn to prevent unnecessary rerenders
-	const handleSignIn = useCallback(async (provider: "discord", callbackURL: string) => {
-		try {
-			setLoading(true);
-			await signInWithProvider(provider, callbackURL);
-		} catch (err) {
-			toast.error(`Failed to login with ${provider}`, {
-				description: err instanceof Error ? err.message : "Please try again.",
-			});
-		} finally {
-			setLoading(false);
-		}
-	}, [signInWithProvider]);
+	const handleSignIn = useCallback(
+		async (provider: "discord", callbackURL: string) => {
+			try {
+				setLoading(true);
+				await signInWithProvider(provider, callbackURL);
+			} catch (err) {
+				toast.error(`Failed to login with ${provider}`, {
+					description: err instanceof Error ? err.message : "Please try again.",
+				});
+			} finally {
+				setLoading(false);
+			}
+		},
+		[signInWithProvider],
+	);
 
 	return (
 		<div className={cn("flex flex-col gap-2", className)} {...props}>
 			<Card>
-				<CardHeader className="text-center">
+				<CardHeader className="text-left">
 					<CardTitle className="text-xl">Welcome back</CardTitle>
 					<CardDescription>Login with your Discord account</CardDescription>
 				</CardHeader>

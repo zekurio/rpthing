@@ -168,7 +168,10 @@ export function CreateCharacterDialog({
 					</DialogDescription>
 				</DialogHeader>
 				<Form {...form}>
-					<form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+					<form
+						onSubmit={form.handleSubmit(onSubmit)}
+						className="scrollbar-none grid max-h-[75vh] gap-4 overflow-y-auto"
+					>
 						<FormField
 							control={form.control}
 							name="name"
@@ -326,7 +329,7 @@ export function CreateCharacterDialog({
 								</div>
 							)}
 						</div>
-						<div className="flex items-center justify-end gap-2">
+						<div className="sticky bottom-0 flex items-center justify-end gap-2 border-t bg-background pt-3">
 							<Button
 								type="button"
 								variant="outline"

@@ -27,11 +27,11 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { useRealmGenderOptions } from "@/hooks/use-realm-gender-options";
-import { queryClient, trpc } from "@/utils/trpc";
 import { uploadWithProgress } from "@/lib/utils";
-import { Progress } from "@/components/ui/progress";
+import { queryClient, trpc } from "@/utils/trpc";
 
 const editCharacterSchema = z.object({
 	name: z.string().min(1, "Name is required").max(200),
@@ -197,7 +197,10 @@ export function EditCharacterDialog({
 					</DialogDescription>
 				</DialogHeader>
 				<Form {...form}>
-					<form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+					<form
+						onSubmit={form.handleSubmit(onSubmit)}
+						className="scrollbar-none grid max-h-[75vh] gap-4 overflow-y-auto"
+					>
 						<FormField
 							control={form.control}
 							name="name"
@@ -277,14 +280,14 @@ export function EditCharacterDialog({
 									setRemoveRequested(true);
 								}}
 							/>
-									{isUploading ? (
-										<div className="flex items-center gap-2">
-											<Progress value={uploadProgress} className="h-2 w-full" />
-											<span className="text-muted-foreground text-xs">
-												{Math.max(0, Math.round(uploadProgress))}%
-											</span>
-										</div>
-									) : null}
+							{isUploading ? (
+								<div className="flex items-center gap-2">
+									<Progress value={uploadProgress} className="h-2 w-full" />
+									<span className="text-muted-foreground text-xs">
+										{Math.max(0, Math.round(uploadProgress))}%
+									</span>
+								</div>
+							) : null}
 						</div>
 						<div className="grid gap-2">
 							<FormLabel>Permissions</FormLabel>
@@ -304,7 +307,7 @@ export function EditCharacterDialog({
 							<FormLabel>Trait ratings</FormLabel>
 							<CharacterRatings characterId={characterId} />
 						</div>
-						<DialogFooter>
+						<DialogFooter className="sticky bottom-0 border-t bg-background pt-3">
 							<Button variant="outline" type="button" onClick={onClose}>
 								Cancel
 							</Button>

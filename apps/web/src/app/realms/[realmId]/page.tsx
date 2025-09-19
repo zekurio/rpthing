@@ -68,7 +68,10 @@ export default function RealmPage() {
 								<TabsTrigger value="traits">Traits</TabsTrigger>
 							</TabsList>
 							<TabsContent value="characters" className="mt-6">
-								<CharacterManager realmId={realm.id} enabled={tab === "characters"} />
+								<CharacterManager
+									realmId={realm.id}
+									enabled={tab === "characters"}
+								/>
 							</TabsContent>
 							<TabsContent value="traits" className="mt-6">
 								<TraitsManager realmId={realm.id} enabled={tab === "traits"} />

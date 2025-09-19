@@ -1,14 +1,26 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import { Pencil, Trash2 } from "lucide-react";
-import { memo, useState } from "react";
-
+import Image from "next/image";
+import { memo, useCallback, useState } from "react";
+import { toast } from "sonner";
 import { EditCharacterDialog } from "@/components/edit-character-dialog";
-import { ImageViewer } from	 "@/components/image-viewer";
+import { ImageViewer } from "@/components/image-viewer";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { gradeForValue } from "@/lib/traits";
 import type { CharacterListItem } from "@/types";
-import { DeleteCharacterDialog } from "@/components/delete-character-dialog";
+import { queryClient, trpc } from "@/utils/trpc";
 
 interface CharacterCardProps {
 	character: CharacterListItem;
@@ -21,10 +33,27 @@ export const CharacterCard = memo(function CharacterCard({
 }: CharacterCardProps) {
 	const [viewerOpen, setViewerOpen] = useState(false);
 	const [editOpen, setEditOpen] = useState(false);
-	
+	const [deleteOpen, setDeleteOpen] = useState(false);
 
-    const ratedTraits =
-        character.ratingsSummary?.filter((t) => typeof t.value === "number") ?? [];
+	const deleteMutation = useMutation({
+		...trpc.character.delete.mutationOptions(),
+		onSuccess: () => {
+			onChanged();
+			queryClient.invalidateQueries({
+				queryKey: trpc.character.list.queryKey(),
+			});
+			toast.success("Character deleted");
+			setDeleteOpen(false);
+		},
+		onError: (err) => toast.error(err.message || "Failed to delete character"),
+	});
+
+	const confirmDelete = useCallback(async () => {
+		await deleteMutation.mutateAsync({ id: character.id });
+	}, [deleteMutation, character.id]);
+
+	const ratedTraits =
+		character.ratingsSummary?.filter((t) => typeof t.value === "number") ?? [];
 
 	const previewSrc =
 		character.croppedImageKey || character.referenceImageKey || undefined;
@@ -39,11 +68,13 @@ export const CharacterCard = memo(function CharacterCard({
 					aria-label="View full image"
 					type="button"
 				>
-					<img
+					<Image
 						src={previewSrc}
 						alt={character.name}
-						className="absolute inset-0 h-full w-full object-cover"
-						loading="lazy"
+						fill
+						className="object-cover"
+						sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+						priority={false}
 					/>
 				</button>
 			) : (
@@ -70,15 +101,20 @@ export const CharacterCard = memo(function CharacterCard({
 					<Button
 						variant="ghost"
 						size="sm"
-					onClick={() => setEditOpen(true)}
+						onClick={() => setEditOpen(true)}
 						aria-label="Edit character"
 					>
 						<Pencil className="h-3 w-3" />
 					</Button>
-				<DeleteCharacterDialog
-						id={character.id}
-						onDeleted={onChanged}
-					/>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="text-destructive"
+						onClick={() => setDeleteOpen(true)}
+						aria-label="Delete character"
+					>
+						<Trash2 className="h-3 w-3" />
+					</Button>
 				</div>
 			</div>
 			{ratedTraits.length > 0 ? (
@@ -120,6 +156,29 @@ export const CharacterCard = memo(function CharacterCard({
 					minScale={1}
 				/>
 			) : null}
+
+			<AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete Character</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete this character? This action cannot
+							be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={deleteMutation.isPending}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={confirmDelete}
+							disabled={deleteMutation.isPending}
+						>
+							{deleteMutation.isPending ? "Deleting..." : "Delete"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 });

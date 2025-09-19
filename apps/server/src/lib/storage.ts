@@ -20,10 +20,10 @@ const publicEndpoint = process.env.PUBLIC_S3_ENDPOINT;
 
 // Normalize public endpoint to include scheme and no trailing slash
 const normalizedPublicBaseUrl = (() => {
-    const value = publicEndpoint?.trim();
-    if (!value) return undefined;
-    const withScheme = value.includes("://") ? value : `https://${value}`;
-    return withScheme.replace(/\/+$/, "");
+	const value = publicEndpoint?.trim();
+	if (!value) return undefined;
+	const withScheme = value.includes("://") ? value : `https://${value}`;
+	return withScheme.replace(/\/+$/, "");
 })();
 
 if (!accessKeyId || !secretAccessKey || !bucketName) {
@@ -49,8 +49,8 @@ const s3 = new S3Client({
 	endpoint,
 	forcePathStyle,
 	credentials: {
-		accessKeyId: accessKeyId!,
-		secretAccessKey: secretAccessKey!,
+		accessKeyId,
+		secretAccessKey,
 	},
 });
 
@@ -68,7 +68,7 @@ const normalizePath = (targetPath: string): string =>
 /**
  * Resolves the actual storage path depending on endpoint style.
  */
-const resolvePath = (targetPath: string): string => {
+const _resolvePath = (targetPath: string): string => {
 	const normalized = normalizePath(targetPath);
 	return endpointIncludesBucket ? normalized : `${bucketName}/${normalized}`;
 };
@@ -90,35 +90,35 @@ const toUint8Array = (data: ArrayBuffer | Uint8Array): Uint8Array => {
  * Upload file content to S3.
  */
 export const uploadFile = async (
-    targetPath: string,
-    data: ArrayBuffer | Uint8Array,
-    options?: { contentType?: string; cacheControl?: string },
+	targetPath: string,
+	data: ArrayBuffer | Uint8Array,
+	options?: { contentType?: string; cacheControl?: string },
 ): Promise<number> => {
 	const objectKey = normalizePath(targetPath);
 	const bytes = toUint8Array(data);
 
 	// First try with public-read ACL; if the backend doesn't support ACLs, retry without
 	try {
-        await s3.send(
-            new PutObjectCommand({
-                Bucket: bucketName!,
-                Key: objectKey,
-                Body: bytes,
-                ACL: "public-read",
-                ContentType: options?.contentType,
-                CacheControl: options?.cacheControl,
-            }),
-        );
+		await s3.send(
+			new PutObjectCommand({
+				Bucket: bucketName,
+				Key: objectKey,
+				Body: bytes,
+				ACL: "public-read",
+				ContentType: options?.contentType,
+				CacheControl: options?.cacheControl,
+			}),
+		);
 		return bytes.byteLength;
-	} catch (firstError) {
+	} catch (_firstError) {
 		try {
 			await s3.send(
 				new PutObjectCommand({
-					Bucket: bucketName!,
+					Bucket: bucketName,
 					Key: objectKey,
-                    Body: bytes,
-                    ContentType: options?.contentType,
-                    CacheControl: options?.cacheControl,
+					Body: bytes,
+					ContentType: options?.contentType,
+					CacheControl: options?.cacheControl,
 				}),
 			);
 			return bytes.byteLength;
@@ -136,7 +136,7 @@ export const deleteFile = async (targetPath: string): Promise<boolean> => {
 
 	try {
 		await s3.send(
-			new DeleteObjectCommand({ Bucket: bucketName!, Key: objectKey }),
+			new DeleteObjectCommand({ Bucket: bucketName, Key: objectKey }),
 		);
 		return true;
 	} catch (cause) {
@@ -154,7 +154,7 @@ export const getFileUrl = async (
 	const objectKey = normalizePath(targetPath);
 
 	try {
-		const cmd = new GetObjectCommand({ Bucket: bucketName!, Key: objectKey });
+		const cmd = new GetObjectCommand({ Bucket: bucketName, Key: objectKey });
 		const expiresIn = Math.max(1, Math.floor(opts?.expiresIn ?? 60 * 60 * 24));
 		return await getSignedUrl(s3, cmd, { expiresIn });
 	} catch (cause) {
@@ -168,10 +168,10 @@ export const getFileUrl = async (
  */
 export const getPublicFileUrl = (targetPath: string): string => {
 	const objectKey = normalizePath(targetPath);
-    const baseUrl = normalizedPublicBaseUrl ?? endpoint;
+	const baseUrl = normalizedPublicBaseUrl ?? endpoint;
 	if (baseUrl) {
 		// If the provided base URL already contains the bucket name, don't add it again
-		const hasBucketInUrl = baseUrl.includes(bucketName!);
+		const hasBucketInUrl = baseUrl.includes(bucketName);
 		return hasBucketInUrl
 			? `${baseUrl}/${objectKey}`
 			: `${baseUrl}/${bucketName}/${objectKey}`;
@@ -187,9 +187,11 @@ export const existsFile = async (targetPath: string): Promise<boolean> => {
 	const objectKey = normalizePath(targetPath);
 
 	try {
-		await s3.send(new HeadObjectCommand({ Bucket: bucketName!, Key: objectKey }));
+		await s3.send(
+			new HeadObjectCommand({ Bucket: bucketName, Key: objectKey }),
+		);
 		return true;
-	} catch (err) {
+	} catch (_err) {
 		// NotFound or 404 -> false; other errors also treated as not existing
 		return false;
 	}

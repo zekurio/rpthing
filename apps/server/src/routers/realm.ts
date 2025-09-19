@@ -6,7 +6,7 @@ import { user } from "../db/schema/auth";
 import { character } from "../db/schema/character";
 import { realm } from "../db/schema/realm";
 import { realmMember } from "../db/schema/realmMember";
-import { deleteFile, getFileUrl, getPublicFileUrl } from "../lib/storage";
+import { deleteFile, getPublicFileUrl } from "../lib/storage";
 import { protectedProcedure, router } from "../lib/trpc";
 import {
 	realmCreateInputSchema,

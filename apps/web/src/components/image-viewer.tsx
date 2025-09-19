@@ -364,6 +364,7 @@ export function ImageViewer({
 							backfaceVisibility: "hidden",
 						}}
 					>
+						{/* biome-ignore lint/performance/noImgElement: viewer needs native img for precise pointer/pinch control */}
 						<img
 							src={src}
 							alt={alt}

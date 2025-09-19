@@ -126,6 +126,16 @@ export function RecentActivity() {
 		})),
 	});
 
+	// Build a userId -> image map from realm members (Better Auth user images)
+	const userImageById = new Map<string, string | null>();
+	memberQueries.forEach((q) => {
+		q.data?.forEach((m) => {
+			if (!userImageById.has(m.userId)) {
+				userImageById.set(m.userId, m.image ?? null);
+			}
+		});
+	});
+
 	const isLoading =
 		realmsLoading ||
 		characterQueries.some((q) => q.isPending) ||
@@ -149,7 +159,7 @@ export function RecentActivity() {
 						realmName: realm.name || "Unnamed Realm",
 						userId: character.ownerId || "",
 						userName: character.ownerName || "Unknown User",
-						userImage: null,
+						userImage: userImageById.get(character.ownerId || "") ?? null,
 						timestamp: new Date(character.createdAt),
 					});
 				}
@@ -165,7 +175,7 @@ export function RecentActivity() {
 						realmName: realm.name || "Unnamed Realm",
 						userId: character.ownerId || "",
 						userName: character.ownerName || "Unknown User",
-						userImage: null,
+						userImage: userImageById.get(character.ownerId || "") ?? null,
 						timestamp: new Date(character.updatedAt),
 					});
 				}
@@ -187,7 +197,7 @@ export function RecentActivity() {
 						realmName: realm.name || "Unnamed Realm",
 						userId: trait.createdByUserId || "",
 						userName: trait.createdByName || "Unknown User",
-						userImage: null,
+						userImage: userImageById.get(trait.createdByUserId || "") ?? null,
 						timestamp: new Date(trait.createdAt),
 					});
 				}
@@ -195,10 +205,10 @@ export function RecentActivity() {
 		}
 	});
 
-	// Sort activities by timestamp (most recent first) and take top 10
+	// Sort activities by timestamp (most recent first) and take top 5
 	const recentActivities = activities
 		.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-		.slice(0, 10);
+		.slice(0, 5);
 
 	if (isLoading) {
 		return (

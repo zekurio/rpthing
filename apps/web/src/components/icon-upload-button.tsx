@@ -1,11 +1,11 @@
 "use client";
 
 import { Camera, Plus, Trash2 } from "lucide-react";
-// Removed next/image
+import Image from "next/image";
 import { useRef, useState } from "react";
-import { cn } from "@/lib/utils";
-import { ImageCropDialog } from "./image-crop-dialog";
 import { toast } from "sonner";
+import { ImageCropDialog } from "@/components/image-crop-dialog";
+import { cn } from "@/lib/utils";
 
 interface IconUploadButtonProps {
 	previewSrc?: string | null;
@@ -70,7 +70,11 @@ export function IconUploadButton({
 		const isImage = mime.startsWith("image/");
 		const isGif = mime === "image/gif" || lowerName.endsWith(".gif");
 		if (!isImage || isGif) {
-			toast.error(isGif ? "GIF images are not supported." : "Please select an image file.");
+			toast.error(
+				isGif
+					? "GIF images are not supported."
+					: "Please select an image file.",
+			);
 			onSelect?.(null, null, { originalFile: null, percentCrop: null });
 			resetInput();
 			return;
@@ -128,11 +132,13 @@ export function IconUploadButton({
 					title={title}
 				>
 					{previewSrc ? (
-						<img
+						<Image
 							src={previewSrc}
 							alt="Preview"
+							width={64}
+							height={64}
 							className="h-16 w-16 rounded-full object-cover"
-							loading="lazy"
+							priority={false}
 						/>
 					) : (
 						<Camera className="size-5" />

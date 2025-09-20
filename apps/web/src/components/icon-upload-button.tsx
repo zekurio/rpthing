@@ -125,7 +125,7 @@ export function IconUploadButton({
 					type="button"
 					onClick={() => fileInputRef.current?.click()}
 					className={cn(
-						"relative grid h-16 w-16 place-items-center rounded-full border-2 border-border border-dashed text-muted-foreground transition-colors hover:border-foreground hover:text-foreground",
+						"relative grid h-16 w-16 place-items-center rounded-lg border-2 border-border border-dashed text-muted-foreground transition-colors hover:border-foreground hover:text-foreground",
 						className,
 					)}
 					aria-label={ariaLabel}

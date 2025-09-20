@@ -117,7 +117,7 @@ export function EditCharacterDialog({
 			id: characterId,
 			name: data.name,
 			gender: data.gender || undefined,
-			notes: data.notes || undefined,
+			notes: (data.notes?.trim() ?? "") === "" ? null : data.notes?.trim(),
 		});
 
 		try {

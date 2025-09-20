@@ -84,12 +84,13 @@ export const characterRouter = router({
 				return null;
 			}
 
-			// Generate public URLs for character images
+			// Generate public URLs for character images with cache-busting
+			const versionParam = row.updatedAt.getTime();
 			const referenceUrl = row.referenceImageKey
-				? getPublicFileUrl(row.referenceImageKey)
+				? `${getPublicFileUrl(row.referenceImageKey)}?v=${versionParam}`
 				: null;
 			const croppedUrl = row.croppedImageKey
-				? getPublicFileUrl(row.croppedImageKey)
+				? `${getPublicFileUrl(row.croppedImageKey)}?v=${versionParam}`
 				: null;
 			return {
 				...row,
@@ -121,6 +122,7 @@ export const characterRouter = router({
 					gender: character.gender,
 					referenceImageKey: character.referenceImageKey,
 					croppedImageKey: character.croppedImageKey,
+					notes: character.notes,
 					userId: character.userId,
 					userName: user.name,
 					createdAt: character.createdAt,
@@ -185,13 +187,14 @@ export const characterRouter = router({
 					);
 			}
 
-			// Generate public URLs for character images and attach ratings summary
+			// Generate public URLs for character images (with cache-busting) and attach ratings summary
 			const withUrls = rows.map((row) => {
+				const versionParam = row.updatedAt.getTime();
 				const referenceUrl = row.referenceImageKey
-					? getPublicFileUrl(row.referenceImageKey)
+					? `${getPublicFileUrl(row.referenceImageKey)}?v=${versionParam}`
 					: null;
 				const croppedUrl = row.croppedImageKey
-					? getPublicFileUrl(row.croppedImageKey)
+					? `${getPublicFileUrl(row.croppedImageKey)}?v=${versionParam}`
 					: null;
 				return {
 					...row,

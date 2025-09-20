@@ -35,7 +35,11 @@ export function CharacterManager({
 		if (!characters) return [];
 		const query = search.trim().toLowerCase();
 		if (!query) return characters;
-		return characters.filter((c) => c.name.toLowerCase().includes(query));
+		return characters.filter(
+			(c) =>
+				c.name.toLowerCase().includes(query) ||
+				(c.notes ? c.notes.toLowerCase().includes(query) : false),
+		);
 	}, [characters, search]);
 
 	return (
@@ -59,7 +63,7 @@ export function CharacterManager({
 			<Input
 				value={search}
 				onChange={(e) => setSearch(e.target.value)}
-				placeholder="Search characters..."
+				placeholder="Search characters and notes..."
 				aria-label="Search characters"
 				className="w-full"
 			/>

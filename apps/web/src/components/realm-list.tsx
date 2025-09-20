@@ -33,7 +33,7 @@ export function RealmList({
 	return (
 		<div className="flex min-h-0 w-full flex-1 flex-col items-center gap-2 overflow-y-auto py-3">
 			{isPending ? (
-				<div className="h-10 w-10 animate-pulse rounded-full bg-accent" />
+				<div className="h-10 w-10 animate-pulse rounded-lg bg-accent" />
 			) : (
 				realms.map((realm) => (
 					<RealmItem

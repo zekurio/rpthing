@@ -10,19 +10,31 @@ export type Trait = {
 	updatedAt?: string | Date;
 };
 
-export type CharacterListItem = {
+export type CharacterData = {
 	id: string;
 	realmId: string;
 	name: string;
 	gender: string | null;
 	referenceImageKey: string | null;
-	croppedImageKey?: string | null;
-	userId?: string;
+	croppedImageKey: string | null;
+	notes: string | null;
+	userId: string;
 	userName?: string | null;
-	createdAt?: string | Date;
-	updatedAt?: string | Date;
+	createdAt: string;
+	updatedAt: string;
+};
+
+export type CharacterListItem = Omit<
+	CharacterData,
+	"createdAt" | "updatedAt" | "userId" | "userName"
+> & {
 	// Optional precomputed ratings summary for displaying badges without extra requests
 	ratingsSummary?: CharacterTraitRating[];
+	userId?: string;
+	userName?: string | null;
+	createdAt?: string;
+	updatedAt?: string;
+	croppedImageKey?: string | null;
 };
 
 export type CharacterTraitRating = {

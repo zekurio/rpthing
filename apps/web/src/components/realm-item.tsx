@@ -137,14 +137,14 @@ export function RealmItem({
 						onLoad={handleImageLoad}
 						onError={handleImageError}
 					/>
-					<AvatarFallback className="rounded-full">
+					<AvatarFallback>
 						{realm.name?.[0]?.toUpperCase() || "R"}
 					</AvatarFallback>
 				</Avatar>
 				<span className="truncate font-medium text-sm">{realm.name}</span>
 				{src && !isImageLoaded && (
 					<div className="absolute inset-2 flex items-center justify-center">
-						<Skeleton size="2xl" className="rounded-full" />
+						<Skeleton size="2xl" className="rounded-lg" />
 					</div>
 				)}
 			</Button>

@@ -32,7 +32,7 @@ export function SidebarRealmList({
 			<SidebarMenu>
 				<SidebarMenuItem>
 					<div className="flex items-center gap-3 rounded-md p-2">
-						<div className="size-6 rounded-full bg-accent" />
+						<div className="size-6 rounded-lg bg-accent" />
 						<span className="h-4 w-24 rounded bg-accent" />
 					</div>
 				</SidebarMenuItem>

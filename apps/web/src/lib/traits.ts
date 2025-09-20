@@ -57,7 +57,7 @@ export function getGradeColor(grade: TraitGrade): string {
 		case "S+":
 			return "bg-purple-100 text-purple-800 border-purple-200";
 		case "Z":
-			return "bg-amber-100 text-amber-900 border-amber-300";
+			return "bg-cyan-100 text-cyan-900 border-cyan-300";
 		default:
 			return "bg-gray-100 text-gray-800 border-gray-200";
 	}

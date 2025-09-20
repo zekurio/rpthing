@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 import { useRealmAccess } from "@/hooks/use-realm-access";
-import { getGradeColor, gradeForValue } from "@/lib/traits";
+import { getGradeColor, gradeForValue, type TraitGrade } from "@/lib/traits";
 import type { CharacterListItem } from "@/types";
 import { queryClient, trpc } from "@/utils/trpc";
 
@@ -196,7 +196,7 @@ export const CharacterCard = memo(function CharacterCard({
 								: String(t.value);
 						const badgeColor =
 							t.displayMode === "grade"
-								? getGradeColor(label)
+								? getGradeColor(label as TraitGrade)
 								: "bg-gray-100 text-gray-800 border-gray-200";
 						return (
 							<span

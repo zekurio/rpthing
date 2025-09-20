@@ -44,7 +44,7 @@ function ActivityIcon({ type, className }: ActivityIconProps) {
 		case "trait_updated":
 			return <Edit className={`${iconClass} text-orange-300`} />;
 		case "realm_joined":
-			return <UserPlus className={`${iconClass} text-cyan-300`} />;
+			return <UserPlus className={`${iconClass} text-yellow-300`} />;
 		default:
 			return <Sword className={iconClass} />;
 	}
@@ -203,6 +203,41 @@ export function RecentActivity({ unstyled = false }: RecentActivityProps) {
 						userName: trait.createdByName || "Unknown User",
 						userImage: userImageById.get(trait.createdByUserId || "") ?? null,
 						timestamp: new Date(trait.createdAt),
+					});
+				}
+				if (trait.updatedAt && trait.updatedAt !== trait.createdAt) {
+					activities.push({
+						type: "trait_updated",
+						entityId: trait.id,
+						entityName: trait.name,
+						realmId: realm.id,
+						realmName: realm.name || "Unnamed Realm",
+						userId: trait.createdByUserId || "",
+						userName: trait.createdByName || "Unknown User",
+						userImage: userImageById.get(trait.createdByUserId || "") ?? null,
+						timestamp: new Date(trait.updatedAt),
+					});
+				}
+			});
+		}
+	});
+
+	// Add realm member join activities
+	memberQueries.forEach((query, index) => {
+		const realm = realms?.[index];
+		if (realm && query.data) {
+			query.data.forEach((member) => {
+				if (member.joinedAt) {
+					activities.push({
+						type: "realm_joined",
+						entityId: member.userId,
+						entityName: member.name || "Unknown User",
+						realmId: realm.id,
+						realmName: realm.name || "Unnamed Realm",
+						userId: member.userId,
+						userName: member.name || "Unknown User",
+						userImage: member.image ?? null,
+						timestamp: new Date(member.joinedAt),
 					});
 				}
 			});

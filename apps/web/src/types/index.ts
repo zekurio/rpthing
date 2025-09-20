@@ -12,6 +12,7 @@ export type Trait = {
 
 export type CharacterListItem = {
 	id: string;
+	realmId: string;
 	name: string;
 	gender: string | null;
 	referenceImageKey: string | null;

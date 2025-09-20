@@ -78,7 +78,11 @@ export function CharacterManager({
 					))}
 				</div>
 			) : filteredCharacters && filteredCharacters.length > 0 ? (
-				<CharacterGallery items={filteredCharacters} onChanged={invalidate} />
+				<CharacterGallery
+					items={filteredCharacters}
+					onChanged={invalidate}
+					realmId={realmId}
+				/>
 			) : (
 				<div className="flex min-h-[12rem] flex-col items-center justify-center rounded-lg border-2 border-muted-foreground/25 border-dashed p-8 text-center">
 					<div className="mb-4 rounded-full bg-muted p-3">

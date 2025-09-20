@@ -190,6 +190,7 @@ export function CharacterOverview({
 											key={character.id}
 											character={character}
 											onChanged={handleCharacterChanged}
+											realmId={group.realm?.id}
 										/>
 									))}
 								</div>

@@ -116,6 +116,7 @@ export const characterRouter = router({
 			const rows = await db
 				.select({
 					id: character.id,
+					realmId: character.realmId,
 					name: character.name,
 					gender: character.gender,
 					referenceImageKey: character.referenceImageKey,

@@ -24,23 +24,35 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { gradeForValue } from "@/lib/traits";
+import { useAuth } from "@/hooks/use-auth";
+import { useRealmAccess } from "@/hooks/use-realm-access";
+import { getGradeColor, gradeForValue } from "@/lib/traits";
 import type { CharacterListItem } from "@/types";
 import { queryClient, trpc } from "@/utils/trpc";
 
 interface CharacterCardProps {
 	character: CharacterListItem;
 	onChanged: () => void;
+	realmId?: string;
 }
 
 export const CharacterCard = memo(function CharacterCard({
 	character,
 	onChanged,
+	realmId: propRealmId,
 }: CharacterCardProps) {
 	const [viewerOpen, setViewerOpen] = useState(false);
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
+
+	const { user } = useAuth();
+	const realmId = propRealmId || character.realmId;
+	const { realm } = useRealmAccess(realmId);
+
+	// Check if user can delete this character (is creator OR is realm owner)
+	const canDelete =
+		user && (character.userId === user.id || realm?.ownerId === user.id);
 
 	const deleteMutation = useMutation({
 		...trpc.character.delete.mutationOptions(),
@@ -117,6 +129,7 @@ export const CharacterCard = memo(function CharacterCard({
 								<DropdownMenuItem
 									onClick={handleDeleteClick}
 									className="text-destructive focus:text-destructive"
+									disabled={!canDelete}
 								>
 									<Trash2 className="mr-2 h-4 w-4" />
 									Delete
@@ -150,6 +163,7 @@ export const CharacterCard = memo(function CharacterCard({
 								<DropdownMenuItem
 									onClick={handleDeleteClick}
 									className="text-destructive focus:text-destructive"
+									disabled={!canDelete}
 								>
 									<Trash2 className="mr-2 h-4 w-4" />
 									Delete
@@ -180,10 +194,14 @@ export const CharacterCard = memo(function CharacterCard({
 							t.displayMode === "grade"
 								? gradeForValue(t.value as number)
 								: String(t.value);
+						const badgeColor =
+							t.displayMode === "grade"
+								? getGradeColor(label)
+								: "bg-gray-100 text-gray-800 border-gray-200";
 						return (
 							<span
 								key={t.traitId}
-								className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
+								className={`rounded-full border px-2 py-0.5 font-medium text-[11px] ${badgeColor}`}
 								title={`${t.traitName}: ${label}`}
 							>
 								{t.traitName}: {label}

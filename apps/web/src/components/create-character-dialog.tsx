@@ -73,6 +73,10 @@ export function CreateCharacterDialog({
 			onOpenChange(false);
 			form.reset({ name: "", gender: "", notes: "" });
 			setLocalRatings({});
+			setSelectedFile(null);
+			setImagePreview(null);
+			setOriginalFile(null);
+			setPercentCrop(null);
 		},
 		onError: (e) => toast.error(e.message || "Failed to create"),
 	});

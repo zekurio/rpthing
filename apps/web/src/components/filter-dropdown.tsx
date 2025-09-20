@@ -3,7 +3,6 @@
 import { Filter, X } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Combobox } from "@/components/ui/combobox";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -203,17 +202,27 @@ export function FilterDropdown({
 					{/* Trait Filters */}
 					<div className="space-y-3">
 						<Label className="font-medium text-xs">Add trait filter</Label>
-						<Combobox
-							options={availableAddTraitOptions}
-							value={newTraitName}
+						<Select
+							value={newTraitName || "none"}
 							onValueChange={(value) => {
-								setNewTraitName("");
-								addTraitByName(value);
+								if (value !== "none") {
+									setNewTraitName("");
+									addTraitByName(value);
+								}
 							}}
-							placeholder="Search traits..."
-							emptyText="No traits found"
-							className="w-full"
-						/>
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="Select a trait..." />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="none">Select a trait...</SelectItem>
+								{availableAddTraitOptions.map((traitName) => (
+									<SelectItem key={traitName} value={traitName}>
+										{traitName}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 						{Object.keys(filters.traitFilters).length > 0 && (
 							<div className="max-h-60 space-y-2 overflow-y-auto">
 								{Object.entries(filters.traitFilters).map(

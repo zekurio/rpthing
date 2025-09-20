@@ -4,6 +4,7 @@ import { Edit, LogOut, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
 	ContextMenu,
 	ContextMenuContent,
@@ -119,10 +120,12 @@ export function RealmItem({
 	};
 
 	const realmButton = (
-		<div className="group relative">
-			<button
-				type="button"
-				className={`flex cursor-pointer items-center gap-3 rounded-md p-2 transition-colors hover:bg-accent ${isSelected ? "bg-accent" : ""}`}
+		<div
+			className={`group relative w-full rounded-md transition-colors hover:bg-accent ${isSelected ? "bg-accent" : ""}`}
+		>
+			<Button
+				variant="ghost"
+				className="h-auto w-full justify-start gap-3 p-2"
 				onClick={handleButtonClick}
 				onTouchStart={handleTouchStart}
 				onTouchEnd={handleTouchEnd}
@@ -144,7 +147,7 @@ export function RealmItem({
 						<Skeleton size="2xl" className="rounded-full" />
 					</div>
 				)}
-			</button>
+			</Button>
 		</div>
 	);
 

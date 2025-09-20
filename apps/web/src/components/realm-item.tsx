@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit, Trash } from "lucide-react";
+import { Edit, LogOut, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,11 +11,6 @@ import {
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface Realm {
 	id: string;
@@ -29,6 +24,7 @@ interface RealmItemProps {
 	isSelected: boolean;
 	onEdit: (realmId: string) => void;
 	onDelete: (realmId: string) => void;
+	onLeave: (realmId: string) => void;
 	isOwner?: boolean;
 }
 
@@ -37,15 +33,17 @@ export function RealmItem({
 	isSelected,
 	onEdit,
 	onDelete,
+	onLeave,
 	isOwner = false,
 }: RealmItemProps) {
 	const router = useRouter();
 	const [isImageLoaded, setIsImageLoaded] = useState(false);
 	const [currentSrc, setCurrentSrc] = useState<string | undefined>(undefined);
+	const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
 	const longPressTimerRef = useRef<number | null>(null);
 	const longPressTriggeredRef = useRef(false);
 	const contextMenuUsedRef = useRef(false);
-	const buttonRef = useRef<HTMLButtonElement | null>(null);
+	const buttonRef = useRef<HTMLDivElement | null>(null);
 	const src = realm.iconKey || undefined;
 
 	// Reset loading state when image source changes
@@ -108,7 +106,11 @@ export function RealmItem({
 	);
 
 	const handleButtonClick = () => {
-		if (longPressTriggeredRef.current || contextMenuUsedRef.current) {
+		if (
+			isContextMenuOpen ||
+			longPressTriggeredRef.current ||
+			contextMenuUsedRef.current
+		) {
 			longPressTriggeredRef.current = false;
 			contextMenuUsedRef.current = false;
 			return;
@@ -118,73 +120,72 @@ export function RealmItem({
 
 	const realmButton = (
 		<div className="group relative">
-			<Tooltip>
-				<TooltipTrigger asChild>
-					<button
-						className={`group/realm relative cursor-pointer ${isSelected ? "rounded-full ring-2 ring-primary" : ""}`}
-						type="button"
-						onClick={handleButtonClick}
-						ref={buttonRef}
-						onTouchStart={handleTouchStart}
-						onTouchEnd={handleTouchEnd}
-					>
-						<Avatar className="h-10 w-10">
-							<AvatarImage
-								src={src}
-								alt={realm.name}
-								onLoad={handleImageLoad}
-								onError={handleImageError}
-							/>
-							<AvatarFallback className="rounded-full">
-								{realm.name?.[0]?.toUpperCase() || "R"}
-							</AvatarFallback>
-						</Avatar>
-						{src && !isImageLoaded && (
-							<div className="absolute inset-0 flex h-10 w-10 items-center justify-center">
-								<Skeleton className="h-10 w-10 rounded-full" />
-							</div>
-						)}
-					</button>
-				</TooltipTrigger>
-				<TooltipContent side="right">
-					<p>{realm.name}</p>
-				</TooltipContent>
-			</Tooltip>
+			<button
+				type="button"
+				className={`flex cursor-pointer items-center gap-3 rounded-md p-2 transition-colors hover:bg-accent ${isSelected ? "bg-accent" : ""}`}
+				onClick={handleButtonClick}
+				onTouchStart={handleTouchStart}
+				onTouchEnd={handleTouchEnd}
+			>
+				<Avatar className="h-8 w-8 flex-shrink-0">
+					<AvatarImage
+						src={src}
+						alt={realm.name}
+						onLoad={handleImageLoad}
+						onError={handleImageError}
+					/>
+					<AvatarFallback className="rounded-full">
+						{realm.name?.[0]?.toUpperCase() || "R"}
+					</AvatarFallback>
+				</Avatar>
+				<span className="truncate font-medium text-sm">{realm.name}</span>
+				{src && !isImageLoaded && (
+					<div className="absolute inset-2 flex items-center justify-center">
+						<Skeleton size="2xl" className="rounded-full" />
+					</div>
+				)}
+			</button>
 		</div>
 	);
 
-	if (isOwner) {
-		return (
-			<ContextMenu>
-				<ContextMenuTrigger asChild>{realmButton}</ContextMenuTrigger>
-				<ContextMenuContent>
+	return (
+		<ContextMenu onOpenChange={setIsContextMenuOpen}>
+			<ContextMenuTrigger asChild>{realmButton}</ContextMenuTrigger>
+			<ContextMenuContent>
+				{isOwner ? (
+					<>
+						<ContextMenuItem
+							onSelect={() => {
+								contextMenuUsedRef.current = true;
+								onEdit(realm.id);
+							}}
+						>
+							<Edit className="mr-2 h-4 w-4" />
+							Edit
+						</ContextMenuItem>
+						<ContextMenuItem
+							onSelect={() => {
+								contextMenuUsedRef.current = true;
+								onDelete(realm.id);
+							}}
+							className="text-destructive focus:text-destructive"
+						>
+							<Trash className="mr-2 h-4 w-4" />
+							Delete
+						</ContextMenuItem>
+					</>
+				) : (
 					<ContextMenuItem
-						onClick={(e) => {
-							e.preventDefault();
-							e.stopPropagation();
+						onSelect={() => {
 							contextMenuUsedRef.current = true;
-							onEdit(realm.id);
+							onLeave(realm.id);
 						}}
 					>
-						<Edit className="mr-2 h-4 w-4" />
-						Edit
+						<LogOut className="mr-2 h-4 w-4" />
+						Leave
 					</ContextMenuItem>
-					<ContextMenuItem
-						onClick={(e) => {
-							e.preventDefault();
-							e.stopPropagation();
-							contextMenuUsedRef.current = true;
-							onDelete(realm.id);
-						}}
-						className="text-destructive focus:text-destructive"
-					>
-						<Trash className="mr-2 h-4 w-4" />
-						Delete
-					</ContextMenuItem>
-				</ContextMenuContent>
-			</ContextMenu>
-		);
-	}
-
-	return realmButton;
+				)}
+			</ContextMenuContent>
+		</ContextMenu>
+	);
 }

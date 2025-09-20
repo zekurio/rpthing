@@ -83,16 +83,15 @@ export const traitRouter = router({
 			const t = result[0];
 
 			if (!t) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Trait not found" });
+				// Return null instead of throwing error
+				return null;
 			}
 
 			// Check if user is a realm member (including owner)
 			const isMember = await isRealmMember(userId, t.realmId);
 			if (!isMember) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Not a realm member",
-				});
+				// Return null instead of throwing error
+				return null;
 			}
 
 			return t;

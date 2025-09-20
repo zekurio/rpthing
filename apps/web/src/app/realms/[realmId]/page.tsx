@@ -1,10 +1,11 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import NotFound from "@/app/not-found";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CharacterManager } from "@/components/character-manager";
+import EditRealmDialog from "@/components/edit-realm-dialog";
 import { TraitsManager } from "@/components/traits-manager";
 import {
 	Dialog,
@@ -23,6 +24,7 @@ import { useRealmAccess } from "@/hooks/use-realm-access";
 
 export default function RealmPage() {
 	const params = useParams<{ realmId?: string | string[] }>();
+	const searchParams = useSearchParams();
 	const rawRealm = params?.realmId;
 	const realmId = Array.isArray(rawRealm)
 		? typeof rawRealm[0] === "string"
@@ -36,6 +38,19 @@ export default function RealmPage() {
 
 	const [tab, setTab] = useState("characters");
 	const [aboutOpen, setAboutOpen] = useState(false);
+	const [editOpen, setEditOpen] = useState(false);
+
+	// Handle edit URL parameter
+	useEffect(() => {
+		const shouldEdit = searchParams?.get("edit") === "1";
+		if (shouldEdit && realm) {
+			setEditOpen(true);
+			// Clean up the URL parameter
+			const url = new URL(window.location.href);
+			url.searchParams.delete("edit");
+			window.history.replaceState({}, "", url.toString());
+		}
+	}, [searchParams, realm]);
 
 	// If access is denied, render the not-found page
 	if (shouldShowNotFound || !realmId) return <NotFound />;
@@ -104,6 +119,11 @@ export default function RealmPage() {
 						</DialogHeader>
 					</DialogContent>
 				</Dialog>
+				<EditRealmDialog
+					open={editOpen}
+					onOpenChange={setEditOpen}
+					realmId={realmId}
+				/>
 			</SidebarInset>
 		</SidebarProvider>
 	);

@@ -15,6 +15,7 @@ interface RealmListProps {
 	currentRealmId: string | null;
 	onEdit: (realmId: string) => void;
 	onDelete: (realmId: string) => void;
+	onLeave: (realmId: string) => void;
 	currentUserId?: string;
 	footer?: React.ReactNode;
 }
@@ -25,6 +26,7 @@ export function RealmList({
 	currentRealmId,
 	onEdit,
 	onDelete,
+	onLeave,
 	currentUserId,
 	footer,
 }: RealmListProps) {
@@ -40,6 +42,7 @@ export function RealmList({
 						isSelected={currentRealmId === realm.id}
 						onEdit={onEdit}
 						onDelete={onDelete}
+						onLeave={onLeave}
 						isOwner={currentUserId ? realm.ownerId === currentUserId : false}
 					/>
 				))

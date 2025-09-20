@@ -81,22 +81,19 @@ export const realmRouter = router({
 				.limit(1);
 
 			if (!r) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
+				// Return false instead of throwing error
+				return false;
 			}
 
 			if (r.password) {
 				if (!password) {
-					throw new TRPCError({
-						code: "BAD_REQUEST",
-						message: "Password required",
-					});
+					// Return false instead of throwing error
+					return false;
 				}
 				const ok = await Bun.password.verify(password, r.password);
 				if (!ok) {
-					throw new TRPCError({
-						code: "UNAUTHORIZED",
-						message: "Invalid password",
-					});
+					// Return false instead of throwing error
+					return false;
 				}
 			}
 
@@ -132,11 +129,8 @@ export const realmRouter = router({
 				.limit(1);
 
 			if (!result) {
-				// Return generic error to prevent information leakage
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Access denied. The requested resource is not available.",
-				});
+				// Return null instead of throwing error
+				return null;
 			}
 
 			// Generate public URL for icon if it exists
@@ -288,10 +282,8 @@ export const realmRouter = router({
 				.limit(1);
 
 			if (!memberCheck) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Access denied. You are not a member of this realm.",
-				});
+				// Return empty array instead of throwing error
+				return [];
 			}
 
 			// Get realm owner ID
@@ -302,10 +294,8 @@ export const realmRouter = router({
 				.limit(1);
 
 			if (!realmData) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Realm not found",
-				});
+				// Return empty array instead of throwing error
+				return [];
 			}
 
 			// Get all members with their roles determined dynamically
@@ -348,17 +338,13 @@ export const realmRouter = router({
 				.limit(1);
 
 			if (!realmData) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Realm not found",
-				});
+				// Return null instead of throwing error
+				return null;
 			}
 
 			if (realmData.ownerId !== userId) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Access denied. The requested resource is not available.",
-				});
+				// Return null instead of throwing error
+				return null;
 			}
 
 			// Get owner information
@@ -376,6 +362,60 @@ export const realmRouter = router({
 				.limit(1);
 
 			return owner;
+		}),
+
+	leave: protectedProcedure
+		.input(realmIdSchema)
+		.mutation(async ({ ctx, input }) => {
+			const userId = ctx.session.user.id;
+			const realmId = input;
+
+			// Check if user is a member of this realm
+			const [memberCheck] = await db
+				.select({ id: realmMember.id })
+				.from(realmMember)
+				.where(
+					and(eq(realmMember.realmId, realmId), eq(realmMember.userId, userId)),
+				)
+				.limit(1);
+
+			if (!memberCheck) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "You are not a member of this realm",
+				});
+			}
+
+			// Check if user is the owner
+			const [realmData] = await db
+				.select({ ownerId: realm.ownerId })
+				.from(realm)
+				.where(eq(realm.id, realmId))
+				.limit(1);
+
+			if (!realmData) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Realm not found",
+				});
+			}
+
+			if (realmData.ownerId === userId) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message:
+						"Realm owners cannot leave their own realm. Transfer ownership first or delete the realm.",
+				});
+			}
+
+			// Remove the user from the realm
+			await db
+				.delete(realmMember)
+				.where(
+					and(eq(realmMember.realmId, realmId), eq(realmMember.userId, userId)),
+				);
+
+			return true;
 		}),
 
 	transferOwnership: protectedProcedure

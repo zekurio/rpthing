@@ -24,6 +24,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { ButtonLoading } from "@/components/ui/loading";
 import { Textarea } from "@/components/ui/textarea";
 import type { Trait } from "@/types";
 import { queryClient, trpc } from "@/utils/trpc";
@@ -187,7 +188,9 @@ export function EditTraitDialog({ trait, onUpdated }: EditTraitDialogProps) {
 										form.formState.isSubmitting || updateMutation.isPending
 									}
 								>
-									{updateMutation.isPending ? "Saving..." : "Save"}
+									<ButtonLoading loading={updateMutation.isPending}>
+										{updateMutation.isPending ? "Saving..." : "Save"}
+									</ButtonLoading>
 								</Button>
 							</div>
 						</form>

@@ -2,6 +2,7 @@
 
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Users } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { CharacterCard } from "@/components/character-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,12 +22,12 @@ function CharacterOverviewSkeleton() {
 					<Skeleton className="aspect-square w-full" />
 					<div className="flex items-center justify-between gap-2 p-2">
 						<div className="min-w-0">
-							<Skeleton className="mb-1 h-4 w-20" />
-							<Skeleton className="h-3 w-16" />
+							<Skeleton size="sm" className="mb-1 w-20" />
+							<Skeleton size="xs" className="w-16" />
 						</div>
 						<div className="flex shrink-0 items-center gap-1">
-							<Skeleton className="h-6 w-6" />
-							<Skeleton className="h-6 w-6" />
+							<Skeleton size="sm" className="rounded-full" />
+							<Skeleton size="sm" className="rounded-full" />
 						</div>
 					</div>
 				</div>
@@ -43,6 +44,7 @@ export function CharacterOverview({
 	unstyled = false,
 }: CharacterOverviewProps) {
 	const { user } = useAuth();
+	const router = useRouter();
 	const { data: realms, isPending: realmsLoading } = useQuery({
 		...trpc.realm.list.queryOptions(),
 	});
@@ -121,7 +123,13 @@ export function CharacterOverview({
 				{charactersByRealm.map((group) => (
 					<div key={group.realm?.id}>
 						<div className="mb-3 flex items-center gap-2">
-							<h3 className="font-medium text-lg">{group.realm?.name}</h3>
+							<button
+								type="button"
+								className="rounded font-medium text-foreground text-lg hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+								onClick={() => router.push(`/realms/${group.realm?.id}`)}
+							>
+								{group.realm?.name}
+							</button>
 							<span className="text-muted-foreground text-sm">
 								({group.characters.length} character
 								{group.characters.length !== 1 ? "s" : ""})
@@ -164,7 +172,13 @@ export function CharacterOverview({
 						{charactersByRealm.map((group) => (
 							<div key={group.realm?.id}>
 								<div className="mb-3 flex items-center gap-2">
-									<h3 className="font-medium text-lg">{group.realm?.name}</h3>
+									<button
+										type="button"
+										className="rounded font-medium text-foreground text-lg hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+										onClick={() => router.push(`/realms/${group.realm?.id}`)}
+									>
+										{group.realm?.name}
+									</button>
 									<span className="text-muted-foreground text-sm">
 										({group.characters.length} character
 										{group.characters.length !== 1 ? "s" : ""})

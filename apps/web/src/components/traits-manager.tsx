@@ -179,7 +179,21 @@ export function TraitsManager({ realmId, enabled = true }: TraitsManagerProps) {
 						"trait-skel-5",
 						"trait-skel-6",
 					].map((key) => (
-						<Skeleton key={key} className="h-20 w-full rounded-lg" />
+						<div
+							key={key}
+							className="min-h-[5rem] overflow-hidden rounded-lg border bg-gradient-to-br from-card to-card/80 p-4 shadow-sm"
+						>
+							<div className="flex h-full items-start justify-between gap-3">
+								<div className="min-w-0 flex-1 space-y-2">
+									<div className="flex flex-wrap items-center gap-2">
+										<Skeleton size="sm" className="w-24" />
+										<Skeleton size="xs" className="w-16" />
+									</div>
+									<Skeleton size="xs" className="w-full" />
+								</div>
+								<Skeleton size="xs" className="rounded-full" />
+							</div>
+						</div>
 					))}
 				</div>
 			) : filteredTraits && filteredTraits.length > 0 ? (

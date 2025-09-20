@@ -1,19 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, Loader2, RotateCcw } from "lucide-react";
+import { Check, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
 import {
 	Form,
 	FormControl,
@@ -24,6 +17,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { ButtonLoading } from "@/components/ui/loading";
 import { useAuth } from "@/hooks/use-auth";
 
 // Schema
@@ -105,42 +99,42 @@ export function ProfileSettings() {
 	// Initial loading skeleton
 	if (isLoading) {
 		return (
-			<div className="space-y-6">
-				<Card>
-					<CardHeader>
-						<div className="h-6 w-28 animate-pulse rounded bg-muted" />
-						<div className="mt-2 h-4 w-56 animate-pulse rounded bg-muted" />
-					</CardHeader>
-					<CardContent>
-						<div className="grid gap-4">
-							<div className="grid gap-2">
-								<div className="h-4 w-12 animate-pulse rounded bg-muted" />
-								<div className="h-10 w-full animate-pulse rounded bg-muted" />
-								<div className="h-4 w-32 animate-pulse rounded bg-muted" />
-							</div>
-							<div className="flex items-center justify-end gap-2">
-								<div className="h-9 w-20 animate-pulse rounded bg-muted" />
-								<div className="h-9 w-28 animate-pulse rounded bg-muted" />
-							</div>
+			<div className="space-y-4">
+				<div className="space-y-4">
+					<div>
+						<div className="h-5 w-20 animate-pulse rounded bg-muted" />
+						<div className="mt-1 h-3 w-48 animate-pulse rounded bg-muted" />
+					</div>
+					<div className="grid gap-4">
+						<div className="grid gap-2">
+							<div className="h-3 w-10 animate-pulse rounded bg-muted" />
+							<div className="h-8 w-full animate-pulse rounded bg-muted" />
+							<div className="h-3 w-24 animate-pulse rounded bg-muted" />
 						</div>
-					</CardContent>
-				</Card>
+						<div className="flex items-center justify-end gap-2">
+							<div className="h-7 w-16 animate-pulse rounded bg-muted" />
+							<div className="h-7 w-24 animate-pulse rounded bg-muted" />
+						</div>
+					</div>
+				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-6">
-			<Card aria-busy={isSubmitting} aria-live="polite">
-				<CardHeader>
-					<CardTitle>Profile</CardTitle>
-					<CardDescription>Update your display name.</CardDescription>
-				</CardHeader>
-				<CardContent>
+		<div className="space-y-3">
+			<div aria-busy={isSubmitting} aria-live="polite">
+				<div className="space-y-2">
+					<div>
+						<h3 className="font-medium text-sm">Profile</h3>
+						<p className="text-muted-foreground text-xs">
+							Update your display name.
+						</p>
+					</div>
 					<Form {...form}>
 						<form
 							onSubmit={handleSubmit(onSubmit)}
-							className="grid gap-4"
+							className="grid gap-3"
 							noValidate
 						>
 							<FormField
@@ -191,10 +185,7 @@ export function ProfileSettings() {
 
 								<Button type="submit">
 									{isSubmitting ? (
-										<>
-											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-											Saving...
-										</>
+										<ButtonLoading loading={true}>Saving...</ButtonLoading>
 									) : justSaved ? (
 										<>
 											<Check className="mr-2 h-4 w-4 text-emerald-600" />
@@ -207,8 +198,8 @@ export function ProfileSettings() {
 							</div>
 						</form>
 					</Form>
-				</CardContent>
-			</Card>
+				</div>
+			</div>
 		</div>
 	);
 }

@@ -73,19 +73,15 @@ export const characterRouter = router({
 				.where(eq(character.id, input.id))
 				.limit(1);
 			if (!row) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Character not found",
-				});
+				// Return null instead of throwing error
+				return null;
 			}
 
 			// Check if user is a realm member (including owner)
 			const isMember = await isRealmMember(userId, row.realmId);
 			if (!isMember) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Not a realm member",
-				});
+				// Return null instead of throwing error
+				return null;
 			}
 
 			// Generate public URLs for character images
@@ -310,19 +306,15 @@ export const characterRouter = router({
 				.where(eq(character.id, input.id))
 				.limit(1);
 			if (!charRow) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Character not found",
-				});
+				// Return null instead of throwing error
+				return null;
 			}
 
 			// Check if user is a realm member (including owner)
 			const isMember = await isRealmMember(userId, charRow.realmId);
 			if (!isMember) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Not a realm member",
-				});
+				// Return null instead of throwing error
+				return null;
 			}
 
 			// Traits in the realm with any rating for this character

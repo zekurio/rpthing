@@ -41,21 +41,24 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 		onMutate: (vars) => {
 			const key = trpc.character.getWithRatings.queryKey({ id: characterId });
 			void queryClient.cancelQueries({ queryKey: key });
-			queryClient.setQueryData(key, (old: CharacterWithRatings | undefined) => {
-				if (!old) return old;
-				return {
-					...old,
-					traits: old.traits.map((t: CharacterTraitRating) =>
-						t.traitId === vars.traitId
-							? {
-									...t,
-									value: typeof vars.value === "number" ? vars.value : null,
-									ratingId: t.ratingId ?? "optimistic",
-								}
-							: t,
-					),
-				};
-			});
+			queryClient.setQueryData(
+				key,
+				(old: CharacterWithRatings | null | undefined) => {
+					if (!old) return old;
+					return {
+						...old,
+						traits: old.traits.map((t: CharacterTraitRating) =>
+							t.traitId === vars.traitId
+								? {
+										...t,
+										value: typeof vars.value === "number" ? vars.value : null,
+										ratingId: t.ratingId ?? "optimistic",
+									}
+								: t,
+						),
+					};
+				},
+			);
 			return undefined;
 		},
 		onError: (e) => {
@@ -73,15 +76,20 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 		onMutate: (ratingId) => {
 			const key = trpc.character.getWithRatings.queryKey({ id: characterId });
 			void queryClient.cancelQueries({ queryKey: key });
-			queryClient.setQueryData(key, (old: CharacterWithRatings | undefined) => {
-				if (!old) return old;
-				return {
-					...old,
-					traits: old.traits.map((t: CharacterTraitRating) =>
-						t.ratingId === ratingId ? { ...t, value: null, ratingId: null } : t,
-					),
-				};
-			});
+			queryClient.setQueryData(
+				key,
+				(old: CharacterWithRatings | null | undefined) => {
+					if (!old) return old;
+					return {
+						...old,
+						traits: old.traits.map((t: CharacterTraitRating) =>
+							t.ratingId === ratingId
+								? { ...t, value: null, ratingId: null }
+								: t,
+						),
+					};
+				},
+			);
 			return undefined;
 		},
 		onError: (e) => {
@@ -125,7 +133,7 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 
 	if (isLoading) {
 		return (
-			<div className="grid gap-3">
+			<div className="grid gap-4">
 				{[
 					"rating-skeleton-1",
 					"rating-skeleton-2",
@@ -133,8 +141,8 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 					"rating-skeleton-4",
 				].map((key) => (
 					<div key={key} className="grid gap-2">
-						<Skeleton className="h-4 w-40" />
-						<Skeleton className="h-3 w-full" />
+						<Skeleton size="sm" className="w-40" />
+						<Skeleton size="xs" className="w-full" />
 					</div>
 				))}
 			</div>

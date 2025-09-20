@@ -2,8 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -42,21 +41,21 @@ type EditRealmFormData = z.infer<typeof editRealmSchema>;
 interface EditRealmDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	realmId: string | null;
+	realmName?: string;
 }
 
-export function EditRealmDialog({ open, onOpenChange }: EditRealmDialogProps) {
-	const pathname = usePathname() ?? "";
+export function EditRealmDialog({
+	open,
+	onOpenChange,
+	realmId,
+	realmName,
+}: EditRealmDialogProps) {
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 	const [removeIcon, setRemoveIcon] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
 	const [uploadProgress, setUploadProgress] = useState(0);
-
-	// Get current realm ID from pathname (e.g., /realms/123 -> "123")
-	const realmId = useMemo(() => {
-		const match = pathname.match(/^\/realms\/([^/]+)/);
-		return match ? match[1] : null;
-	}, [pathname]);
 
 	const { data: realm } = useQuery({
 		...trpc.realm.getById.queryOptions({ realmId: realmId ?? "" }),
@@ -88,17 +87,17 @@ export function EditRealmDialog({ open, onOpenChange }: EditRealmDialogProps) {
 	const currentIconSrc = realm?.iconKey || null;
 
 	useEffect(() => {
-		if (realm && open) {
+		if (open) {
 			form.reset({
-				name: realm.name || "",
-				description: realm.description || "",
+				name: realm?.name || realmName || "",
+				description: realm?.description || "",
 				password: "",
 			});
 			setSelectedFile(null);
 			setImagePreview(null);
 			setRemoveIcon(false);
 		}
-	}, [realm, open, form]);
+	}, [realm, realmName, open, form]);
 
 	const uploadFile = async (realmId: string, file: File): Promise<void> => {
 		const formData = new FormData();

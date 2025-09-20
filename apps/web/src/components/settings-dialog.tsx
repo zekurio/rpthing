@@ -1,11 +1,11 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { Settings, Shield, User, X } from "lucide-react";
+import { Palette, Shield, User, X } from "lucide-react";
 import { useState } from "react";
 import { AccountSettings } from "@/components/account-settings";
+import { AppearanceSettings } from "@/components/appearance-settings";
 import { ProfileSettings } from "@/components/profile-settings";
-import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -14,22 +14,22 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SettingsDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
 
-type SettingsSection = "general" | "profile" | "account";
+type SettingsSection = "appearance" | "profile" | "account";
 
 type Section = { id: SettingsSection; label: string; icon: LucideIcon };
 
 const settingsSections: Section[] = [
 	{
-		id: "general",
-		label: "General",
-		icon: Settings,
+		id: "appearance",
+		label: "Appearance",
+		icon: Palette,
 	},
 	{
 		id: "profile",
@@ -45,84 +45,131 @@ const settingsSections: Section[] = [
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 	const [activeSection, setActiveSection] =
-		useState<SettingsSection>("general");
+		useState<SettingsSection>("appearance");
+	const isMobile = useIsMobile();
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent
 				showCloseButton={false}
-				className="h-[640px] overflow-hidden p-0 sm:max-w-3xl md:max-w-4xl"
+				className={`h-[480px] overflow-hidden p-0 ${
+					isMobile ? "w-full max-w-[95vw]" : "sm:max-w-2xl md:max-w-3xl"
+				}`}
 			>
-				<div className="flex h-full">
-					{/* Sidebar */}
-					<div className="flex w-64 flex-col border-r">
-						<div className="px-4 py-3">
-							<DialogClose asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-8 w-8"
-									type="button"
-								>
-									<X className="h-4 w-4" />
-									<span className="sr-only">Close</span>
-								</Button>
-							</DialogClose>
-						</div>
-						<nav className="flex-1 space-y-1 p-3">
-							{settingsSections.map((section) => {
-								const Icon = section.icon;
-								return (
-									<button
-										key={section.id}
-										onClick={() => setActiveSection(section.id)}
-										className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors ${
-											activeSection === section.id
-												? "bg-accent text-accent-foreground"
-												: "hover:bg-accent"
-										}`}
+				<DialogHeader className="sr-only">
+					<DialogTitle>Settings</DialogTitle>
+				</DialogHeader>
+				<div className="flex h-full flex-col">
+					{isMobile ? (
+						<>
+							{/* Mobile Header */}
+							<div className="flex items-center justify-between border-b px-3 py-1.5">
+								<h2 className="font-semibold text-sm">
+									{settingsSections.find((s) => s.id === activeSection)?.label}
+								</h2>
+								<DialogClose asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-7 w-7"
 										type="button"
 									>
-										<Icon className="size-4" />
-										<span className="font-medium">{section.label}</span>
-									</button>
-								);
-							})}
-						</nav>
-					</div>
+										<X className="h-3.5 w-3.5" />
+										<span className="sr-only">Close</span>
+									</Button>
+								</DialogClose>
+							</div>
 
-					{/* Content */}
-					<div className="flex flex-1 flex-col">
-						<DialogHeader className="border-b px-6 py-5">
-							<DialogTitle className="font-semibold text-xl">
-								{settingsSections.find((s) => s.id === activeSection)?.label}
-							</DialogTitle>
-						</DialogHeader>
-						<div className="flex-1 overflow-y-auto px-6 py-6">
-							{activeSection === "general" && <GeneralSettings />}
-							{activeSection === "profile" && <ProfileSettings />}
-							{activeSection === "account" && <AccountSettings />}
+							{/* Mobile Navigation Tabs */}
+							<div className="flex border-b bg-muted/50">
+								{settingsSections.map((section) => {
+									const Icon = section.icon;
+									return (
+										<button
+											key={section.id}
+											onClick={() => setActiveSection(section.id)}
+											className={`flex flex-1 items-center justify-center gap-1.5 px-2 py-2 text-xs transition-colors ${
+												activeSection === section.id
+													? "bg-primary/10 text-primary"
+													: "text-muted-foreground hover:text-foreground"
+											}`}
+											type="button"
+										>
+											<Icon className="size-3.5" />
+											<span>{section.label}</span>
+										</button>
+									);
+								})}
+							</div>
+
+							{/* Mobile Content */}
+							<div className="flex-1 overflow-y-auto px-3 py-3">
+								{activeSection === "appearance" && <AppearanceSettings />}
+								{activeSection === "profile" && <ProfileSettings />}
+								{activeSection === "account" && <AccountSettings />}
+							</div>
+						</>
+					) : (
+						<div className="flex h-full">
+							{/* Desktop Sidebar */}
+							<div className="flex w-52 flex-col border-r">
+								<div className="px-2 py-1.5">
+									<DialogClose asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											className="h-7 w-7"
+											type="button"
+										>
+											<X className="h-3.5 w-3.5" />
+											<span className="sr-only">Close</span>
+										</Button>
+									</DialogClose>
+								</div>
+								<nav className="flex-1 space-y-1 p-2">
+									{settingsSections.map((section) => {
+										const Icon = section.icon;
+										return (
+											<button
+												key={section.id}
+												onClick={() => setActiveSection(section.id)}
+												className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left transition-colors ${
+													activeSection === section.id
+														? "bg-primary/10 font-medium text-primary"
+														: "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+												}`}
+												type="button"
+											>
+												<Icon className="size-4" />
+												<span className="font-medium text-sm">
+													{section.label}
+												</span>
+											</button>
+										);
+									})}
+								</nav>
+							</div>
+
+							{/* Desktop Content */}
+							<div className="flex flex-1 flex-col">
+								<DialogHeader className="border-b px-3 py-2">
+									<DialogTitle className="font-semibold text-base">
+										{
+											settingsSections.find((s) => s.id === activeSection)
+												?.label
+										}
+									</DialogTitle>
+								</DialogHeader>
+								<div className="flex-1 overflow-y-auto px-3 py-3">
+									{activeSection === "appearance" && <AppearanceSettings />}
+									{activeSection === "profile" && <ProfileSettings />}
+									{activeSection === "account" && <AccountSettings />}
+								</div>
+							</div>
 						</div>
-					</div>
+					)}
 				</div>
 			</DialogContent>
 		</Dialog>
-	);
-}
-
-function GeneralSettings() {
-	return (
-		<div className="space-y-6">
-			<div className="space-y-4">
-				<div>
-					<h3 className="mb-1 font-medium text-lg">Theme</h3>
-					<p className="mb-4 text-muted-foreground text-sm">
-						Choose your preferred theme for the application.
-					</p>
-					<ThemeSwitcher />
-				</div>
-				<Separator />
-			</div>
-		</div>
 	);
 }

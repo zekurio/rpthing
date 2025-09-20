@@ -223,12 +223,12 @@ export function RecentActivity({ unstyled = false }: RecentActivityProps) {
 							key={`recent-activity-skeleton-${idx}`}
 							className="flex items-center gap-3"
 						>
-							<Skeleton className="h-4 w-4 rounded-full" />
+							<Skeleton size="sm" className="rounded-full" />
 							<div className="flex-1 space-y-2">
-								<Skeleton className="h-4 w-3/4" />
-								<Skeleton className="h-3 w-1/2" />
+								<Skeleton size="sm" className="w-3/4" />
+								<Skeleton size="xs" className="w-1/2" />
 							</div>
-							<Skeleton className="h-8 w-8 rounded-full" />
+							<Skeleton size="2xl" className="rounded-full" />
 						</div>
 					))}
 				</div>
@@ -248,12 +248,12 @@ export function RecentActivity({ unstyled = false }: RecentActivityProps) {
 							key={`recent-activity-skeleton-${idx}`}
 							className="flex items-center gap-3"
 						>
-							<Skeleton className="h-4 w-4 rounded-full" />
+							<Skeleton size="sm" className="rounded-full" />
 							<div className="flex-1 space-y-2">
-								<Skeleton className="h-4 w-3/4" />
-								<Skeleton className="h-3 w-1/2" />
+								<Skeleton size="sm" className="w-3/4" />
+								<Skeleton size="xs" className="w-1/2" />
 							</div>
-							<Skeleton className="h-8 w-8 rounded-full" />
+							<Skeleton size="2xl" className="rounded-full" />
 						</div>
 					))}
 				</CardContent>

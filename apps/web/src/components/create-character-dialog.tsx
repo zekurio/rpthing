@@ -26,6 +26,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { InlineLoading } from "@/components/ui/loading";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useRealmGenderOptions } from "@/hooks/use-realm-gender-options";
@@ -250,9 +251,7 @@ export function CreateCharacterDialog({
 						<div className="grid gap-2">
 							<FormLabel>Trait ratings</FormLabel>
 							{traitsLoading ? (
-								<div className="text-muted-foreground text-xs">
-									Loading traits…
-								</div>
+								<InlineLoading text="Loading traits..." className="text-xs" />
 							) : !traits || traits.length === 0 ? (
 								<div className="rounded-md border p-3 text-muted-foreground text-sm">
 									No traits in this realm yet.

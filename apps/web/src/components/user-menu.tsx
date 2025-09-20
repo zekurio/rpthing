@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -15,11 +14,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	SidebarMenu,
-	SidebarMenuButton,
-	SidebarMenuItem,
-} from "@/components/ui/sidebar";
+import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
 import { authClient } from "@/lib/auth-client";
 import { SettingsDialog } from "./settings-dialog";
@@ -40,7 +35,7 @@ export function UserMenu() {
 	};
 
 	if (!user) {
-		return <Button onClick={() => router.push("/login")}>Sign In</Button>;
+		return null;
 	}
 
 	return (
@@ -48,22 +43,19 @@ export function UserMenu() {
 			<SidebarMenuItem>
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<SidebarMenuButton
-							size="lg"
-							className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-						>
+						<div className="flex w-full cursor-pointer items-center gap-3 rounded-md p-2 transition-colors hover:bg-accent">
 							{isLoading ? (
 								<>
-									<div className="h-8 w-8 rounded-lg bg-accent grayscale" />
-									<div className="grid flex-1 text-left text-sm leading-tight">
+									<div className="h-8 w-8 flex-shrink-0 rounded-lg bg-accent grayscale" />
+									<div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
 										<span className="h-4 w-24 rounded bg-accent" />
 										<span className="mt-1 h-3 w-32 rounded bg-accent" />
 									</div>
-									<MoreVertical className="ml-auto size-4 text-muted-foreground" />
+									<MoreVertical className="ml-auto size-4 flex-shrink-0" />
 								</>
 							) : (
 								<>
-									<Avatar className="h-8 w-8 rounded-lg">
+									<Avatar className="h-8 w-8 flex-shrink-0 rounded-lg">
 										<AvatarImage
 											src={user?.image || ""}
 											alt={user?.name || ""}
@@ -77,10 +69,10 @@ export function UserMenu() {
 											{user?.name || "User"}
 										</span>
 									</div>
-									<MoreVertical className="ml-auto size-4" />
+									<MoreVertical className="ml-auto size-4 flex-shrink-0" />
 								</>
 							)}
-						</SidebarMenuButton>
+						</div>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						className="box-border w-(--radix-dropdown-menu-trigger-width) min-w-0 rounded-lg"

@@ -130,7 +130,8 @@ export const ratingRouter = router({
 				.limit(1);
 
 			if (!row) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Rating not found" });
+				// Return null instead of throwing error
+				return null;
 			}
 
 			const [charRow] = await db
@@ -140,19 +141,15 @@ export const ratingRouter = router({
 				.limit(1);
 
 			if (!charRow) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Character not found",
-				});
+				// Return null instead of throwing error
+				return null;
 			}
 
 			// Check if user is a realm member
 			const isMember = await isRealmMember(userId, charRow.realmId);
 			if (!isMember) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Not a realm member",
-				});
+				// Return null instead of throwing error
+				return null;
 			}
 
 			return row;
@@ -170,10 +167,8 @@ export const ratingRouter = router({
 				.where(eq(character.id, characterId))
 				.limit(1);
 			if (!charRow) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Character not found",
-				});
+				// Return null instead of throwing error
+				return null;
 			}
 
 			const [traitRow] = await db
@@ -182,14 +177,13 @@ export const ratingRouter = router({
 				.where(eq(trait.id, traitId))
 				.limit(1);
 			if (!traitRow) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Trait not found" });
+				// Return null instead of throwing error
+				return null;
 			}
 
 			if (traitRow.realmId !== charRow.realmId) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "Mismatched realms",
-				});
+				// Return null instead of throwing error
+				return null;
 			}
 
 			const [row] = await db
@@ -213,10 +207,8 @@ export const ratingRouter = router({
 			// Check if user is a realm member
 			const isMember = await isRealmMember(userId, charRow.realmId);
 			if (!isMember) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Not a realm member",
-				});
+				// Return null instead of throwing error
+				return null;
 			}
 
 			return row;

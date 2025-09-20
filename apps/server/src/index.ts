@@ -201,39 +201,27 @@ app.post("/api/upload/character-image/:characterId", async (c) => {
 
 		// Verify character exists and permissions
 		const [charRow] = await db
-			.select({ realmId: character.realmId, ownerId: character.userId })
+			.select({ realmId: character.realmId })
 			.from(character)
 			.where(eq(character.id, characterId))
 			.limit(1);
 		if (!charRow) {
 			return c.json({ error: "Character not found" }, 404);
 		}
-		const [r] = await db
-			.select({ ownerId: realm.ownerId })
-			.from(realm)
-			.where(eq(realm.id, charRow.realmId))
+
+		// Check if user is a realm member
+		const [member] = await db
+			.select({ id: realmMember.id })
+			.from(realmMember)
+			.where(
+				and(
+					eq(realmMember.realmId, charRow.realmId),
+					eq(realmMember.userId, session.user.id),
+				),
+			)
 			.limit(1);
-		const isRealmOwner = !!r && r.ownerId === session.user.id;
-		const isCharacterOwner = charRow.ownerId === session.user.id;
-		if (!isRealmOwner && !isCharacterOwner) {
-			// Public character can be edited by realm members
-			const [char] = await db
-				.select({ isPublic: character.isPublic, realmId: character.realmId })
-				.from(character)
-				.where(eq(character.id, characterId))
-				.limit(1);
-			if (!char?.isPublic) return c.json({ error: "Forbidden" }, 403);
-			const [member] = await db
-				.select({ id: realmMember.id })
-				.from(realmMember)
-				.where(
-					and(
-						eq(realmMember.realmId, char.realmId),
-						eq(realmMember.userId, session.user.id),
-					),
-				)
-				.limit(1);
-			if (!member) return c.json({ error: "Forbidden" }, 403);
+		if (!member) {
+			return c.json({ error: "Not a realm member" }, 403);
 		}
 
 		// We will derive the extension from the uploaded file (or previously stored key)
@@ -433,7 +421,6 @@ app.delete("/api/upload/character-image/:characterId", async (c) => {
 		const [charRow] = await db
 			.select({
 				realmId: character.realmId,
-				ownerId: character.userId,
 				imageKey: character.referenceImageKey,
 				croppedKey: character.croppedImageKey,
 			})
@@ -443,31 +430,20 @@ app.delete("/api/upload/character-image/:characterId", async (c) => {
 		if (!charRow) {
 			return c.json({ error: "Character not found" }, 404);
 		}
-		const [r] = await db
-			.select({ ownerId: realm.ownerId })
-			.from(realm)
-			.where(eq(realm.id, charRow.realmId))
+
+		// Check if user is a realm member
+		const [member] = await db
+			.select({ id: realmMember.id })
+			.from(realmMember)
+			.where(
+				and(
+					eq(realmMember.realmId, charRow.realmId),
+					eq(realmMember.userId, session.user.id),
+				),
+			)
 			.limit(1);
-		const isRealmOwner = !!r && r.ownerId === session.user.id;
-		const isCharacterOwner = charRow.ownerId === session.user.id;
-		if (!isRealmOwner && !isCharacterOwner) {
-			const [char] = await db
-				.select({ isPublic: character.isPublic, realmId: character.realmId })
-				.from(character)
-				.where(eq(character.id, characterId))
-				.limit(1);
-			if (!char?.isPublic) return c.json({ error: "Forbidden" }, 403);
-			const [member] = await db
-				.select({ id: realmMember.id })
-				.from(realmMember)
-				.where(
-					and(
-						eq(realmMember.realmId, char.realmId),
-						eq(realmMember.userId, session.user.id),
-					),
-				)
-				.limit(1);
-			if (!member) return c.json({ error: "Forbidden" }, 403);
+		if (!member) {
+			return c.json({ error: "Not a realm member" }, 403);
 		}
 
 		if (!charRow.imageKey) {

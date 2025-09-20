@@ -214,7 +214,7 @@ function Sidebar({
 					data-sidebar="sidebar"
 					data-slot="sidebar"
 					data-mobile="true"
-					className="w-(--sidebar-width) bg-sidebar/60 backdrop-blur supports-[backdrop-filter]:bg-sidebar/60 p-0 text-sidebar-foreground [&>button]:hidden"
+					className="w-(--sidebar-width) bg-sidebar/60 p-0 text-sidebar-foreground backdrop-blur supports-[backdrop-filter]:bg-sidebar/60 [&>button]:hidden"
 					style={
 						{
 							"--sidebar-width": SIDEBAR_WIDTH_MOBILE,

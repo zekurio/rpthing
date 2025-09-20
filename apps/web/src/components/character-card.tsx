@@ -166,10 +166,10 @@ export const CharacterCard = memo(function CharacterCard({
 						{character.gender ? (
 							<>
 								{character.gender}
-								{character.ownerName ? " • " : null}
+								{character.userName ? " • " : null}
 							</>
 						) : null}
-						{character.ownerName ? `Owner: ${character.ownerName}` : null}
+						{character.userName ? `Created by: ${character.userName}` : null}
 					</div>
 				</div>
 			</div>

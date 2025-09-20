@@ -70,21 +70,13 @@ export const ratingRouter = router({
 				});
 			}
 
-			// Check if user is a realm member (including owner)
+			// Check if user is a realm member
 			const isMember = await isRealmMember(userId, traitRow.realmId);
 			if (!isMember) {
-				// Allow if character owner (even if not realm member)
-				const [charInfo] = await db
-					.select({ ownerId: character.userId })
-					.from(character)
-					.where(eq(character.id, characterId))
-					.limit(1);
-				if (charInfo?.ownerId !== userId) {
-					throw new TRPCError({
-						code: "FORBIDDEN",
-						message: "Not permitted",
-					});
-				}
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Not a realm member",
+				});
 			}
 
 			const numericValue = mapGradeToValue(value);
@@ -154,7 +146,7 @@ export const ratingRouter = router({
 				});
 			}
 
-			// Check if user is a realm member (including owner)
+			// Check if user is a realm member
 			const isMember = await isRealmMember(userId, charRow.realmId);
 			if (!isMember) {
 				throw new TRPCError({
@@ -218,21 +210,13 @@ export const ratingRouter = router({
 
 			if (!row) return null;
 
-			// Check if user is a realm member (including owner)
+			// Check if user is a realm member
 			const isMember = await isRealmMember(userId, charRow.realmId);
 			if (!isMember) {
-				// Allow if character owner (even if not realm member)
-				const [charInfo] = await db
-					.select({ ownerId: character.userId })
-					.from(character)
-					.where(eq(character.id, characterId))
-					.limit(1);
-				if (charInfo?.ownerId !== userId) {
-					throw new TRPCError({
-						code: "FORBIDDEN",
-						message: "Not permitted",
-					});
-				}
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Not a realm member",
+				});
 			}
 
 			return row;
@@ -257,21 +241,13 @@ export const ratingRouter = router({
 				});
 			}
 
-			// Check if user is a realm member (including owner)
+			// Check if user is a realm member
 			const isMember = await isRealmMember(userId, charRow.realmId);
 			if (!isMember) {
-				// Allow if character owner (even if not realm member)
-				const [charInfo] = await db
-					.select({ ownerId: character.userId })
-					.from(character)
-					.where(eq(character.id, characterId))
-					.limit(1);
-				if (charInfo?.ownerId !== userId) {
-					throw new TRPCError({
-						code: "FORBIDDEN",
-						message: "Not permitted",
-					});
-				}
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Not a realm member",
+				});
 			}
 
 			return await db
@@ -317,7 +293,7 @@ export const ratingRouter = router({
 				});
 			}
 
-			// Check if user is a realm member (including owner)
+			// Check if user is a realm member
 			const isMember = await isRealmMember(userId, charRow.realmId);
 			if (!isMember) {
 				throw new TRPCError({

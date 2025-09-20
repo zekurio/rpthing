@@ -89,7 +89,8 @@ export default function RealmsPage() {
 								<div className="lg:col-span-2">
 									<CharacterOverview unstyled />
 								</div>
-								<div className="lg:col-span-1">
+								<div className="lg:col-span-1 lg:border-border lg:border-l lg:pl-6">
+									<hr className="my-6 border-border border-t lg:hidden" />
 									<RecentActivity unstyled />
 								</div>
 							</div>

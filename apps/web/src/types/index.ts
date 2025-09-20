@@ -16,8 +16,8 @@ export type CharacterListItem = {
 	gender: string | null;
 	referenceImageKey: string | null;
 	croppedImageKey?: string | null;
-	ownerId?: string;
-	ownerName?: string | null;
+	userId?: string;
+	userName?: string | null;
 	createdAt?: string | Date;
 	updatedAt?: string | Date;
 	// Optional precomputed ratings summary for displaying badges without extra requests

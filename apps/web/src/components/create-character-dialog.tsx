@@ -36,7 +36,6 @@ const formSchema = z.object({
 	name: z.string().min(1, "Name is required").max(200),
 	gender: z.string().max(50).optional(),
 	notes: z.string().max(10000).optional(),
-	isPublic: z.boolean().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -55,7 +54,6 @@ export function CreateCharacterDialog({
 	onCreated,
 }: CreateCharacterDialogProps) {
 	const genderOptions = useRealmGenderOptions(realmId);
-	const isPublicId = React.useId();
 
 	const { data: traits, isLoading: traitsLoading } = useQuery({
 		...trpc.trait.list.queryOptions({ realmId }),
@@ -106,7 +104,6 @@ export function CreateCharacterDialog({
 				name: data.name.trim(),
 				gender: data.gender?.trim() || undefined,
 				notes: data.notes?.trim() || undefined,
-				isPublic: Boolean(data.isPublic),
 			});
 			if (selectedFile) {
 				const fd = new FormData();
@@ -245,20 +242,6 @@ export function CreateCharacterDialog({
 									setPercentCrop(null);
 								}}
 							/>
-						</div>
-						<div className="grid gap-2">
-							<FormLabel>Permissions</FormLabel>
-							<div className="flex items-center gap-2">
-								<input
-									id={isPublicId}
-									type="checkbox"
-									checked={!!form.watch("isPublic")}
-									onChange={(e) => form.setValue("isPublic", e.target.checked)}
-								/>
-								<label htmlFor={isPublicId} className="text-sm">
-									Public (realm members can edit)
-								</label>
-							</div>
 						</div>
 						<div className="grid gap-2">
 							<FormLabel>Trait ratings</FormLabel>

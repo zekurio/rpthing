@@ -161,9 +161,9 @@ export function RecentActivity({ unstyled = false }: RecentActivityProps) {
 						entityName: character.name,
 						realmId: realm.id,
 						realmName: realm.name || "Unnamed Realm",
-						userId: character.ownerId || "",
-						userName: character.ownerName || "Unknown User",
-						userImage: userImageById.get(character.ownerId || "") ?? null,
+						userId: character.userId || "",
+						userName: character.userName || "Unknown User",
+						userImage: userImageById.get(character.userId || "") ?? null,
 						timestamp: new Date(character.createdAt),
 					});
 				}
@@ -177,9 +177,9 @@ export function RecentActivity({ unstyled = false }: RecentActivityProps) {
 						entityName: character.name,
 						realmId: realm.id,
 						realmName: realm.name || "Unnamed Realm",
-						userId: character.ownerId || "",
-						userName: character.ownerName || "Unknown User",
-						userImage: userImageById.get(character.ownerId || "") ?? null,
+						userId: character.userId || "",
+						userName: character.userName || "Unknown User",
+						userImage: userImageById.get(character.userId || "") ?? null,
 						timestamp: new Date(character.updatedAt),
 					});
 				}

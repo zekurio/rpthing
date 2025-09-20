@@ -61,7 +61,6 @@ export const characterRouter = router({
 					id: character.id,
 					realmId: character.realmId,
 					userId: character.userId,
-					isPublic: character.isPublic,
 					name: character.name,
 					gender: character.gender,
 					referenceImageKey: character.referenceImageKey,
@@ -123,11 +122,10 @@ export const characterRouter = router({
 					id: character.id,
 					name: character.name,
 					gender: character.gender,
-					isPublic: character.isPublic,
 					referenceImageKey: character.referenceImageKey,
 					croppedImageKey: character.croppedImageKey,
-					ownerId: character.userId,
-					ownerName: user.name,
+					userId: character.userId,
+					userName: user.name,
 					createdAt: character.createdAt,
 					updatedAt: character.updatedAt,
 				})
@@ -216,7 +214,7 @@ export const characterRouter = router({
 			const { id, ...updates } = input;
 
 			const [row] = await db
-				.select({ realmId: character.realmId, ownerId: character.userId })
+				.select({ realmId: character.realmId })
 				.from(character)
 				.where(eq(character.id, id))
 				.limit(1);
@@ -227,16 +225,13 @@ export const characterRouter = router({
 				});
 			}
 
-			// Check if user is a realm member (including owner)
+			// Check if user is a realm member
 			const isMember = await isRealmMember(userId, row.realmId);
 			if (!isMember) {
-				// Allow if character owner (even if not realm member)
-				if (row.ownerId !== userId) {
-					throw new TRPCError({
-						code: "FORBIDDEN",
-						message: "Not permitted",
-					});
-				}
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Not a realm member",
+				});
 			}
 
 			await db.update(character).set(updates).where(eq(character.id, id));
@@ -252,7 +247,6 @@ export const characterRouter = router({
 				.select({
 					realmId: character.realmId,
 					imageKey: character.referenceImageKey,
-					ownerId: character.userId,
 				})
 				.from(character)
 				.where(eq(character.id, input.id))
@@ -264,15 +258,13 @@ export const characterRouter = router({
 				});
 			}
 
-			// Check if user is a realm member (including owner)
+			// Check if user is a realm member
 			const isMember = await isRealmMember(userId, row.realmId);
 			if (!isMember) {
-				if (row.ownerId !== userId) {
-					throw new TRPCError({
-						code: "FORBIDDEN",
-						message: "Not permitted to delete character",
-					});
-				}
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "Not a realm member",
+				});
 			}
 
 			// Attempt to delete stored image(s) if present (best-effort)

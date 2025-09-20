@@ -62,7 +62,7 @@ export function CharacterOverview({
 			const realmId = realmIds[index];
 			const realm = realms?.find((r) => r.id === realmId);
 			const characters = (query.data || [])
-				.filter((c) => !user || c.ownerId === user.id)
+				.filter((c) => !user || c.userId === user.id)
 				.sort((a, b) => {
 					// Sort by most recently updated
 					const aDate = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
@@ -127,7 +127,7 @@ export function CharacterOverview({
 								{group.characters.length !== 1 ? "s" : ""})
 							</span>
 						</div>
-						<div className="grid gap-4 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+						<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 							{group.characters.map((character) => (
 								<CharacterCard
 									key={character.id}

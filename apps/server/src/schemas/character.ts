@@ -11,7 +11,6 @@ export const characterCreateInputSchema = z.object({
 	realmId: realmIdSchema,
 	name: characterNameSchema,
 	gender: characterGenderSchema.optional(),
-	isPublic: z.boolean().optional(),
 	referenceImageKey: characterReferenceImageKeySchema.optional(),
 	notes: characterNotesSchema.optional(),
 });
@@ -21,7 +20,6 @@ export const characterUpdateInputSchema = z.object({
 	id: characterIdSchema,
 	name: characterNameSchema.optional(),
 	gender: characterGenderSchema.optional(),
-	isPublic: z.boolean().optional(),
 	referenceImageKey: characterReferenceImageKeySchema.optional(),
 	notes: characterNotesSchema.optional(),
 });

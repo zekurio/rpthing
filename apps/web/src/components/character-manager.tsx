@@ -5,6 +5,7 @@ import { Plus, Users } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { CharacterGallery } from "@/components/character-gallery";
 import { CreateCharacterDialog } from "@/components/create-character-dialog";
+import { FilterDropdown, type FilterState } from "@/components/filter-dropdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,17 +31,82 @@ export function CharacterManager({
 
 	const [createOpen, setCreateOpen] = useState(false);
 	const [search, setSearch] = useState("");
+	const [filters, setFilters] = useState<FilterState>({
+		gender: null,
+		creator: null,
+		traitFilters: {},
+	});
+
+	// Get available creators and traits for filter options
+	const availableCreators = useMemo(() => {
+		if (!characters) return [];
+		const creators = new Set<string>();
+		characters.forEach((c) => {
+			if (c.userName) creators.add(c.userName);
+		});
+		return Array.from(creators).sort();
+	}, [characters]);
+
+	// Get traits from the realm
+	const { data: traits } = useQuery({
+		...trpc.trait.list.queryOptions({ realmId }),
+		enabled,
+	});
 
 	const filteredCharacters = useMemo(() => {
 		if (!characters) return [];
+
+		let filtered = characters;
+
+		// Apply search filter
 		const query = search.trim().toLowerCase();
-		if (!query) return characters;
-		return characters.filter(
-			(c) =>
-				c.name.toLowerCase().includes(query) ||
-				(c.notes ? c.notes.toLowerCase().includes(query) : false),
-		);
-	}, [characters, search]);
+		if (query) {
+			filtered = filtered.filter(
+				(c) =>
+					c.name.toLowerCase().includes(query) ||
+					(c.notes ? c.notes.toLowerCase().includes(query) : false),
+			);
+		}
+
+		// Apply gender filter
+		if (filters.gender) {
+			filtered = filtered.filter((c) => c.gender === filters.gender);
+		}
+
+		// Apply creator filter
+		if (filters.creator) {
+			filtered = filtered.filter((c) => c.userName === filters.creator);
+		}
+
+		// Apply per-trait score range filters
+		const traitFilterEntries = Object.entries(filters.traitFilters);
+		if (traitFilterEntries.length > 0) {
+			filtered = filtered.filter((c) => {
+				if (!c.ratingsSummary || c.ratingsSummary.length === 0) {
+					return false; // Exclude characters with no ratings when trait filters are active
+				}
+
+				// Check if character meets all trait filter criteria
+				return traitFilterEntries.every(([traitId, traitFilter]) => {
+					const rating = c.ratingsSummary?.find((r) => r.traitId === traitId);
+					if (!rating || typeof rating.value !== "number") {
+						return false; // Character doesn't have a rating for this trait
+					}
+
+					const minScore = traitFilter.minScore
+						? Number.parseInt(traitFilter.minScore, 10)
+						: 0;
+					const maxScore = traitFilter.maxScore
+						? Number.parseInt(traitFilter.maxScore, 10)
+						: Number.POSITIVE_INFINITY;
+
+					return rating.value >= minScore && rating.value <= maxScore;
+				});
+			});
+		}
+
+		return filtered;
+	}, [characters, search, filters]);
 
 	return (
 		<div className="space-y-6">
@@ -60,13 +126,22 @@ export function CharacterManager({
 					<Plus className="h-4 w-4" />
 				</Button>
 			</div>
-			<Input
-				value={search}
-				onChange={(e) => setSearch(e.target.value)}
-				placeholder="Search characters and notes..."
-				aria-label="Search characters"
-				className="w-full"
-			/>
+			<div className="flex items-center gap-2">
+				<Input
+					value={search}
+					onChange={(e) => setSearch(e.target.value)}
+					placeholder="Search characters and notes..."
+					aria-label="Search characters"
+					className="flex-1"
+				/>
+				<FilterDropdown
+					realmId={realmId}
+					filters={filters}
+					onFiltersChange={setFilters}
+					availableCreators={availableCreators}
+					availableTraits={traits || []}
+				/>
+			</div>
 
 			{isLoading ? (
 				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">

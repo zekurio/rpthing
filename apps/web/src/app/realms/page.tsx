@@ -5,7 +5,6 @@ import { useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CharacterOverview } from "@/components/character-overview";
 import { CreateOrJoinRealmDialog } from "@/components/create-or-join-realm-dialog";
-import { RecentActivity } from "@/components/recent-activity";
 import { Button } from "@/components/ui/button";
 import { LoadingText } from "@/components/ui/loading";
 import {
@@ -142,14 +141,8 @@ export default function RealmsPage() {
 								Quick access to your recent characters and activity.
 							</p>
 
-							<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-								<div className="lg:col-span-2">
-									<CharacterOverview unstyled />
-								</div>
-								<div className="lg:col-span-1 lg:border-border lg:border-l lg:pl-6">
-									<hr className="my-6 border-border border-t lg:hidden" />
-									<RecentActivity unstyled />
-								</div>
+							<div className="grid grid-cols-1 gap-6">
+								<CharacterOverview unstyled />
 							</div>
 						</main>
 					</div>

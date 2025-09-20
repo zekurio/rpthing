@@ -6,6 +6,7 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CreateTraitDialog } from "@/components/create-trait-dialog";
 import { EditTraitDialog } from "@/components/edit-trait-dialog";
+import { FilterDropdown, type FilterState } from "@/components/filter-dropdown";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -125,17 +126,47 @@ export function TraitsManager({ realmId, enabled = true }: TraitsManagerProps) {
 
 	const [createOpen, setCreateOpen] = useState(false);
 	const [search, setSearch] = useState("");
+	const [filters, setFilters] = useState<FilterState>({
+		gender: null,
+		creator: null,
+		traitFilters: {},
+	});
+
+	// Get available creators for filter options
+	const availableCreators = useMemo(() => {
+		if (!traits) return [];
+		const creators = new Set<string>();
+		traits.forEach((t) => {
+			if (t.createdByName) creators.add(t.createdByName);
+		});
+		return Array.from(creators).sort();
+	}, [traits]);
 
 	const filteredTraits = useMemo(() => {
 		if (!traits) return [];
+
+		let filtered = traits;
+
+		// Apply search filter
 		const query = search.trim().toLowerCase();
-		if (!query) return traits;
-		return traits.filter(
-			(t) =>
-				t.name.toLowerCase().includes(query) ||
-				(t.description ? t.description.toLowerCase().includes(query) : false),
-		);
-	}, [traits, search]);
+		if (query) {
+			filtered = filtered.filter(
+				(t) =>
+					t.name.toLowerCase().includes(query) ||
+					(t.description ? t.description.toLowerCase().includes(query) : false),
+			);
+		}
+
+		// Apply creator filter
+		if (filters.creator) {
+			filtered = filtered.filter((t) => t.createdByName === filters.creator);
+		}
+
+		// Note: Gender and score filters don't apply to traits directly
+		// They would be used for filtering characters that use these traits
+
+		return filtered;
+	}, [traits, search, filters]);
 
 	const invalidateList = useCallback(() => {
 		queryClient.invalidateQueries({
@@ -161,13 +192,22 @@ export function TraitsManager({ realmId, enabled = true }: TraitsManagerProps) {
 					<Plus className="h-4 w-4" />
 				</Button>
 			</div>
-			<Input
-				value={search}
-				onChange={(e) => setSearch(e.target.value)}
-				placeholder="Search traits..."
-				aria-label="Search traits"
-				className="w-full"
-			/>
+			<div className="flex gap-2">
+				<Input
+					value={search}
+					onChange={(e) => setSearch(e.target.value)}
+					placeholder="Search traits..."
+					aria-label="Search traits"
+					className="flex-1"
+				/>
+				<FilterDropdown
+					realmId={realmId}
+					filters={filters}
+					onFiltersChange={setFilters}
+					availableCreators={availableCreators}
+					availableTraits={traits || []}
+				/>
+			</div>
 
 			{isLoading ? (
 				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

@@ -103,7 +103,7 @@ export function CharacterOverview({
 				</p>
 			</div>
 		) : (
-			<div className="space-y-6">
+			<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 				{charactersByRealm.map((group) => (
 					<div key={group.realm?.id}>
 						<div className="mb-3 flex items-center gap-2">
@@ -172,7 +172,7 @@ export function CharacterOverview({
 						</p>
 					</div>
 				) : (
-					<div className="space-y-6">
+					<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 						{charactersByRealm.map((group) => (
 							<div key={group.realm?.id}>
 								<div className="mb-3 flex items-center gap-2">

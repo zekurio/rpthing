@@ -137,7 +137,7 @@ export function IconUploadButton({
 							alt="Preview"
 							width={64}
 							height={64}
-							className="h-16 w-16 rounded-full object-cover"
+							className="h-[60px] w-[60px] rounded-lg object-cover"
 							priority={false}
 						/>
 					) : (

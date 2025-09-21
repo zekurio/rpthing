@@ -1,14 +1,12 @@
 "use client";
 
-import { LogOut, MoreVertical, Settings } from "lucide-react";
+import { LogOut, MoreVertical } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
-	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
@@ -17,12 +15,10 @@ import {
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
 import { authClient } from "@/lib/auth-client";
-import { SettingsDialog } from "./settings-dialog";
 
 export function UserMenu() {
 	const router = useRouter();
 	const { user, isLoading } = useAuth();
-	const [settingsOpen, setSettingsOpen] = useState(false);
 
 	const handleSignOut = async () => {
 		try {
@@ -91,13 +87,6 @@ export function UserMenu() {
 							</div>
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
-						<DropdownMenuGroup>
-							<DropdownMenuItem onClick={() => setSettingsOpen(true)}>
-								<Settings />
-								Settings
-							</DropdownMenuItem>
-						</DropdownMenuGroup>
-						<DropdownMenuSeparator />
 						<DropdownMenuItem onClick={handleSignOut}>
 							<LogOut />
 							Log out
@@ -105,7 +94,6 @@ export function UserMenu() {
 					</DropdownMenuContent>
 				</DropdownMenu>
 			</SidebarMenuItem>
-			<SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
 		</SidebarMenu>
 	);
 }

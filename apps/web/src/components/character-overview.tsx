@@ -2,35 +2,23 @@
 
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Users } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { CharacterCard } from "@/components/character-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/utils/trpc";
 
 const CHARACTER_SKELETON_KEYS = Array.from(
-	{ length: 8 },
+	{ length: 4 },
 	(_, i) => `character-skeleton-${i}`,
 );
 
 function CharacterOverviewSkeleton() {
 	return (
-		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+		<div className="grid grid-cols-2 gap-2">
 			{CHARACTER_SKELETON_KEYS.map((key) => (
-				<div key={key} className="group overflow-hidden rounded-lg border">
-					<Skeleton className="aspect-square w-full" />
-					<div className="flex items-center justify-between gap-2 p-2">
-						<div className="min-w-0">
-							<Skeleton size="sm" className="mb-1 w-20" />
-							<Skeleton size="xs" className="w-16" />
-						</div>
-						<div className="flex shrink-0 items-center gap-1">
-							<Skeleton size="sm" className="rounded-full" />
-							<Skeleton size="sm" className="rounded-full" />
-						</div>
-					</div>
-				</div>
+				<Skeleton key={key} className="aspect-square w-full rounded-lg" />
 			))}
 		</div>
 	);
@@ -58,13 +46,16 @@ export function CharacterOverview({
 		})),
 	});
 
-	// Group characters by realm
+	// Group characters by realm, showing 4 most recent per realm
 	const charactersByRealm = characterQueries
 		.map((query, index) => {
 			const realmId = realmIds[index];
 			const realm = realms?.find((r) => r.id === realmId);
-			const characters = (query.data || [])
-				.filter((c) => !user || c.userId === user.id)
+			const allUserCharacters = (query.data || []).filter(
+				(c) => !user || c.userId === user.id,
+			);
+
+			const characters = allUserCharacters
 				.sort((a, b) => {
 					// Sort by most recently updated
 					const aDate = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
@@ -76,19 +67,12 @@ export function CharacterOverview({
 			return {
 				realm,
 				characters,
+				totalCount: allUserCharacters.length,
 			};
 		})
 		.filter((group) => group.characters.length > 0 && group.realm);
 
 	const isLoading = realmsLoading || characterQueries.some((q) => q.isPending);
-
-	// Handle character changes (for invalidating queries)
-	const handleCharacterChanged = () => {
-		// Invalidate the character queries to refresh the data
-		characterQueries.forEach((query) => {
-			query.refetch();
-		});
-	};
 
 	if (isLoading) {
 		if (unstyled) {
@@ -125,24 +109,44 @@ export function CharacterOverview({
 						<div className="mb-3 flex items-center gap-2">
 							<button
 								type="button"
-								className="rounded font-medium text-foreground text-lg hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+								className="rounded-md bg-primary/10 px-3 py-1.5 font-semibold text-lg text-primary transition-colors hover:bg-primary/20 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
 								onClick={() => router.push(`/realms/${group.realm?.id}`)}
 							>
 								{group.realm?.name}
 							</button>
 							<span className="text-muted-foreground text-sm">
-								({group.characters.length} character
-								{group.characters.length !== 1 ? "s" : ""})
+								({group.totalCount} character
+								{group.totalCount !== 1 ? "s" : ""})
 							</span>
 						</div>
-						<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-							{group.characters.map((character) => (
-								<CharacterCard
-									key={character.id}
-									character={character}
-									onChanged={handleCharacterChanged}
-								/>
-							))}
+						<div className="grid grid-cols-2 gap-2">
+							{group.characters.map((character) => {
+								const imageSrc =
+									character.croppedImageKey || character.referenceImageKey;
+								return (
+									<div
+										key={character.id}
+										className="group overflow-hidden rounded-lg border"
+									>
+										{imageSrc ? (
+											<div className="relative aspect-square w-full bg-muted">
+												<Image
+													src={imageSrc}
+													alt={character.name}
+													fill
+													className="object-cover"
+													sizes="(max-width: 640px) 50vw, 25vw"
+													priority={false}
+												/>
+											</div>
+										) : (
+											<div className="flex aspect-square w-full items-center justify-center bg-muted text-muted-foreground text-xs">
+												No image
+											</div>
+										)}
+									</div>
+								);
+							})}
 						</div>
 					</div>
 				))}
@@ -174,25 +178,44 @@ export function CharacterOverview({
 								<div className="mb-3 flex items-center gap-2">
 									<button
 										type="button"
-										className="rounded font-medium text-foreground text-lg hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+										className="rounded-md bg-primary/10 px-3 py-1.5 font-semibold text-lg text-primary transition-colors hover:bg-primary/20 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
 										onClick={() => router.push(`/realms/${group.realm?.id}`)}
 									>
 										{group.realm?.name}
 									</button>
 									<span className="text-muted-foreground text-sm">
-										({group.characters.length} character
-										{group.characters.length !== 1 ? "s" : ""})
+										({group.totalCount} character
+										{group.totalCount !== 1 ? "s" : ""})
 									</span>
 								</div>
-								<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-									{group.characters.map((character) => (
-										<CharacterCard
-											key={character.id}
-											character={character}
-											onChanged={handleCharacterChanged}
-											realmId={group.realm?.id}
-										/>
-									))}
+								<div className="grid grid-cols-2 gap-2">
+									{group.characters.map((character) => {
+										const imageSrc =
+											character.croppedImageKey || character.referenceImageKey;
+										return (
+											<div
+												key={character.id}
+												className="group overflow-hidden rounded-lg border"
+											>
+												{imageSrc ? (
+													<div className="relative aspect-square w-full bg-muted">
+														<Image
+															src={imageSrc}
+															alt={character.name}
+															fill
+															className="object-cover"
+															sizes="(max-width: 640px) 50vw, 25vw"
+															priority={false}
+														/>
+													</div>
+												) : (
+													<div className="flex aspect-square w-full items-center justify-center bg-muted text-muted-foreground text-xs">
+														No image
+													</div>
+												)}
+											</div>
+										);
+									})}
 								</div>
 							</div>
 						))}

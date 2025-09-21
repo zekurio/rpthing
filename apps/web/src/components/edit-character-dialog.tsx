@@ -191,7 +191,7 @@ export function EditCharacterDialog({
 				<Form {...form}>
 					<form
 						onSubmit={form.handleSubmit(onSubmit)}
-						className="scrollbar-none grid max-h-[75vh] gap-4 overflow-y-auto"
+						className="scrollbar-none grid max-h-[75vh] gap-4 overflow-y-auto px-1"
 					>
 						<FormField
 							control={form.control}

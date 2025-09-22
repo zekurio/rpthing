@@ -2,7 +2,6 @@ import "dotenv/config";
 import { trpcServer } from "@hono/trpc-server";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import sharp from "sharp";
 import { auth } from "@/server/auth";
@@ -26,15 +25,6 @@ import {
 const app = new Hono().basePath("/api");
 
 app.use(logger());
-app.use(
-	cors({
-		origin:
-			process.env.NODE_ENV === "production"
-				? ["https://yourdomain.com"] // Replace with your production domain
-				: ["http://localhost:3000"],
-		credentials: true,
-	}),
-);
 
 app.on(["POST", "GET"], "/auth/**", (c) => auth.handler(c.req.raw));
 

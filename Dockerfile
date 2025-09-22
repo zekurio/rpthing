@@ -15,6 +15,9 @@ COPY . .
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1
 
+# Ensure public directory exists even if the repo doesn't have one
+RUN mkdir -p public
+
 # Accept build-time env for validation in env.ts (not persisted to final image)
 ARG DATABASE_URL
 ARG BETTER_AUTH_SECRET

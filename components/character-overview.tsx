@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { Users } from "lucide-react";
+import { User, Users } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,15 +109,17 @@ export function CharacterOverview({
 						<div className="mb-3 flex items-center gap-2">
 							<button
 								type="button"
-								className="rounded-md bg-primary/10 px-3 py-1.5 font-semibold text-lg text-primary transition-colors hover:bg-primary/20 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+								className="max-w-[calc(100%-40px)] overflow-hidden text-ellipsis whitespace-nowrap rounded-md bg-primary/10 px-3 py-1.5 font-semibold text-lg text-primary transition-colors hover:bg-primary/20 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+								style={{ maxWidth: "calc(100% - 40px)" }}
 								onClick={() => router.push(`/realms/${group.realm?.id}`)}
+								title={group.realm?.name}
 							>
 								{group.realm?.name}
 							</button>
-							<span className="text-muted-foreground text-sm">
-								({group.totalCount} character
-								{group.totalCount !== 1 ? "s" : ""})
-							</span>
+							<div className="flex items-center gap-1 text-muted-foreground text-sm">
+								<User className="h-4 w-4" />
+								<span>{group.totalCount}</span>
+							</div>
 						</div>
 						<div className="grid grid-cols-2 gap-2">
 							{group.characters.map((character) => {
@@ -178,15 +180,17 @@ export function CharacterOverview({
 								<div className="mb-3 flex items-center gap-2">
 									<button
 										type="button"
-										className="rounded-md bg-primary/10 px-3 py-1.5 font-semibold text-lg text-primary transition-colors hover:bg-primary/20 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+										className="whitespace-nowrap rounded-md bg-primary/10 px-3 py-1.5 font-semibold text-lg text-primary transition-colors hover:bg-primary/20 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
 										onClick={() => router.push(`/realms/${group.realm?.id}`)}
 									>
-										{group.realm?.name}
+										{group.realm?.name && group.realm.name.length > 16
+											? `${group.realm.name.slice(0, 16)}...`
+											: group.realm?.name}
 									</button>
-									<span className="text-muted-foreground text-sm">
-										({group.totalCount} character
-										{group.totalCount !== 1 ? "s" : ""})
-									</span>
+									<div className="flex items-center gap-1 text-muted-foreground text-sm">
+										<User className="h-4 w-4" />
+										<span>{group.totalCount}</span>
+									</div>
 								</div>
 								<div className="grid grid-cols-2 gap-2">
 									{group.characters.map((character) => {

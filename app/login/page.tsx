@@ -1,9 +1,7 @@
 "use client";
 
-import { Suspense } from "react";
 import { LoginForm } from "@/components/login-form";
 import { Logo } from "@/components/logo";
-import { LoadingText } from "@/components/ui/loading";
 
 export default function LoginPage() {
 	return (
@@ -12,9 +10,7 @@ export default function LoginPage() {
 				<div className="flex justify-center">
 					<Logo />
 				</div>
-				<Suspense fallback={<LoadingText text="Loading..." />}>
-					<LoginForm />
-				</Suspense>
+				<LoginForm />
 			</div>
 		</div>
 	);

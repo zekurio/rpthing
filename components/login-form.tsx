@@ -29,7 +29,6 @@ export function LoginForm({
 			return redirect;
 		}
 
-		// Default to realms page
 		return "/realms";
 	};
 

@@ -2,22 +2,10 @@
 
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/use-auth";
 
 export default function Home() {
-	const router = useRouter();
-	const { isAuthenticated, isLoading } = useAuth();
-
-	useEffect(() => {
-		if (!isLoading && isAuthenticated) {
-			router.replace("/realms");
-		}
-	}, [isAuthenticated, isLoading, router]);
-
 	return (
 		<main className="relative">
 			{/* Decorative background */}

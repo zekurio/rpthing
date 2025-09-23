@@ -1,7 +1,7 @@
-"use client";
-
+import { Suspense } from "react";
 import { LoginForm } from "@/components/login-form";
 import { Logo } from "@/components/logo";
+import { LoadingSpinner } from "@/components/ui/loading";
 
 export default function LoginPage() {
 	return (
@@ -10,7 +10,11 @@ export default function LoginPage() {
 				<div className="flex justify-center">
 					<Logo />
 				</div>
-				<LoginForm />
+				<Suspense
+					fallback={<LoadingSpinner size="lg" className="text-primary" />}
+				>
+					<LoginForm />
+				</Suspense>
 			</div>
 		</div>
 	);

@@ -9,8 +9,7 @@ type SignInProvider = "discord";
 export function useAuth() {
 	const { data: session, isPending, error, refetch } = authClient.useSession();
 
-	const user = (session?.user as User | undefined) || undefined;
-	const isAuthenticated = !!user;
+	const user = session?.user as User | undefined;
 
 	const signOut = useCallback(async () => {
 		await authClient.signOut();
@@ -41,7 +40,6 @@ export function useAuth() {
 		() => ({
 			session,
 			user,
-			isAuthenticated,
 			isLoading: isPending,
 			error,
 			signOut,
@@ -53,7 +51,6 @@ export function useAuth() {
 		[
 			session,
 			user,
-			isAuthenticated,
 			isPending,
 			error,
 			signOut,

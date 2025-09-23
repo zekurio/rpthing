@@ -1,25 +1,20 @@
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "@/server/auth";
 
-// Temporarily disable middleware-based auth checks
-// Better-auth works better with client-side authentication checks
-// The useAuthGuard and useRealmAccess hooks will handle redirects
+export async function middleware(request: NextRequest) {
+	const session = await auth.api.getSession({
+		headers: await headers(),
+	});
 
-export function middleware(_request: NextRequest) {
-	// For now, just pass through all requests
-	// Authentication is handled by client-side hooks
+	if (!session) {
+		return NextResponse.redirect(new URL("/login", request.url));
+	}
+
 	return NextResponse.next();
 }
 
 export const config = {
-	matcher: [
-		/*
-		 * Match all request paths except for the ones starting with:
-		 * - api (API routes)
-		 * - _next/static (static files)
-		 * - _next/image (image optimization files)
-		 * - favicon.ico (favicon file)
-		 */
-		"/((?!api|_next/static|_next/image|favicon.ico).*)",
-	],
+	runtime: "nodejs",
+	matcher: ["/realms"], // Apply middleware to specific routes
 };

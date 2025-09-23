@@ -12,22 +12,15 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { useAuthGuard } from "@/hooks/use-realm-access";
 import { trpc } from "@/utils/trpc";
 
 export default function RealmsPage() {
-	const { isAuthenticated } = useAuthGuard();
 	const { data, error, isPending } = useQuery({
 		...trpc.realm.list.queryOptions(),
 		retry: 2,
 		retryDelay: 1000,
 	});
 	const [dialogOpen, setDialogOpen] = useState(false);
-
-	// If not authenticated, the hook will redirect to login
-	if (!isAuthenticated) {
-		return null;
-	}
 
 	// Show loading state while pending
 	if (isPending) {

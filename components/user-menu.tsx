@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, MoreVertical } from "lucide-react";
+import { LogOut, MoreVertical, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,6 +28,10 @@ export function UserMenu() {
 		} catch (error) {
 			console.error("Failed to sign out:", error);
 		}
+	};
+
+	const goToSettings = () => {
+		router.push("/settings");
 	};
 
 	if (!user) {
@@ -86,6 +90,11 @@ export function UserMenu() {
 								</div>
 							</div>
 						</DropdownMenuLabel>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem onClick={goToSettings}>
+							<Settings />
+							Settings
+						</DropdownMenuItem>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem onClick={handleSignOut}>
 							<LogOut />

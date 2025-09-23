@@ -40,23 +40,13 @@ export function useRealmAccess(realmId: string | null | undefined) {
 
 /**
  * Hook to check if user is authenticated
- * Redirects to login if not authenticated
+ * Note: Auth protection is now handled by middleware
  */
 export function useAuthGuard() {
-	const router = useRouter();
-	const { user, isLoading, isAuthenticated } = useAuth();
-
-	useEffect(() => {
-		if (!isLoading && !isAuthenticated) {
-			// Redirect to login if not authenticated
-			const currentPath = window.location.pathname;
-			router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
-		}
-	}, [isLoading, isAuthenticated, router]);
+	const { user, isLoading } = useAuth();
 
 	return {
 		user,
 		isLoading,
-		isAuthenticated,
 	};
 }

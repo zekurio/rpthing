@@ -40,13 +40,15 @@ export function LoadingSpinner({
 	};
 
 	return (
-		<Loader2
-			className={cn(
-				"animate-spin text-muted-foreground",
-				sizeClasses[size],
-				className,
-			)}
-		/>
+		<div className="flex items-center justify-center">
+			<Loader2
+				className={cn(
+					"animate-spin text-muted-foreground",
+					sizeClasses[size],
+					className,
+				)}
+			/>
+		</div>
 	);
 }
 

@@ -3,7 +3,7 @@ import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 export const user = pgTable("user", {
 	id: uuid("id")
 		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
+		.$defaultFn(() => Bun.randomUUIDv7()),
 	name: text("name").notNull(),
 	email: text("email").notNull().unique(),
 	emailVerified: boolean("email_verified").default(false).notNull(),
@@ -18,7 +18,7 @@ export const user = pgTable("user", {
 export const session = pgTable("session", {
 	id: uuid("id")
 		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
+		.$defaultFn(() => Bun.randomUUIDv7()),
 	expiresAt: timestamp("expires_at").notNull(),
 	token: text("token").notNull().unique(),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -36,7 +36,7 @@ export const session = pgTable("session", {
 export const account = pgTable("account", {
 	id: uuid("id")
 		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
+		.$defaultFn(() => Bun.randomUUIDv7()),
 	accountId: text("account_id").notNull(),
 	providerId: text("provider_id").notNull(),
 	userId: uuid("user_id")
@@ -59,7 +59,7 @@ export const account = pgTable("account", {
 export const verification = pgTable("verification", {
 	id: uuid("id")
 		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
+		.$defaultFn(() => Bun.randomUUIDv7()),
 	identifier: text("identifier").notNull(),
 	value: text("value").notNull(),
 	expiresAt: timestamp("expires_at").notNull(),

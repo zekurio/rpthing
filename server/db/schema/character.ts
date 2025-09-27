@@ -5,7 +5,7 @@ import { realm } from "./realm";
 export const character = pgTable("character", {
 	id: uuid("id")
 		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
+		.$defaultFn(() => Bun.randomUUIDv7()),
 	realmId: text("realm_id")
 		.notNull()
 		.references(() => realm.id, { onDelete: "cascade" }),

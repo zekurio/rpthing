@@ -13,7 +13,7 @@ export const realmMember = pgTable(
 	{
 		id: uuid("id")
 			.primaryKey()
-			.$defaultFn(() => crypto.randomUUID()),
+			.$defaultFn(() => Bun.randomUUIDv7()),
 		realmId: text("realm_id")
 			.notNull()
 			.references(() => realm.id, { onDelete: "cascade" }),

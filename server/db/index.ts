@@ -1,14 +1,10 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/bun-sql";
+import { migrate } from "drizzle-orm/bun-sql/migrator";
 import { env } from "@/env";
 
-const pool = new Pool({
-	connectionString: env.DATABASE_URL,
-});
+const db = drizzle(env.DATABASE_URL);
 
-const db = drizzle(pool);
-
+// Run migrations
 await migrate(db, { migrationsFolder: "./drizzle/migrations" });
 
 export { db };

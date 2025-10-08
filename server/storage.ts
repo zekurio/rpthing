@@ -1,4 +1,3 @@
-// Bun S3 client implementation
 import { S3Client } from "bun";
 import { env } from "@/env";
 
@@ -9,7 +8,6 @@ const endpoint = env.S3_ENDPOINT;
 const region = "us-east-1";
 const publicEndpoint = env.PUBLIC_S3_ENDPOINT;
 
-// Public endpoint is already normalized by env.ts
 const normalizedPublicBaseUrl = publicEndpoint;
 
 const s3 = new S3Client({
@@ -49,7 +47,9 @@ export const uploadFile = async (
 	try {
 		await s3.write(objectKey, bytes, {
 			type: options?.contentType,
-			...(options?.cacheControl && { cacheControl: options.cacheControl }),
+			...(options?.cacheControl && {
+				cacheControl: options.cacheControl,
+			}),
 		});
 		return bytes.byteLength;
 	} catch (cause) {

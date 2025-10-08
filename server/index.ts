@@ -39,17 +39,6 @@ app.use(
 	}),
 );
 
-app.use(
-	"/trpc",
-	trpcServer({
-		router: appRouter,
-		createContext: (ctx) =>
-			createServerContext({
-				context: ctx as unknown as CreateContextOptions["context"],
-			}),
-	}),
-);
-
 app.post("/upload/realm-icon/:realmId", async (c) => {
 	try {
 		const realmId = c.req.param("realmId");
@@ -392,7 +381,10 @@ app.post("/upload/character-image/:characterId", async (c) => {
 		const finalOriginalKey = `character-images/${characterId}.${originalExt ?? "bin"}`;
 		await db
 			.update(character)
-			.set({ referenceImageKey: finalOriginalKey, croppedImageKey: croppedKey })
+			.set({
+				referenceImageKey: finalOriginalKey,
+				croppedImageKey: croppedKey,
+			})
 			.where(eq(character.id, characterId));
 
 		const url = getPublicFileUrl(croppedKey ?? finalOriginalKey);

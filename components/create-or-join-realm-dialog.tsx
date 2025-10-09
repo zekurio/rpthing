@@ -28,8 +28,8 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { queryClient, trpc } from "@/lib/trpc";
 import { uploadWithProgress } from "@/lib/utils";
-import { queryClient, trpc } from "@/utils/trpc";
 
 const createRealmSchema = z.object({
 	name: z

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { trpc } from "@/utils/trpc";
+import { trpc } from "@/lib/trpc";
 import { useAuth } from "./use-auth";
 
 /**

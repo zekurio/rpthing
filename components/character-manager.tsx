@@ -9,7 +9,7 @@ import { FilterDropdown, type FilterState } from "@/components/filter-dropdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { queryClient, trpc } from "@/utils/trpc";
+import { queryClient, trpc } from "@/lib/trpc";
 
 export function CharacterManager({
 	realmId,

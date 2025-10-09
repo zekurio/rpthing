@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
-import { trpc } from "@/utils/trpc";
+import { trpc } from "@/lib/trpc";
 
 const CHARACTER_SKELETON_KEYS = Array.from(
 	{ length: 4 },

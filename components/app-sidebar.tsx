@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/sidebar";
 import { UserMenu } from "@/components/user-menu";
 import { useAuth } from "@/hooks/use-auth";
-import { queryClient, trpc } from "@/utils/trpc";
+import { queryClient, trpc } from "@/lib/trpc";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const params = useParams();

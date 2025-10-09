@@ -25,7 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ButtonLoading } from "@/components/ui/loading";
 import { Textarea } from "@/components/ui/textarea";
-import { queryClient, trpc } from "@/utils/trpc";
+import { queryClient, trpc } from "@/lib/trpc";
 
 const traitFormSchema = z.object({
 	name: z

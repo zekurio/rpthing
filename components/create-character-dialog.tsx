@@ -31,7 +31,7 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useRealmGenderOptions } from "@/hooks/use-realm-gender-options";
 import { gradeForValue } from "@/lib/traits";
-import { queryClient, trpc } from "@/utils/trpc";
+import { queryClient, trpc } from "@/lib/trpc";
 
 const formSchema = z.object({
 	name: z.string().min(1, "Name is required").max(200),

@@ -1,7 +1,7 @@
 import { characterRouter } from "@/server/routers/character";
 import { realmRouter } from "@/server/routers/realm";
 import { traitRouter } from "@/server/routers/trait";
-import { protectedProcedure, publicProcedure, router } from "@/server/trpc";
+import { publicProcedure, router } from "@/server/trpc";
 
 export const appRouter = router({
 	healthCheck: publicProcedure.query(() => {

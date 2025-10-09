@@ -1,19 +1,13 @@
 import "dotenv/config";
-import { trpcServer } from "@hono/trpc-server";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import sharp from "sharp";
 import { auth } from "@/server/auth";
-import {
-	type CreateContextOptions,
-	createContext as createServerContext,
-} from "@/server/context";
 import { db } from "@/server/db/index";
 import { character } from "@/server/db/schema/character";
 import { realm } from "@/server/db/schema/realm";
 import { realmMember } from "@/server/db/schema/realmMember";
-import { appRouter } from "@/server/routers/index";
 import {
 	deleteFile,
 	existsFile,
@@ -27,17 +21,6 @@ const app = new Hono().basePath("/api");
 app.use(logger());
 
 app.on(["POST", "GET"], "/auth/**", (c) => auth.handler(c.req.raw));
-
-app.use(
-	"/trpc/*",
-	trpcServer({
-		router: appRouter,
-		createContext: (ctx) =>
-			createServerContext({
-				context: ctx as unknown as CreateContextOptions["context"],
-			}),
-	}),
-);
 
 app.post("/upload/realm-icon/:realmId", async (c) => {
 	try {

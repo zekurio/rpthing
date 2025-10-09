@@ -28,7 +28,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useRealmAccess } from "@/hooks/use-realm-access";
 import { getGradeColor, gradeForValue, type TraitGrade } from "@/lib/traits";
-import { queryClient, trpc } from "@/utils/trpc";
+import { queryClient, trpc } from "@/lib/trpc";
 
 interface CharacterCardProps {
 	character: CharacterListItem;

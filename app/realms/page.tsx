@@ -12,7 +12,7 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { trpc } from "@/utils/trpc";
+import { trpc } from "@/lib/trpc";
 
 export default function RealmsPage() {
 	const { data, error, isPending } = useQuery({

@@ -29,8 +29,8 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { useRealmGenderOptions } from "@/hooks/use-realm-gender-options";
+import { queryClient, trpc } from "@/lib/trpc";
 import { uploadWithProgress } from "@/lib/utils";
-import { queryClient, trpc } from "@/utils/trpc";
 
 const editCharacterSchema = z.object({
 	name: z.string().min(1, "Name is required").max(200),

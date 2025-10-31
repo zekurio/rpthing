@@ -81,9 +81,9 @@ export default function RealmPage() {
 						</>
 					) : null}
 				</div>
-				<div className="flex h-full min-h-0 w-full flex-col">
-					<div className="flex h-full min-h-0 overflow-hidden">
-						<main className="flex-1 overflow-y-auto p-6">
+				<div className="flex min-h-0 w-full flex-1 flex-col">
+					<div className="flex min-h-0 flex-1 overflow-hidden">
+						<main className="scrollbar-none flex-1 overflow-y-auto p-6 md:[scrollbar-gutter:stable]">
 							<div className="space-y-6">
 								<Tabs value={tab} onValueChange={setTab} className="w-full">
 									<TabsList className="grid w-full grid-cols-2 bg-muted">

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { idSchema, realmIdSchema } from "./rp";
+import { dateTimeSchema, idSchema, realmIdSchema } from "./rp";
 
 export const TRAIT_GRADES = [
 	"F",
@@ -78,3 +78,26 @@ export const ratingGetByPairInputSchema = z.object({
 	traitId: idSchema,
 });
 export type RatingGetByPairInput = z.infer<typeof ratingGetByPairInputSchema>;
+
+export const traitSchema = z.object({
+	id: traitIdSchema,
+	name: traitNameSchema,
+	description: traitDescriptionSchema,
+	displayMode: traitDisplayModeSchema,
+	realmId: realmIdSchema,
+	createdByUserId: idSchema.nullable().optional(),
+	createdByName: z.string().nullable().optional(),
+	createdAt: dateTimeSchema.optional(),
+	updatedAt: dateTimeSchema.optional(),
+});
+export type Trait = z.infer<typeof traitSchema>;
+
+export const characterTraitRatingSchema = z.object({
+	traitId: traitIdSchema,
+	traitName: traitNameSchema,
+	description: traitDescriptionSchema,
+	displayMode: traitDisplayModeSchema,
+	ratingId: ratingIdSchema.nullable(),
+	value: z.number().int().min(1).max(20).nullable(),
+});
+export type CharacterTraitRating = z.infer<typeof characterTraitRatingSchema>;

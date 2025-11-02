@@ -2,6 +2,7 @@ import { z } from "zod";
 
 // Shared primitives
 export const idSchema = z.string().min(1);
+export const dateTimeSchema = z.union([z.date(), z.string()]);
 
 // Realm
 export const realmIdSchema = z

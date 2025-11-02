@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import type { CharacterTraitRating, CharacterWithRatings } from "@types";
+import type { CharacterWithRatings } from "@types";
 import { X } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
@@ -47,15 +47,15 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 					if (!old) return old;
 					return {
 						...old,
-						traits: old.traits.map((t: CharacterTraitRating) =>
-							t.traitId === vars.traitId
-								? {
-										...t,
-										value: typeof vars.value === "number" ? vars.value : null,
-										ratingId: t.ratingId ?? "optimistic",
-									}
-								: t,
-						),
+						traits: old.traits.map((t) => {
+							const next = { ...t, description: t.description ?? null };
+							if (t.traitId !== vars.traitId) return next;
+							return {
+								...next,
+								value: typeof vars.value === "number" ? vars.value : null,
+								ratingId: t.ratingId ?? "optimistic",
+							};
+						}),
 					};
 				},
 			);
@@ -82,11 +82,11 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 					if (!old) return old;
 					return {
 						...old,
-						traits: old.traits.map((t: CharacterTraitRating) =>
-							t.ratingId === ratingId
-								? { ...t, value: null, ratingId: null }
-								: t,
-						),
+						traits: old.traits.map((t) => {
+							const next = { ...t, description: t.description ?? null };
+							if (t.ratingId !== ratingId) return next;
+							return { ...next, value: null, ratingId: null };
+						}),
 					};
 				},
 			);

@@ -1,8 +1,9 @@
 "use client";
 
-import { LogOut, MoreVertical, Settings } from "lucide-react";
+import { LogOut, MoreVertical } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
@@ -14,24 +15,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
-import { authClient } from "@/lib/auth-client";
 
 export function UserMenu() {
 	const router = useRouter();
-	const { user, isLoading } = useAuth();
+	const { user, isLoading, signOut } = useAuth();
 
 	const handleSignOut = async () => {
 		try {
-			await authClient.signOut();
+			await signOut();
 			toast.success("You have been signed out successfully.");
 			router.push("/");
 		} catch (error) {
 			console.error("Failed to sign out:", error);
+			toast.error("Sign out failed");
 		}
-	};
-
-	const goToSettings = () => {
-		router.push("/settings");
 	};
 
 	if (!user) {
@@ -91,13 +88,13 @@ export function UserMenu() {
 							</div>
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem onClick={goToSettings}>
-							<Settings />
-							Settings
-						</DropdownMenuItem>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem onClick={handleSignOut}>
-							<LogOut />
+						<DropdownMenuItem
+							onSelect={(event) => {
+								event.preventDefault();
+								handleSignOut();
+							}}
+						>
+							<LogOut className="mr-2 size-4" />
 							Log out
 						</DropdownMenuItem>
 					</DropdownMenuContent>

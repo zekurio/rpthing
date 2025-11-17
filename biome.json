@@ -6,7 +6,7 @@
 		"useIgnoreFile": false
 	},
 	"files": {
-		"ignoreUnknown": false,
+		"ignoreUnknown": true,
 		"includes": [
 			"**",
 			"!**/.next",
@@ -23,14 +23,16 @@
 			"!**/.wrangler",
 			"!**/.alchemy",
 			"!**/wrangler.jsonc",
-			"!**/.source"
+			"!**/.source",
+			"!/nix/store/*"
 		]
 	},
+
 	"formatter": {
 		"enabled": true,
 		"indentStyle": "tab"
 	},
-	"assist": { "actions": { "source": { "organizeImports": "on" } } },
+
 	"linter": {
 		"enabled": true,
 		"rules": {
@@ -64,6 +66,15 @@
 			}
 		}
 	},
+
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	},
+
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "double"

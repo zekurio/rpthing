@@ -1,5 +1,5 @@
 {
-  description = "javascript development environment";
+  description = "rpthing devShell";
 
   nixConfig = {
     extra-substituters = [
@@ -20,19 +20,18 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
 
-  outputs = { self, nixpkgs }:
+  outputs = { self, nixpkgs, ... }:
   let
     systems = [ "x86_64-linux" "aarch64-linux" ];
-    forAllSystems = f: nixpkgs.lib.genAttrs systems (system:
-      f nixpkgs.legacyPackages.${system});
-  in {
+    forAllSystems = f:
+      nixpkgs.lib.genAttrs systems (system:
+        f nixpkgs.legacyPackages.${system});
+  in
+  {
     devShells = forAllSystems (pkgs: {
-      # JS/Bun shell
       default = pkgs.mkShell {
         packages = with pkgs; [
           bun
-          nodejs_22
-          corepack
         ];
       };
     });

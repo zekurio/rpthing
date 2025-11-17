@@ -31,9 +31,11 @@
 # Environment & local files
 .env*
 !.env.example
+!.envrc
 .DS_Store
 *.pem
 *.local
+.direnv
 
 # Logs
 npm-debug.log*

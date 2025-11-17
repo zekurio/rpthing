@@ -164,7 +164,10 @@ export function ImageViewer({
 		}
 		const el = e.currentTarget as HTMLDivElement;
 		el.setPointerCapture?.(e.pointerId);
-		pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+		pointersRef.current.set(e.pointerId, {
+			x: e.clientX,
+			y: e.clientY,
+		});
 		if (pointersRef.current.size === 1) {
 			isPanningRef.current = true;
 		}
@@ -189,7 +192,10 @@ export function ImageViewer({
 			const prev = pointersRef.current.get(e.pointerId);
 			if (!prev) return;
 			// Update to current position for subsequent computations
-			pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+			pointersRef.current.set(e.pointerId, {
+				x: e.clientX,
+				y: e.clientY,
+			});
 
 			if (
 				pointersRef.current.size === 2 &&
@@ -338,7 +344,7 @@ export function ImageViewer({
 				showCloseButton={false}
 				className="w-[96vw] max-w-none border-0 bg-transparent p-0 shadow-none sm:w-[95vw] sm:max-w-[95vw] md:w-[90vw] md:max-w-[90vw] lg:w-[85vw] lg:max-w-[85vw] xl:w-[80vw] xl:max-w-[80vw]"
 			>
-				<DialogHeader>
+				<DialogHeader className="border-0">
 					<VisuallyHidden>
 						<DialogTitle>{alt}</DialogTitle>
 					</VisuallyHidden>

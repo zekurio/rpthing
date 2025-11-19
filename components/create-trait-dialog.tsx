@@ -11,6 +11,7 @@ import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
@@ -24,6 +25,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ButtonLoading } from "@/components/ui/loading";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { queryClient, trpc } from "@/lib/trpc";
 
@@ -128,16 +136,20 @@ export function CreateTraitDialog({
 							render={({ field }) => (
 								<FormItem>
 									<FormLabel>Display Mode</FormLabel>
-									<FormControl>
-										<select
-											value={field.value ?? "grade"}
-											onChange={(e) => field.onChange(e.target.value)}
-											className="h-9 rounded-md border bg-background px-3 text-sm"
-										>
-											<option value="grade">Grade</option>
-											<option value="number">Number</option>
-										</select>
-									</FormControl>
+									<Select
+										onValueChange={field.onChange}
+										defaultValue={field.value}
+									>
+										<FormControl>
+											<SelectTrigger>
+												<SelectValue placeholder="Select a display mode" />
+											</SelectTrigger>
+										</FormControl>
+										<SelectContent>
+											<SelectItem value="grade">Grade</SelectItem>
+											<SelectItem value="number">Number</SelectItem>
+										</SelectContent>
+									</Select>
 									<FormMessage />
 								</FormItem>
 							)}
@@ -160,7 +172,7 @@ export function CreateTraitDialog({
 								</FormItem>
 							)}
 						/>
-						<div className="flex items-center justify-end gap-2">
+						<DialogFooter>
 							<Button
 								type="button"
 								variant="outline"
@@ -179,7 +191,7 @@ export function CreateTraitDialog({
 									{createMutation.isPending ? "Creating..." : "Create"}
 								</ButtonLoading>
 							</Button>
-						</div>
+						</DialogFooter>
 					</form>
 				</Form>
 			</DialogContent>

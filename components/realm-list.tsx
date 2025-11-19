@@ -7,6 +7,7 @@ interface Realm {
 	name?: string;
 	iconKey?: string | null;
 	ownerId?: string;
+	memberCount?: number;
 }
 
 interface RealmListProps {

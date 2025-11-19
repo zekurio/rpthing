@@ -1,13 +1,14 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { toast } from "sonner";
 import { CreateOrJoinRealmDialog } from "@/components/create-or-join-realm-dialog";
 import { DeleteRealmDialog } from "@/components/delete-realm-dialog";
 import EditRealmDialog from "@/components/edit-realm-dialog";
+import { LeaveRealmDialog } from "@/components/leave-realm-dialog";
 import { Logo } from "@/components/logo";
 import { SidebarRealmList } from "@/components/sidebar-realm-list";
+import { TransferOwnershipDialog } from "@/components/transfer-ownership-dialog";
 import {
 	Sidebar,
 	SidebarContent,
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/sidebar";
 import { UserMenu } from "@/components/user-menu";
 import { useAuth } from "@/hooks/use-auth";
-import { queryClient, trpc } from "@/lib/trpc";
+import { trpc } from "@/lib/trpc";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const params = useParams();
@@ -40,25 +41,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
+	const [transferDialogOpen, setTransferDialogOpen] = useState(false);
 	const [selectedRealm, setSelectedRealm] = useState<{
 		id: string;
 		name?: string;
 	} | null>(null);
 	const { user } = useAuth();
-
-	// Mutations
-	const leaveMutation = useMutation({
-		...trpc.realm.leave.mutationOptions(),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: trpc.realm.list.queryKey() });
-			toast.success("Left realm successfully");
-			// If we left the current realm, redirect to /realms
-			if (selectedRealm?.id === currentRealmId) {
-				window.location.href = "/realms";
-			}
-		},
-		onError: (err) => toast.error(err.message),
-	});
 
 	const handleEditRealm = (realmId: string) => {
 		const realm = data?.find((r) => r.id === realmId);
@@ -73,7 +62,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	};
 
 	const handleLeaveRealm = (realmId: string) => {
-		leaveMutation.mutate(realmId);
+		const realm = data?.find((r) => r.id === realmId);
+		setSelectedRealm({ id: realmId, name: realm?.name });
+
+		if (realm?.ownerId === user?.id) {
+			setTransferDialogOpen(true);
+		} else {
+			setLeaveDialogOpen(true);
+		}
 	};
 
 	return (
@@ -122,6 +118,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			<DeleteRealmDialog
 				open={deleteDialogOpen}
 				onOpenChange={setDeleteDialogOpen}
+				realmId={selectedRealm?.id ?? null}
+				realmName={selectedRealm?.name}
+				currentRealmId={currentRealmId}
+			/>
+			<LeaveRealmDialog
+				open={leaveDialogOpen}
+				onOpenChange={setLeaveDialogOpen}
+				realmId={selectedRealm?.id ?? null}
+				realmName={selectedRealm?.name}
+				currentRealmId={currentRealmId}
+			/>
+			<TransferOwnershipDialog
+				open={transferDialogOpen}
+				onOpenChange={setTransferDialogOpen}
 				realmId={selectedRealm?.id ?? null}
 				realmName={selectedRealm?.name}
 				currentRealmId={currentRealmId}

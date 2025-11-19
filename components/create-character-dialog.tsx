@@ -14,6 +14,7 @@ import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
@@ -171,6 +172,7 @@ export function CreateCharacterDialog({
 				</DialogHeader>
 				<Form {...form}>
 					<form
+						id="create-character-form"
 						onSubmit={form.handleSubmit(onSubmit)}
 						className="scrollbar-none grid max-h-[75vh] gap-4 overflow-y-auto px-1"
 					>
@@ -315,26 +317,27 @@ export function CreateCharacterDialog({
 								</div>
 							)}
 						</div>
-						<div className="sticky flex items-center justify-end gap-2 border-t bg-background pt-3">
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => onOpenChange(false)}
-								disabled={mutation.isPending}
-							>
-								Cancel
-							</Button>
-							<Button
-								type="submit"
-								disabled={form.formState.isSubmitting || mutation.isPending}
-							>
-								{form.formState.isSubmitting || mutation.isPending
-									? "Creating..."
-									: "Create"}
-							</Button>
-						</div>
 					</form>
 				</Form>
+				<DialogFooter>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => onOpenChange(false)}
+						disabled={mutation.isPending}
+					>
+						Cancel
+					</Button>
+					<Button
+						type="submit"
+						form="create-character-form"
+						disabled={form.formState.isSubmitting || mutation.isPending}
+					>
+						{form.formState.isSubmitting || mutation.isPending
+							? "Creating..."
+							: "Create"}
+					</Button>
+				</DialogFooter>
 			</DialogContent>
 		</Dialog>
 	);

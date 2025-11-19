@@ -13,6 +13,7 @@ import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
@@ -310,7 +311,7 @@ export function CreateOrJoinRealmDialog({
 										</div>
 									) : null}
 								</div>
-								<div className="flex items-center justify-end gap-2 pt-2">
+								<DialogFooter>
 									<Button
 										variant="outline"
 										type="button"
@@ -328,7 +329,7 @@ export function CreateOrJoinRealmDialog({
 									>
 										{createMutation.isPending ? "Creating..." : "Create"}
 									</Button>
-								</div>
+								</DialogFooter>
 							</form>
 						</Form>
 					</TabsContent>
@@ -374,7 +375,7 @@ export function CreateOrJoinRealmDialog({
 										</FormItem>
 									)}
 								/>
-								<div className="flex items-center justify-end gap-2 pt-2">
+								<DialogFooter>
 									<Button
 										variant="outline"
 										type="button"
@@ -391,7 +392,7 @@ export function CreateOrJoinRealmDialog({
 									>
 										{joinMutation.isPending ? "Joining..." : "Join Realm"}
 									</Button>
-								</div>
+								</DialogFooter>
 							</form>
 						</Form>
 					</TabsContent>

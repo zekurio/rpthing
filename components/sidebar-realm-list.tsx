@@ -8,6 +8,7 @@ type Realm = {
 	name?: string;
 	iconKey?: string | null;
 	ownerId?: string;
+	memberCount?: number;
 };
 
 export function SidebarRealmList({

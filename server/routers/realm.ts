@@ -6,7 +6,7 @@ import {
 	realmUpdateInputSchema,
 } from "@schemas";
 import { TRPCError } from "@trpc/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/server/db/index";
 import { user } from "@/server/db/schema/auth";
@@ -55,6 +55,10 @@ export const realmRouter = router({
 				ownerId: realm.ownerId,
 				createdAt: realm.createdAt,
 				updatedAt: realm.updatedAt,
+				memberCount:
+					sql<number>`(SELECT count(*) FROM ${realmMember} WHERE ${realmMember.realmId} = ${realm.id})`.mapWith(
+						Number,
+					),
 			})
 			.from(realm)
 			.innerJoin(realmMember, eq(realm.id, realmMember.realmId))

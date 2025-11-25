@@ -14,9 +14,8 @@ import {
 
 const STORAGE_KEY = "nsfw-blur-preference";
 const CACHE_KEY = "nsfw-classification-cache";
-// Lower threshold for better detection - Porn/Hentai use lower threshold, Sexy uses higher
-const NSFW_THRESHOLD_EXPLICIT = 0.2; // For Porn, Hentai
-const NSFW_THRESHOLD_SEXY = 0.4; // For Sexy content
+
+const NSFW_CLASSES = ["Porn", "Hentai", "Sexy"];
 
 type ClassificationResult = {
 	isNsfw: boolean;
@@ -156,33 +155,21 @@ export function NsfwProvider({ children }: { children: ReactNode }) {
 
 					const predictions = await model.classify(img);
 
-					// Check for NSFW content with different thresholds per category
-					let isNsfw = false;
-					let maxNsfwConfidence = 0;
+					// Find the top prediction (highest probability)
+					const topPrediction = predictions.reduce((max, pred) =>
+						pred.probability > max.probability ? pred : max,
+					);
 
-					for (const pred of predictions) {
-						// Explicit content (Porn, Hentai) - lower threshold
-						if (pred.className === "Porn" || pred.className === "Hentai") {
-							if (pred.probability >= NSFW_THRESHOLD_EXPLICIT) {
-								isNsfw = true;
-							}
-							maxNsfwConfidence = Math.max(maxNsfwConfidence, pred.probability);
-						}
-						// Sexy content - higher threshold to reduce false positives
-						if (pred.className === "Sexy") {
-							if (pred.probability >= NSFW_THRESHOLD_SEXY) {
-								isNsfw = true;
-							}
-							maxNsfwConfidence = Math.max(maxNsfwConfidence, pred.probability);
-						}
-					}
+					// Only blur if the top prediction is an NSFW class
+					const isNsfw = NSFW_CLASSES.includes(topPrediction.className);
+					const confidence = topPrediction.probability;
 
 					// Update cache
 					setCache((prev) => ({
 						...prev,
 						[src]: {
 							isNsfw,
-							confidence: maxNsfwConfidence,
+							confidence,
 							timestamp: Date.now(),
 						},
 					}));

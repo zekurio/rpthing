@@ -3,11 +3,11 @@
 import { useMutation } from "@tanstack/react-query";
 import type { CharacterListItem } from "@types";
 import { MoreVertical, Pencil, Trash2 } from "lucide-react";
-import Image from "next/image";
 import { memo, useCallback, useState } from "react";
 import { toast } from "sonner";
 import { EditCharacterDialog } from "@/components/edit-character-dialog";
 import { ImageViewer } from "@/components/image-viewer";
+import { NsfwImage } from "@/components/nsfw-image";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -18,7 +18,6 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -50,7 +49,6 @@ export const CharacterCard = memo(function CharacterCard({
 	const realmId = propRealmId || character.realmId;
 	const { realm } = useRealmAccess(realmId);
 
-	// Check if user can delete this character (is creator OR is realm owner)
 	const canDelete =
 		user && (character.userId === user.id || realm?.ownerId === user.id);
 
@@ -90,89 +88,75 @@ export const CharacterCard = memo(function CharacterCard({
 		character.croppedImageKey || character.referenceImageKey || undefined;
 	const fullImageSrc = character.referenceImageKey || undefined;
 
+	const OptionsMenu = (
+		<div className="absolute top-2 right-2 z-10">
+			<DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+				<DropdownMenuTrigger asChild>
+					{/* biome-ignore lint/a11y/useSemanticElements: Using div to avoid button nesting issues */}
+					<div
+						role="button"
+						tabIndex={0}
+						className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-black/70 text-white transition-colors hover:bg-black/80"
+						aria-label="Character options"
+						onClick={(e) => e.stopPropagation()}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === " ") {
+								e.stopPropagation();
+							}
+						}}
+					>
+						<MoreVertical className="h-4 w-4" />
+					</div>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="end">
+					<DropdownMenuItem onClick={handleEditClick}>
+						<Pencil className="mr-2 h-4 w-4" />
+						Edit
+					</DropdownMenuItem>
+					<DropdownMenuItem
+						onClick={handleDeleteClick}
+						className="text-destructive focus:text-destructive"
+						disabled={!canDelete}
+					>
+						<Trash2 className="mr-2 h-4 w-4" />
+						Delete
+					</DropdownMenuItem>
+				</DropdownMenuContent>
+			</DropdownMenu>
+		</div>
+	);
+
 	return (
 		<div className="group overflow-hidden rounded-lg border border-border">
 			{previewSrc ? (
-				<div className="relative aspect-square w-full bg-muted">
+				<div className="relative aspect-square w-full overflow-hidden bg-muted">
 					<button
 						className="absolute inset-0 h-full w-full cursor-pointer"
 						onClick={() => setViewerOpen(true)}
 						aria-label="View full image"
 						type="button"
 					>
-						<Image
+						<NsfwImage
 							src={previewSrc}
 							alt={character.name}
 							fill
 							className="object-cover"
 							sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
 							priority={false}
+							classificationSrc={fullImageSrc}
 						/>
 					</button>
-					<div className="absolute top-2 right-2">
-						<DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="secondary"
-									size="sm"
-									className="h-8 w-8 rounded-full bg-black/50 p-0 text-white hover:bg-black/70"
-									aria-label="Character options"
-								>
-									<MoreVertical className="h-4 w-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								<DropdownMenuItem onClick={handleEditClick}>
-									<Pencil className="mr-2 h-4 w-4" />
-									Edit
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									onClick={handleDeleteClick}
-									className="text-destructive focus:text-destructive"
-									disabled={!canDelete}
-								>
-									<Trash2 className="mr-2 h-4 w-4" />
-									Delete
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
+					{OptionsMenu}
 				</div>
 			) : (
 				<div className="relative aspect-square w-full bg-muted">
 					<div className="grid h-full w-full place-items-center text-muted-foreground text-xs">
 						No image
 					</div>
-					<div className="absolute top-2 right-2">
-						<DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="secondary"
-									size="sm"
-									className="h-8 w-8 rounded-full bg-black/50 p-0 text-white hover:bg-black/70"
-									aria-label="Character options"
-								>
-									<MoreVertical className="h-4 w-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								<DropdownMenuItem onClick={handleEditClick}>
-									<Pencil className="mr-2 h-4 w-4" />
-									Edit
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									onClick={handleDeleteClick}
-									className="text-destructive focus:text-destructive"
-									disabled={!canDelete}
-								>
-									<Trash2 className="mr-2 h-4 w-4" />
-									Delete
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
+					{OptionsMenu}
 				</div>
 			)}
+
 			<div className="p-2">
 				<div className="min-w-0">
 					<div className="truncate font-medium">{character.name}</div>
@@ -187,7 +171,8 @@ export const CharacterCard = memo(function CharacterCard({
 					</div>
 				</div>
 			</div>
-			{ratedTraits.length > 0 ? (
+
+			{ratedTraits.length > 0 && (
 				<div className="flex flex-wrap gap-1 px-2 pb-2">
 					{ratedTraits.map((t) => {
 						const label =
@@ -209,7 +194,7 @@ export const CharacterCard = memo(function CharacterCard({
 						);
 					})}
 				</div>
-			) : null}
+			)}
 
 			<EditCharacterDialog
 				open={editOpen}
@@ -218,8 +203,7 @@ export const CharacterCard = memo(function CharacterCard({
 				onChanged={onChanged}
 			/>
 
-			{/* New high-performance image viewer */}
-			{fullImageSrc ? (
+			{fullImageSrc && (
 				<ImageViewer
 					open={viewerOpen}
 					onOpenChange={setViewerOpen}
@@ -229,7 +213,7 @@ export const CharacterCard = memo(function CharacterCard({
 					maxScale={5}
 					minScale={1}
 				/>
-			) : null}
+			)}
 
 			<AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
 				<AlertDialogContent>

@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "blur_nsfw" boolean DEFAULT true NOT NULL;

@@ -73,6 +73,14 @@ export function CreateOrJoinRealmDialog({
 }: CreateOrJoinRealmDialogProps) {
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
+	const [originalFile, setOriginalFile] = useState<File | null>(null);
+	const [percentCrop, setPercentCrop] = useState<{
+		unit?: string;
+		x?: number;
+		y?: number;
+		width?: number;
+		height?: number;
+	} | null>(null);
 	const [activeTab, setActiveTab] = useState<"create" | "join">("create");
 	const [uploadProgress, setUploadProgress] = useState<number>(0);
 	const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -123,12 +131,25 @@ export function CreateOrJoinRealmDialog({
 	const handleRemoveIcon = useCallback(() => {
 		setSelectedFile(null);
 		setImagePreview(null);
+		setOriginalFile(null);
+		setPercentCrop(null);
 	}, []);
 
-	const uploadFile = useCallback(
-		async (realmId: string, file: File): Promise<void> => {
+	const uploadIcon = useCallback(
+		async (
+			realmId: string,
+			file: File,
+			original?: File | null,
+			crop?: typeof percentCrop,
+		): Promise<void> => {
 			const formData = new FormData();
-			formData.append("file", file);
+			// Prefer uploading the original with crop so server can process it
+			if (original && crop) {
+				formData.append("file", original);
+				formData.append("crop", JSON.stringify(crop));
+			} else {
+				formData.append("file", file);
+			}
 
 			setIsUploading(true);
 			setUploadProgress(0);
@@ -161,6 +182,8 @@ export function CreateOrJoinRealmDialog({
 		joinForm.reset();
 		setSelectedFile(null);
 		setImagePreview(null);
+		setOriginalFile(null);
+		setPercentCrop(null);
 		setIsUploading(false);
 		setUploadProgress(0);
 		setActiveTab("create");
@@ -178,7 +201,7 @@ export function CreateOrJoinRealmDialog({
 
 				// Then upload the icon if a file was selected
 				if (selectedFile && realm.id) {
-					await uploadFile(realm.id, selectedFile);
+					await uploadIcon(realm.id, selectedFile, originalFile, percentCrop);
 					// Invalidate realm list to refresh sidebar
 					queryClient.invalidateQueries({
 						queryKey: trpc.realm.list.queryKey(),
@@ -189,7 +212,7 @@ export function CreateOrJoinRealmDialog({
 				// Error is already handled by mutation onError
 			}
 		},
-		[createMutation, selectedFile, uploadFile],
+		[createMutation, selectedFile, originalFile, percentCrop, uploadIcon],
 	);
 
 	const onJoinSubmit = useCallback(
@@ -302,9 +325,11 @@ export function CreateOrJoinRealmDialog({
 										<FormLabel>Icon (optional)</FormLabel>
 										<ImageUpload
 											previewSrc={imagePreview || undefined}
-											onSelect={(file, preview) => {
+											onSelect={(file, preview, meta) => {
 												setSelectedFile(file);
 												setImagePreview(preview);
+												setOriginalFile(meta?.originalFile ?? null);
+												setPercentCrop(meta?.percentCrop ?? null);
 											}}
 											onRemove={handleRemoveIcon}
 										/>

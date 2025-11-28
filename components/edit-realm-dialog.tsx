@@ -54,6 +54,14 @@ export function EditRealmDialog({
 }: EditRealmDialogProps) {
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
+	const [originalFile, setOriginalFile] = useState<File | null>(null);
+	const [percentCrop, setPercentCrop] = useState<{
+		unit?: string;
+		x?: number;
+		y?: number;
+		width?: number;
+		height?: number;
+	} | null>(null);
 	const [removeIcon, setRemoveIcon] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
 	const [uploadProgress, setUploadProgress] = useState(0);
@@ -98,13 +106,26 @@ export function EditRealmDialog({
 			});
 			setSelectedFile(null);
 			setImagePreview(null);
+			setOriginalFile(null);
+			setPercentCrop(null);
 			setRemoveIcon(false);
 		}
 	}, [realm, realmName, open, form]);
 
-	const uploadFile = async (realmId: string, file: File): Promise<void> => {
+	const uploadIcon = async (
+		realmId: string,
+		file: File,
+		original?: File | null,
+		crop?: typeof percentCrop,
+	): Promise<void> => {
 		const formData = new FormData();
-		formData.append("file", file);
+		// Prefer uploading the original with crop so server can process it
+		if (original && crop) {
+			formData.append("file", original);
+			formData.append("crop", JSON.stringify(crop));
+		} else {
+			formData.append("file", file);
+		}
 		setIsUploading(true);
 		setUploadProgress(0);
 		try {
@@ -143,6 +164,8 @@ export function EditRealmDialog({
 	const handleRemoveIcon = () => {
 		setSelectedFile(null);
 		setImagePreview(null);
+		setOriginalFile(null);
+		setPercentCrop(null);
 		setRemoveIcon(true);
 	};
 
@@ -159,8 +182,8 @@ export function EditRealmDialog({
 
 			// Handle icon operations
 			if (selectedFile) {
-				// Upload new icon
-				await uploadFile(realmId, selectedFile);
+				// Upload new icon with crop data
+				await uploadIcon(realmId, selectedFile, originalFile, percentCrop);
 				// Invalidate realm list to refresh sidebar
 				queryClient.invalidateQueries({
 					queryKey: trpc.realm.list.queryKey(),
@@ -182,6 +205,8 @@ export function EditRealmDialog({
 		form.reset();
 		setSelectedFile(null);
 		setImagePreview(null);
+		setOriginalFile(null);
+		setPercentCrop(null);
 		setRemoveIcon(false);
 		onOpenChange(false);
 	};
@@ -255,9 +280,11 @@ export function EditRealmDialog({
 											? undefined
 											: imagePreview || currentIconSrc || undefined
 									}
-									onSelect={(file, preview) => {
+									onSelect={(file, preview, meta) => {
 										setSelectedFile(file);
 										setImagePreview(preview);
+										setOriginalFile(meta?.originalFile ?? null);
+										setPercentCrop(meta?.percentCrop ?? null);
 										setRemoveIcon(false);
 									}}
 									onRemove={handleRemoveIcon}

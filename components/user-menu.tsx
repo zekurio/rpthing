@@ -97,9 +97,9 @@ export function UserMenu() {
 						>
 							<div className="flex items-center gap-2">
 								{blurNsfw ? (
-									<EyeOff className="size-4" />
+									<EyeOff className="size-4 shrink-0" />
 								) : (
-									<Eye className="size-4" />
+									<Eye className="size-4 shrink-0" />
 								)}
 								<span>Blur NSFW</span>
 							</div>
@@ -116,8 +116,10 @@ export function UserMenu() {
 								handleSignOut();
 							}}
 						>
-							<LogOut className="mr-2 size-4" />
-							Log out
+							<div className="flex items-center gap-2">
+								<LogOut className="size-4 shrink-0" />
+								<span>Log out</span>
+							</div>
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>

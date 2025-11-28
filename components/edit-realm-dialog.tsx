@@ -9,14 +9,6 @@ import { z } from "zod";
 import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import {
 	Form,
 	FormControl,
 	FormField,
@@ -26,6 +18,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import {
+	ResponsiveDialog,
+	ResponsiveDialogBody,
+	ResponsiveDialogContent,
+	ResponsiveDialogDescription,
+	ResponsiveDialogFooter,
+	ResponsiveDialogHeader,
+	ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { queryClient, trpc } from "@/lib/trpc";
 import { uploadWithProgress } from "@/lib/utils";
@@ -72,7 +73,9 @@ export function EditRealmDialog({
 	const updateMutation = useMutation({
 		...trpc.realm.update.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: trpc.realm.list.queryKey() });
+			queryClient.invalidateQueries({
+				queryKey: trpc.realm.list.queryKey(),
+			});
 			if (realmId) {
 				queryClient.invalidateQueries({
 					queryKey: trpc.realm.getById.queryKey({ realmId }),
@@ -159,12 +162,16 @@ export function EditRealmDialog({
 				// Upload new icon
 				await uploadFile(realmId, selectedFile);
 				// Invalidate realm list to refresh sidebar
-				queryClient.invalidateQueries({ queryKey: trpc.realm.list.queryKey() });
+				queryClient.invalidateQueries({
+					queryKey: trpc.realm.list.queryKey(),
+				});
 			} else if (removeIcon && currentIconSrc) {
 				// Remove existing icon
 				await deleteIcon(realmId);
 				// Invalidate realm list to refresh sidebar
-				queryClient.invalidateQueries({ queryKey: trpc.realm.list.queryKey() });
+				queryClient.invalidateQueries({
+					queryKey: trpc.realm.list.queryKey(),
+				});
 			}
 		} catch (error) {
 			console.error("Failed to update realm or handle icon:", error);
@@ -182,98 +189,111 @@ export function EditRealmDialog({
 	if (!realmId) return null;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Edit realm</DialogTitle>
-					<DialogDescription>Update the realm details below.</DialogDescription>
-				</DialogHeader>
-				<Form {...form}>
-					<form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-						<FormField
-							control={form.control}
-							name="name"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Name</FormLabel>
-									<FormControl>
-										<Input {...field} />
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="description"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Description (optional)</FormLabel>
-									<FormControl>
-										<Textarea
-											{...field}
-											placeholder="Enter a description for this realm..."
-											className="min-h-[80px] resize-none"
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="password"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Password (optional)</FormLabel>
-									<FormControl>
-										<Input type="password" {...field} />
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<div className="grid gap-2">
-							<FormLabel>Icon (optional)</FormLabel>
-							<ImageUpload
-								previewSrc={
-									removeIcon
-										? undefined
-										: imagePreview || currentIconSrc || undefined
-								}
-								onSelect={(file, preview) => {
-									setSelectedFile(file);
-									setImagePreview(preview);
-									setRemoveIcon(false);
-								}}
-								onRemove={handleRemoveIcon}
+		<ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+			<ResponsiveDialogContent>
+				<ResponsiveDialogHeader>
+					<ResponsiveDialogTitle>Edit realm</ResponsiveDialogTitle>
+					<ResponsiveDialogDescription>
+						Update the realm details below.
+					</ResponsiveDialogDescription>
+				</ResponsiveDialogHeader>
+				<ResponsiveDialogBody>
+					<Form {...form}>
+						<form
+							id="edit-realm-form"
+							onSubmit={form.handleSubmit(onSubmit)}
+							className="grid gap-4"
+						>
+							<FormField
+								control={form.control}
+								name="name"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Name</FormLabel>
+										<FormControl>
+											<Input {...field} />
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
 							/>
-							{isUploading ? (
-								<div className="flex items-center gap-2">
-									<Progress value={uploadProgress} className="h-2 w-full" />
-									<span className="text-muted-foreground text-xs">
-										{Math.max(0, Math.round(uploadProgress))}%
-									</span>
-								</div>
-							) : null}
-						</div>
-						<DialogFooter>
-							<Button variant="outline" type="button" onClick={onClose}>
-								Cancel
-							</Button>
-							<Button
-								type="submit"
-								disabled={
-									form.formState.isSubmitting || updateMutation.isPending
-								}
-							>
-								{updateMutation.isPending ? "Updating..." : "Update"}
-							</Button>
-						</DialogFooter>
-					</form>
-				</Form>
-			</DialogContent>
-		</Dialog>
+							<FormField
+								control={form.control}
+								name="description"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Description (optional)</FormLabel>
+										<FormControl>
+											<Textarea
+												{...field}
+												placeholder="Enter a description for this realm..."
+												className="min-h-[80px] resize-none"
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name="password"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Password (optional)</FormLabel>
+										<FormControl>
+											<Input type="password" {...field} />
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<div className="grid gap-2">
+								<FormLabel>Icon (optional)</FormLabel>
+								<ImageUpload
+									previewSrc={
+										removeIcon
+											? undefined
+											: imagePreview || currentIconSrc || undefined
+									}
+									onSelect={(file, preview) => {
+										setSelectedFile(file);
+										setImagePreview(preview);
+										setRemoveIcon(false);
+									}}
+									onRemove={handleRemoveIcon}
+								/>
+								{isUploading ? (
+									<div className="flex items-center gap-2">
+										<Progress value={uploadProgress} className="h-2 w-full" />
+										<span className="text-muted-foreground text-xs">
+											{Math.max(0, Math.round(uploadProgress))}%
+										</span>
+									</div>
+								) : null}
+							</div>
+						</form>
+					</Form>
+				</ResponsiveDialogBody>
+				<ResponsiveDialogFooter>
+					<Button
+						variant="outline"
+						type="button"
+						onClick={onClose}
+						className="w-full sm:w-auto"
+					>
+						Cancel
+					</Button>
+					<Button
+						type="submit"
+						form="edit-realm-form"
+						disabled={form.formState.isSubmitting || updateMutation.isPending}
+						className="w-full sm:w-auto"
+					>
+						{updateMutation.isPending ? "Updating..." : "Update"}
+					</Button>
+				</ResponsiveDialogFooter>
+			</ResponsiveDialogContent>
+		</ResponsiveDialog>
 	);
 }
 

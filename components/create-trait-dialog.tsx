@@ -8,14 +8,6 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import {
 	Form,
 	FormControl,
 	FormField,
@@ -25,6 +17,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { ButtonLoading } from "@/components/ui/loading";
+import {
+	ResponsiveDialog,
+	ResponsiveDialogBody,
+	ResponsiveDialogContent,
+	ResponsiveDialogDescription,
+	ResponsiveDialogFooter,
+	ResponsiveDialogHeader,
+	ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import {
 	Select,
 	SelectContent,
@@ -102,99 +103,108 @@ export function CreateTraitDialog({
 	);
 
 	return (
-		<Dialog
+		<ResponsiveDialog
 			open={open}
 			onOpenChange={(o) => (o ? onOpenChange(o) : handleClose())}
 		>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>New Trait</DialogTitle>
-					<DialogDescription>Create a trait for this realm.</DialogDescription>
-				</DialogHeader>
-				<Form {...form}>
-					<form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-						<FormField
-							control={form.control}
-							name="name"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Name</FormLabel>
-									<FormControl>
-										<Input
-											{...field}
-											placeholder="Enter name"
-											maxLength={100}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="displayMode"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Display Mode</FormLabel>
-									<Select
-										onValueChange={field.onChange}
-										defaultValue={field.value}
-									>
+			<ResponsiveDialogContent>
+				<ResponsiveDialogHeader>
+					<ResponsiveDialogTitle>New Trait</ResponsiveDialogTitle>
+					<ResponsiveDialogDescription>
+						Create a trait for this realm.
+					</ResponsiveDialogDescription>
+				</ResponsiveDialogHeader>
+				<ResponsiveDialogBody>
+					<Form {...form}>
+						<form
+							id="create-trait-form"
+							onSubmit={form.handleSubmit(onSubmit)}
+							className="grid gap-4"
+						>
+							<FormField
+								control={form.control}
+								name="name"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Name</FormLabel>
 										<FormControl>
-											<SelectTrigger>
-												<SelectValue placeholder="Select a display mode" />
-											</SelectTrigger>
+											<Input
+												{...field}
+												placeholder="Enter name"
+												maxLength={100}
+											/>
 										</FormControl>
-										<SelectContent>
-											<SelectItem value="grade">Grade</SelectItem>
-											<SelectItem value="number">Number</SelectItem>
-										</SelectContent>
-									</Select>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="description"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Description (optional)</FormLabel>
-									<FormControl>
-										<Textarea
-											{...field}
-											placeholder="Describe the trait"
-											className="min-h-[80px] resize-none"
-											maxLength={2000}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<DialogFooter>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={handleClose}
-								disabled={createMutation.isPending}
-							>
-								Cancel
-							</Button>
-							<Button
-								type="submit"
-								disabled={
-									form.formState.isSubmitting || createMutation.isPending
-								}
-							>
-								<ButtonLoading loading={createMutation.isPending}>
-									{createMutation.isPending ? "Creating..." : "Create"}
-								</ButtonLoading>
-							</Button>
-						</DialogFooter>
-					</form>
-				</Form>
-			</DialogContent>
-		</Dialog>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name="displayMode"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Display Mode</FormLabel>
+										<Select
+											onValueChange={field.onChange}
+											defaultValue={field.value}
+										>
+											<FormControl>
+												<SelectTrigger>
+													<SelectValue placeholder="Select a display mode" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												<SelectItem value="grade">Grade</SelectItem>
+												<SelectItem value="number">Number</SelectItem>
+											</SelectContent>
+										</Select>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name="description"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Description (optional)</FormLabel>
+										<FormControl>
+											<Textarea
+												{...field}
+												placeholder="Describe the trait"
+												className="min-h-[80px] resize-none"
+												maxLength={2000}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</form>
+					</Form>
+				</ResponsiveDialogBody>
+				<ResponsiveDialogFooter>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={handleClose}
+						disabled={createMutation.isPending}
+						className="w-full sm:w-auto"
+					>
+						Cancel
+					</Button>
+					<Button
+						type="submit"
+						form="create-trait-form"
+						disabled={form.formState.isSubmitting || createMutation.isPending}
+						className="w-full sm:w-auto"
+					>
+						<ButtonLoading loading={createMutation.isPending}>
+							{createMutation.isPending ? "Creating..." : "Create"}
+						</ButtonLoading>
+					</Button>
+				</ResponsiveDialogFooter>
+			</ResponsiveDialogContent>
+		</ResponsiveDialog>
 	);
 }

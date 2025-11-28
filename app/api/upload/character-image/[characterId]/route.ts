@@ -1,10 +1,16 @@
 import { and, eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
-import sharp from "sharp";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db/index";
 import { character } from "@/server/db/schema/character";
 import { realmMember } from "@/server/db/schema/realmMember";
+import {
+	cropImage,
+	determineExtension,
+	isSupportedImageType,
+	parseCropJson,
+	unsupportedImageResponse,
+} from "@/server/image-processing";
 import {
 	deleteFile,
 	existsFile,
@@ -12,28 +18,6 @@ import {
 	getPublicFileUrl,
 	uploadFile,
 } from "@/server/storage";
-
-const unsupportedImageResponse = Response.json(
-	{ error: "Only non-GIF image uploads are allowed" },
-	{ status: 415 },
-);
-
-const extensionFromMime = (mime: string) => {
-	switch (mime) {
-		case "image/png":
-			return "png";
-		case "image/jpeg":
-			return "jpg";
-		case "image/webp":
-			return "webp";
-		case "image/avif":
-			return "avif";
-		case "image/gif":
-			return "gif";
-		default:
-			return "";
-	}
-};
 
 type CharacterParams = { characterId: string };
 
@@ -60,7 +44,11 @@ export async function POST(
 		}
 
 		const [charRow] = await db
-			.select({ realmId: character.realmId })
+			.select({
+				realmId: character.realmId,
+				referenceImageKey: character.referenceImageKey,
+				croppedImageKey: character.croppedImageKey,
+			})
 			.from(character)
 			.where(eq(character.id, characterId))
 			.limit(1);
@@ -85,29 +73,47 @@ export async function POST(
 		let originalExt: string | null = null;
 		let baseBuffer: Uint8Array | null = null;
 
+		// Handle file upload
 		if (file instanceof File) {
 			const buffer = await file.arrayBuffer();
 			baseBuffer = new Uint8Array(buffer);
 			const mime = file.type || "";
-			if (!mime.startsWith("image/") || mime === "image/gif") {
-				return unsupportedImageResponse;
+			const filename = (file as unknown as { name?: string }).name || "";
+
+			if (!isSupportedImageType(mime)) {
+				return unsupportedImageResponse();
 			}
-			const name =
-				(file as unknown as { name?: string }).name?.toLowerCase() ?? "";
-			const nameExt = (() => {
-				const idx = name.lastIndexOf(".");
-				return idx >= 0 ? name.slice(idx + 1) : "";
-			})();
-			const extFromMime = extensionFromMime(mime);
-			originalExt = (extFromMime || nameExt || "bin").toLowerCase();
+
+			originalExt = determineExtension(mime, filename);
 
 			const originalKey = `character-images/${characterId}.${originalExt}`;
+
+			// Delete old files if extension changed
+			if (
+				charRow.referenceImageKey &&
+				charRow.referenceImageKey !== originalKey
+			) {
+				try {
+					await deleteFile(charRow.referenceImageKey);
+				} catch {
+					// Ignore if file doesn't exist
+				}
+			}
+			if (charRow.croppedImageKey) {
+				try {
+					await deleteFile(charRow.croppedImageKey);
+				} catch {
+					// Ignore if file doesn't exist
+				}
+			}
+
 			await uploadFile(originalKey, baseBuffer, {
 				contentType: mime || undefined,
 				cacheControl: "public, max-age=31536000, immutable",
 			});
 		} else {
-			const tryExts = ["png", "jpg", "jpeg", "webp", "avif", "gif", "bin"];
+			// No new file - try to find existing original
+			const tryExts = ["png", "jpg", "jpeg", "webp", "avif", "bin"];
 			let foundKey: string | null = null;
 			for (const ext of tryExts) {
 				const key = `character-images/${characterId}.${ext}`;
@@ -135,97 +141,19 @@ export async function POST(
 			baseBuffer = new Uint8Array(buf);
 		}
 
+		// Process crop if provided
 		let croppedKey: string | null = null;
-		if (typeof cropJson === "string") {
-			try {
-				const crop = JSON.parse(cropJson) as {
-					unit?: string;
-					x?: number;
-					y?: number;
-					width?: number;
-					height?: number;
-				};
-				if (
-					crop &&
-					crop.unit === "%" &&
-					typeof crop.x === "number" &&
-					typeof crop.y === "number" &&
-					typeof crop.width === "number" &&
-					typeof crop.height === "number" &&
-					baseBuffer
-				) {
-					const base = sharp(baseBuffer);
-					const meta = await base.metadata();
-					const srcWidth = meta.width ?? 0;
-					const srcHeight = meta.height ?? 0;
-					if (srcWidth > 0 && srcHeight > 0) {
-						const left = Math.max(0, Math.round((crop.x / 100) * srcWidth));
-						const top = Math.max(0, Math.round((crop.y / 100) * srcHeight));
-						const width = Math.max(
-							1,
-							Math.round((crop.width / 100) * srcWidth),
-						);
-						const height = Math.max(
-							1,
-							Math.round((crop.height / 100) * srcHeight),
-						);
-						const boundedLeft = Math.min(left, Math.max(0, srcWidth - 1));
-						const boundedTop = Math.min(top, Math.max(0, srcHeight - 1));
-						const boundedWidth = Math.min(width, srcWidth - boundedLeft);
-						const boundedHeight = Math.min(height, srcHeight - boundedTop);
-						const pipeline = base.extract({
-							left: boundedLeft,
-							top: boundedTop,
-							width: boundedWidth,
-							height: boundedHeight,
-						});
-						let croppedBuf: Uint8Array;
-						switch ((originalExt || "").toLowerCase()) {
-							case "jpg":
-							case "jpeg":
-								croppedBuf = await pipeline.jpeg().toBuffer();
-								break;
-							case "png":
-								croppedBuf = await pipeline.png().toBuffer();
-								break;
-							case "webp":
-								croppedBuf = await pipeline.webp().toBuffer();
-								break;
-							case "avif":
-								croppedBuf = await pipeline.avif().toBuffer();
-								break;
-							case "gif":
-								croppedBuf = await pipeline.png().toBuffer();
-								originalExt = "png";
-								break;
-							default:
-								croppedBuf = await pipeline.png().toBuffer();
-								originalExt = "png";
-						}
-						croppedKey = `character-images/${characterId}-cropped.${originalExt}`;
-						const croppedMime = (() => {
-							switch ((originalExt || "").toLowerCase()) {
-								case "jpg":
-								case "jpeg":
-									return "image/jpeg";
-								case "png":
-									return "image/png";
-								case "webp":
-									return "image/webp";
-								case "avif":
-									return "image/avif";
-								default:
-									return "image/png";
-							}
-						})();
-						await uploadFile(croppedKey, croppedBuf, {
-							contentType: croppedMime,
-							cacheControl: "public, max-age=31536000, immutable",
-						});
-					}
+		if (typeof cropJson === "string" && baseBuffer && originalExt) {
+			const crop = parseCropJson(cropJson);
+			if (crop) {
+				const cropped = await cropImage(baseBuffer, crop, originalExt);
+				if (cropped) {
+					croppedKey = `character-images/${characterId}-cropped.${cropped.extension}`;
+					await uploadFile(croppedKey, cropped.buffer, {
+						contentType: cropped.mimeType,
+						cacheControl: "public, max-age=31536000, immutable",
+					});
 				}
-			} catch (error) {
-				console.error("Failed to process character crop:", error);
 			}
 		}
 
@@ -297,17 +225,24 @@ export async function DELETE(
 			);
 		}
 
-		const originalKey = `character-images/${characterId}.png`;
-		const croppedKey = `character-images/${characterId}-cropped.png`;
-		const keysToDelete = new Set<string>([originalKey, croppedKey]);
+		// Collect all possible keys to delete
+		const keysToDelete = new Set<string>();
 		if (charRow.imageKey) keysToDelete.add(charRow.imageKey);
 		if (charRow.croppedKey) keysToDelete.add(charRow.croppedKey);
+
+		// Also try common extensions in case DB is out of sync
+		const commonExts = ["png", "jpg", "jpeg", "webp", "avif"];
+		for (const ext of commonExts) {
+			keysToDelete.add(`character-images/${characterId}.${ext}`);
+			keysToDelete.add(`character-images/${characterId}-cropped.${ext}`);
+		}
 
 		for (const key of keysToDelete) {
 			try {
 				await deleteFile(key);
 			} catch (error) {
-				console.error(`Failed to delete character image ${key}:`, error);
+				// Ignore errors for files that may not exist
+				console.debug(`Failed to delete character image ${key}:`, error);
 			}
 		}
 

@@ -108,6 +108,8 @@ export function EditCharacterDialog({
 			});
 			setSelectedFile(null);
 			setImagePreview(null);
+			setOriginalFile(null);
+			setPercentCrop(null);
 			setRemoveRequested(false);
 		}
 	}, [character, open, form]);
@@ -176,6 +178,8 @@ export function EditCharacterDialog({
 		form.reset();
 		setSelectedFile(null);
 		setImagePreview(null);
+		setOriginalFile(null);
+		setPercentCrop(null);
 		setRemoveRequested(false);
 		onOpenChange(false);
 	};
@@ -259,6 +263,7 @@ export function EditCharacterDialog({
 										removeRequested
 											? undefined
 											: (imagePreview ??
+												character?.croppedImageKey ??
 												character?.referenceImageKey ??
 												undefined)
 									}

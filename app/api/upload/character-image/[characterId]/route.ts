@@ -44,7 +44,11 @@ export async function POST(
 		}
 
 		const [charRow] = await db
-			.select({ realmId: character.realmId })
+			.select({
+				realmId: character.realmId,
+				referenceImageKey: character.referenceImageKey,
+				croppedImageKey: character.croppedImageKey,
+			})
 			.from(character)
 			.where(eq(character.id, characterId))
 			.limit(1);
@@ -83,6 +87,26 @@ export async function POST(
 			originalExt = determineExtension(mime, filename);
 
 			const originalKey = `character-images/${characterId}.${originalExt}`;
+
+			// Delete old files if extension changed
+			if (
+				charRow.referenceImageKey &&
+				charRow.referenceImageKey !== originalKey
+			) {
+				try {
+					await deleteFile(charRow.referenceImageKey);
+				} catch {
+					// Ignore if file doesn't exist
+				}
+			}
+			if (charRow.croppedImageKey) {
+				try {
+					await deleteFile(charRow.croppedImageKey);
+				} catch {
+					// Ignore if file doesn't exist
+				}
+			}
+
 			await uploadFile(originalKey, baseBuffer, {
 				contentType: mime || undefined,
 				cacheControl: "public, max-age=31536000, immutable",

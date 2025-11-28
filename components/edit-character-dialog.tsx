@@ -11,14 +11,6 @@ import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import {
 	Form,
 	FormControl,
 	FormField,
@@ -28,6 +20,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import {
+	ResponsiveDialog,
+	ResponsiveDialogBody,
+	ResponsiveDialogContent,
+	ResponsiveDialogDescription,
+	ResponsiveDialogFooter,
+	ResponsiveDialogHeader,
+	ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useRealmGenderOptions } from "@/hooks/use-realm-gender-options";
 import { queryClient, trpc } from "@/lib/trpc";
@@ -142,7 +143,9 @@ export function EditCharacterDialog({
 					throw new Error("Failed to upload character image");
 				}
 				queryClient.invalidateQueries({
-					queryKey: trpc.character.getById.queryKey({ id: characterId }),
+					queryKey: trpc.character.getById.queryKey({
+						id: characterId,
+					}),
 				});
 				queryClient.invalidateQueries({
 					queryKey: trpc.character.list.queryKey(),
@@ -153,7 +156,9 @@ export function EditCharacterDialog({
 					credentials: "include",
 				});
 				queryClient.invalidateQueries({
-					queryKey: trpc.character.getById.queryKey({ id: characterId }),
+					queryKey: trpc.character.getById.queryKey({
+						id: characterId,
+					}),
 				});
 				queryClient.invalidateQueries({
 					queryKey: trpc.character.list.queryKey(),
@@ -178,120 +183,123 @@ export function EditCharacterDialog({
 	if (!characterId) return null;
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Edit character</DialogTitle>
-					<DialogDescription>
+		<ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+			<ResponsiveDialogContent>
+				<ResponsiveDialogHeader>
+					<ResponsiveDialogTitle>Edit character</ResponsiveDialogTitle>
+					<ResponsiveDialogDescription>
 						Update the character details below.
-					</DialogDescription>
-				</DialogHeader>
-				<Form {...form}>
-					<form
-						id="edit-character-form"
-						onSubmit={form.handleSubmit(onSubmit)}
-						className="scrollbar-none grid max-h-[75vh] gap-4 overflow-y-auto px-1"
-					>
-						<FormField
-							control={form.control}
-							name="name"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Name</FormLabel>
-									<FormControl>
-										<Input
-											{...field}
-											placeholder="Enter character name"
-											maxLength={200}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="gender"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Gender (optional)</FormLabel>
-									<FormControl>
-										<Combobox
-											options={genderOptions}
-											value={field.value}
-											onValueChange={field.onChange}
-											placeholder="Select gender..."
-											allowCustom={true}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="notes"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Notes (optional)</FormLabel>
-									<FormControl>
-										<Textarea
-											{...field}
-											placeholder="Enter character notes, backstory, or description..."
-											className="min-h-[80px] resize-none"
-											maxLength={10000}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<div className="grid gap-2">
-							<FormLabel>Image (optional)</FormLabel>
-							<ImageUpload
-								previewSrc={
-									removeRequested
-										? undefined
-										: (imagePreview ??
-											character?.referenceImageKey ??
-											undefined)
-								}
-								onSelect={(file, preview, meta) => {
-									setSelectedFile(file);
-									setImagePreview(preview);
-									setOriginalFile(meta?.originalFile ?? null);
-									setPercentCrop(meta?.percentCrop ?? null);
-									setRemoveRequested(false);
-								}}
-								onRemove={() => {
-									setSelectedFile(null);
-									setImagePreview(null);
-									setOriginalFile(null);
-									setPercentCrop(null);
-									setRemoveRequested(true);
-								}}
+					</ResponsiveDialogDescription>
+				</ResponsiveDialogHeader>
+				<ResponsiveDialogBody>
+					<Form {...form}>
+						<form
+							id="edit-character-form"
+							onSubmit={form.handleSubmit(onSubmit)}
+							className="grid gap-4"
+						>
+							<FormField
+								control={form.control}
+								name="name"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Name</FormLabel>
+										<FormControl>
+											<Input
+												{...field}
+												placeholder="Enter character name"
+												maxLength={200}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
 							/>
-							{isUploading ? (
-								<div className="flex items-center gap-2">
-									<Progress value={uploadProgress} className="h-2 w-full" />
-									<span className="text-muted-foreground text-xs">
-										{Math.max(0, Math.round(uploadProgress))}%
-									</span>
-								</div>
-							) : null}
-						</div>
-						<div className="grid gap-2">
-							<FormLabel>Trait ratings</FormLabel>
-							<CharacterRatings characterId={characterId} />
-						</div>
-					</form>
-				</Form>
-				<DialogFooter>
+							<FormField
+								control={form.control}
+								name="gender"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Gender (optional)</FormLabel>
+										<FormControl>
+											<Combobox
+												options={genderOptions}
+												value={field.value}
+												onValueChange={field.onChange}
+												placeholder="Select gender..."
+												allowCustom={true}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<FormField
+								control={form.control}
+								name="notes"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Notes (optional)</FormLabel>
+										<FormControl>
+											<Textarea
+												{...field}
+												placeholder="Enter character notes, backstory, or description..."
+												className="min-h-[80px] resize-none"
+												maxLength={10000}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+							<div className="grid gap-2">
+								<FormLabel>Image (optional)</FormLabel>
+								<ImageUpload
+									previewSrc={
+										removeRequested
+											? undefined
+											: (imagePreview ??
+												character?.referenceImageKey ??
+												undefined)
+									}
+									onSelect={(file, preview, meta) => {
+										setSelectedFile(file);
+										setImagePreview(preview);
+										setOriginalFile(meta?.originalFile ?? null);
+										setPercentCrop(meta?.percentCrop ?? null);
+										setRemoveRequested(false);
+									}}
+									onRemove={() => {
+										setSelectedFile(null);
+										setImagePreview(null);
+										setOriginalFile(null);
+										setPercentCrop(null);
+										setRemoveRequested(true);
+									}}
+								/>
+								{isUploading ? (
+									<div className="flex items-center gap-2">
+										<Progress value={uploadProgress} className="h-2 w-full" />
+										<span className="text-muted-foreground text-xs">
+											{Math.max(0, Math.round(uploadProgress))}%
+										</span>
+									</div>
+								) : null}
+							</div>
+							<div className="grid gap-2">
+								<FormLabel>Trait ratings</FormLabel>
+								<CharacterRatings characterId={characterId} />
+							</div>
+						</form>
+					</Form>
+				</ResponsiveDialogBody>
+				<ResponsiveDialogFooter>
 					<Button
 						type="button"
 						variant="outline"
 						onClick={() => onOpenChange(false)}
 						disabled={updateMutation.isPending}
+						className="w-full sm:w-auto"
 					>
 						Cancel
 					</Button>
@@ -299,14 +307,15 @@ export function EditCharacterDialog({
 						type="submit"
 						form="edit-character-form"
 						disabled={form.formState.isSubmitting || updateMutation.isPending}
+						className="w-full sm:w-auto"
 					>
 						{form.formState.isSubmitting || updateMutation.isPending
 							? "Updating..."
 							: "Update"}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ResponsiveDialogFooter>
+			</ResponsiveDialogContent>
+		</ResponsiveDialog>
 	);
 }
 

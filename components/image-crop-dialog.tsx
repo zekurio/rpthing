@@ -13,13 +13,14 @@ import "react-image-crop/dist/ReactCrop.css";
 
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	ResponsiveDialog,
+	ResponsiveDialogBody,
+	ResponsiveDialogContent,
+	ResponsiveDialogDescription,
+	ResponsiveDialogFooter,
+	ResponsiveDialogHeader,
+	ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 
 interface ImageCropDialogProps {
 	open: boolean;
@@ -149,16 +150,16 @@ export function ImageCropDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-md">
-				<DialogHeader>
-					<DialogTitle>Crop Image</DialogTitle>
-					<DialogDescription>
+		<ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+			<ResponsiveDialogContent className="max-w-md">
+				<ResponsiveDialogHeader>
+					<ResponsiveDialogTitle>Crop Image</ResponsiveDialogTitle>
+					<ResponsiveDialogDescription>
 						Crop your image to a square. Drag to move the crop area and use the
 						handles to resize.
-					</DialogDescription>
-				</DialogHeader>
-				<div className="flex justify-center">
+					</ResponsiveDialogDescription>
+				</ResponsiveDialogHeader>
+				<ResponsiveDialogBody className="flex justify-center">
 					<ReactCrop
 						crop={crop}
 						onChange={(_, percentCrop) => setCrop(percentCrop)}
@@ -183,16 +184,24 @@ export function ImageCropDialog({
 							decoding="async"
 						/>
 					</ReactCrop>
-				</div>
-				<DialogFooter>
-					<Button variant="outline" onClick={handleCancel}>
+				</ResponsiveDialogBody>
+				<ResponsiveDialogFooter>
+					<Button
+						variant="outline"
+						onClick={handleCancel}
+						className="w-full sm:w-auto"
+					>
 						Cancel
 					</Button>
-					<Button onClick={handleCropComplete} disabled={!completedCrop}>
+					<Button
+						onClick={handleCropComplete}
+						disabled={!completedCrop}
+						className="w-full sm:w-auto"
+					>
 						Crop & Use
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</ResponsiveDialogFooter>
+			</ResponsiveDialogContent>
+		</ResponsiveDialog>
 	);
 }

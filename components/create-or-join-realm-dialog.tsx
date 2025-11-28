@@ -10,14 +10,6 @@ import { z } from "zod";
 import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import {
 	Form,
 	FormControl,
 	FormField,
@@ -27,6 +19,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import {
+	ResponsiveDialog,
+	ResponsiveDialogBody,
+	ResponsiveDialogContent,
+	ResponsiveDialogDescription,
+	ResponsiveDialogFooter,
+	ResponsiveDialogHeader,
+	ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { queryClient, trpc } from "@/lib/trpc";
@@ -92,7 +93,9 @@ export function CreateOrJoinRealmDialog({
 	const createMutation = useMutation({
 		...trpc.realm.create.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: trpc.realm.list.queryKey() });
+			queryClient.invalidateQueries({
+				queryKey: trpc.realm.list.queryKey(),
+			});
 			toast.success("Realm created successfully!");
 			handleClose();
 		},
@@ -105,7 +108,9 @@ export function CreateOrJoinRealmDialog({
 	const joinMutation = useMutation({
 		...trpc.realm.join.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: trpc.realm.list.queryKey() });
+			queryClient.invalidateQueries({
+				queryKey: trpc.realm.list.queryKey(),
+			});
 			toast.success("Successfully joined realm!");
 			handleClose();
 		},
@@ -216,189 +221,199 @@ export function CreateOrJoinRealmDialog({
 	);
 
 	return (
-		<Dialog open={open} onOpenChange={handleOpenChange}>
-			<DialogContent className="sm:max-w-lg">
-				<DialogHeader>
-					<DialogTitle>Realm Options</DialogTitle>
-					<DialogDescription>
+		<ResponsiveDialog open={open} onOpenChange={handleOpenChange}>
+			<ResponsiveDialogContent className="sm:max-w-lg">
+				<ResponsiveDialogHeader>
+					<ResponsiveDialogTitle>Realm Options</ResponsiveDialogTitle>
+					<ResponsiveDialogDescription>
 						Create a new realm or join an existing one.
-					</DialogDescription>
-				</DialogHeader>
-				<Tabs
-					value={activeTab}
-					onValueChange={(value) => setActiveTab(value as "create" | "join")}
-					className="w-full"
-				>
-					<TabsList className="grid w-full grid-cols-2">
-						<TabsTrigger value="create">Create</TabsTrigger>
-						<TabsTrigger value="join">Join</TabsTrigger>
-					</TabsList>
-					<TabsContent value="create" className="mt-6">
-						<Form {...createForm}>
-							<form
-								onSubmit={createForm.handleSubmit(onCreateSubmit)}
-								className="grid gap-4"
-							>
-								<FormField
-									control={createForm.control}
-									name="name"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Name</FormLabel>
-											<FormControl>
-												<Input
-													{...field}
-													placeholder="Enter realm name"
-													maxLength={50}
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<FormField
-									control={createForm.control}
-									name="description"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Description (optional)</FormLabel>
-											<FormControl>
-												<Textarea
-													{...field}
-													placeholder="Enter a description for this realm..."
-													className="min-h-[80px] resize-none"
-													maxLength={500}
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<FormField
-									control={createForm.control}
-									name="password"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Password (optional)</FormLabel>
-											<FormControl>
-												<Input
-													type="password"
-													{...field}
-													placeholder="Enter password (min 4 characters)"
-													maxLength={100}
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<div className="grid gap-2">
-									<FormLabel>Icon (optional)</FormLabel>
-									<ImageUpload
-										previewSrc={imagePreview || undefined}
-										onSelect={(file, preview) => {
-											setSelectedFile(file);
-											setImagePreview(preview);
-										}}
-										onRemove={handleRemoveIcon}
+					</ResponsiveDialogDescription>
+				</ResponsiveDialogHeader>
+				<ResponsiveDialogBody>
+					<Tabs
+						value={activeTab}
+						onValueChange={(value) => setActiveTab(value as "create" | "join")}
+						className="w-full"
+					>
+						<TabsList className="grid w-full grid-cols-2">
+							<TabsTrigger value="create">Create</TabsTrigger>
+							<TabsTrigger value="join">Join</TabsTrigger>
+						</TabsList>
+						<TabsContent value="create" className="mt-6">
+							<Form {...createForm}>
+								<form
+									onSubmit={createForm.handleSubmit(onCreateSubmit)}
+									className="grid gap-4"
+								>
+									<FormField
+										control={createForm.control}
+										name="name"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Name</FormLabel>
+												<FormControl>
+													<Input
+														{...field}
+														placeholder="Enter realm name"
+														maxLength={50}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
 									/>
-									{isUploading ? (
-										<div className="flex items-center gap-2">
-											<Progress value={uploadProgress} className="h-2 w-full" />
-											<span className="text-muted-foreground text-xs">
-												{Math.max(0, Math.round(uploadProgress))}%
-											</span>
-										</div>
-									) : null}
-								</div>
-								<DialogFooter>
-									<Button
-										variant="outline"
-										type="button"
-										onClick={handleClose}
-										disabled={createMutation.isPending}
-									>
-										Cancel
-									</Button>
-									<Button
-										type="submit"
-										disabled={
-											createForm.formState.isSubmitting ||
-											createMutation.isPending
-										}
-									>
-										{createMutation.isPending ? "Creating..." : "Create"}
-									</Button>
-								</DialogFooter>
-							</form>
-						</Form>
-					</TabsContent>
-					<TabsContent value="join" className="mt-6">
-						<Form {...joinForm}>
-							<form
-								onSubmit={joinForm.handleSubmit(onJoinSubmit)}
-								className="grid gap-4"
-							>
-								<FormField
-									control={joinForm.control}
-									name="realmId"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Realm ID</FormLabel>
-											<FormControl>
-												<Input
-													{...field}
-													placeholder="Enter 7-character realm ID"
-													maxLength={7}
-													className="font-mono"
+									<FormField
+										control={createForm.control}
+										name="description"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Description (optional)</FormLabel>
+												<FormControl>
+													<Textarea
+														{...field}
+														placeholder="Enter a description for this realm..."
+														className="min-h-[80px] resize-none"
+														maxLength={500}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<FormField
+										control={createForm.control}
+										name="password"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Password (optional)</FormLabel>
+												<FormControl>
+													<Input
+														type="password"
+														{...field}
+														placeholder="Enter password (min 4 characters)"
+														maxLength={100}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<div className="grid gap-2">
+										<FormLabel>Icon (optional)</FormLabel>
+										<ImageUpload
+											previewSrc={imagePreview || undefined}
+											onSelect={(file, preview) => {
+												setSelectedFile(file);
+												setImagePreview(preview);
+											}}
+											onRemove={handleRemoveIcon}
+										/>
+										{isUploading ? (
+											<div className="flex items-center gap-2">
+												<Progress
+													value={uploadProgress}
+													className="h-2 w-full"
 												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<FormField
-									control={joinForm.control}
-									name="password"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Password (optional)</FormLabel>
-											<FormControl>
-												<Input
-													type="password"
-													{...field}
-													placeholder="Enter password if required"
-													maxLength={100}
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<DialogFooter>
-									<Button
-										variant="outline"
-										type="button"
-										onClick={handleClose}
-										disabled={joinMutation.isPending}
-									>
-										Cancel
-									</Button>
-									<Button
-										type="submit"
-										disabled={
-											joinForm.formState.isSubmitting || joinMutation.isPending
-										}
-									>
-										{joinMutation.isPending ? "Joining..." : "Join Realm"}
-									</Button>
-								</DialogFooter>
-							</form>
-						</Form>
-					</TabsContent>
-				</Tabs>
-			</DialogContent>
-		</Dialog>
+												<span className="text-muted-foreground text-xs">
+													{Math.max(0, Math.round(uploadProgress))}%
+												</span>
+											</div>
+										) : null}
+									</div>
+									<ResponsiveDialogFooter className="border-none p-0 pt-2">
+										<Button
+											variant="outline"
+											type="button"
+											onClick={handleClose}
+											disabled={createMutation.isPending}
+											className="w-full sm:w-auto"
+										>
+											Cancel
+										</Button>
+										<Button
+											type="submit"
+											disabled={
+												createForm.formState.isSubmitting ||
+												createMutation.isPending
+											}
+											className="w-full sm:w-auto"
+										>
+											{createMutation.isPending ? "Creating..." : "Create"}
+										</Button>
+									</ResponsiveDialogFooter>
+								</form>
+							</Form>
+						</TabsContent>
+						<TabsContent value="join" className="mt-6">
+							<Form {...joinForm}>
+								<form
+									onSubmit={joinForm.handleSubmit(onJoinSubmit)}
+									className="grid gap-4"
+								>
+									<FormField
+										control={joinForm.control}
+										name="realmId"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Realm ID</FormLabel>
+												<FormControl>
+													<Input
+														{...field}
+														placeholder="Enter 7-character realm ID"
+														maxLength={7}
+														className="font-mono"
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<FormField
+										control={joinForm.control}
+										name="password"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Password (optional)</FormLabel>
+												<FormControl>
+													<Input
+														type="password"
+														{...field}
+														placeholder="Enter password if required"
+														maxLength={100}
+													/>
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<ResponsiveDialogFooter className="border-none p-0 pt-2">
+										<Button
+											variant="outline"
+											type="button"
+											onClick={handleClose}
+											disabled={joinMutation.isPending}
+											className="w-full sm:w-auto"
+										>
+											Cancel
+										</Button>
+										<Button
+											type="submit"
+											disabled={
+												joinForm.formState.isSubmitting ||
+												joinMutation.isPending
+											}
+											className="w-full sm:w-auto"
+										>
+											{joinMutation.isPending ? "Joining..." : "Join Realm"}
+										</Button>
+									</ResponsiveDialogFooter>
+								</form>
+							</Form>
+						</TabsContent>
+					</Tabs>
+				</ResponsiveDialogBody>
+			</ResponsiveDialogContent>
+		</ResponsiveDialog>
 	);
 }
 

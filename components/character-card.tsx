@@ -89,7 +89,7 @@ export const CharacterCard = memo(function CharacterCard({
 	const fullImageSrc = character.referenceImageKey || undefined;
 
 	const OptionsMenu = (
-		<div className="absolute top-2 right-2 z-10">
+		<div className="absolute top-2 right-2">
 			<DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
 				<DropdownMenuTrigger asChild>
 					{/* biome-ignore lint/a11y/useSemanticElements: Using div to avoid button nesting issues */}

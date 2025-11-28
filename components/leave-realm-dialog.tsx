@@ -4,15 +4,15 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+	ResponsiveAlertDialog,
+	ResponsiveAlertDialogAction,
+	ResponsiveAlertDialogCancel,
+	ResponsiveAlertDialogContent,
+	ResponsiveAlertDialogDescription,
+	ResponsiveAlertDialogFooter,
+	ResponsiveAlertDialogHeader,
+	ResponsiveAlertDialogTitle,
+} from "@/components/ui/responsive-alert-dialog";
 import { queryClient, trpc } from "@/lib/trpc";
 
 interface LeaveRealmDialogProps {
@@ -35,7 +35,9 @@ export function LeaveRealmDialog({
 	const leaveMutation = useMutation({
 		...trpc.realm.leave.mutationOptions(),
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: trpc.realm.list.queryKey() });
+			queryClient.invalidateQueries({
+				queryKey: trpc.realm.list.queryKey(),
+			});
 			toast.success("Left realm successfully.");
 			onOpenChange(false);
 
@@ -53,24 +55,24 @@ export function LeaveRealmDialog({
 	};
 
 	return (
-		<AlertDialog open={open} onOpenChange={onOpenChange}>
-			<AlertDialogContent>
-				<AlertDialogHeader>
-					<AlertDialogTitle>Leave Realm</AlertDialogTitle>
-					<AlertDialogDescription>
+		<ResponsiveAlertDialog open={open} onOpenChange={onOpenChange}>
+			<ResponsiveAlertDialogContent>
+				<ResponsiveAlertDialogHeader>
+					<ResponsiveAlertDialogTitle>Leave Realm</ResponsiveAlertDialogTitle>
+					<ResponsiveAlertDialogDescription>
 						Are you sure you want to leave "{realmName || "this realm"}"?
-					</AlertDialogDescription>
-				</AlertDialogHeader>
-				<AlertDialogFooter>
-					<AlertDialogCancel>Cancel</AlertDialogCancel>
-					<AlertDialogAction
+					</ResponsiveAlertDialogDescription>
+				</ResponsiveAlertDialogHeader>
+				<ResponsiveAlertDialogFooter>
+					<ResponsiveAlertDialogCancel>Cancel</ResponsiveAlertDialogCancel>
+					<ResponsiveAlertDialogAction
 						onClick={handleLeave}
 						disabled={leaveMutation.isPending}
 					>
 						{leaveMutation.isPending ? "Leaving..." : "Leave"}
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
+					</ResponsiveAlertDialogAction>
+				</ResponsiveAlertDialogFooter>
+			</ResponsiveAlertDialogContent>
+		</ResponsiveAlertDialog>
 	);
 }

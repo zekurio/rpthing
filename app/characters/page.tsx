@@ -227,7 +227,7 @@ export default function CharactersPage() {
 
 			realmCharacters.forEach((character) => {
 				// Only show user's own characters
-				if (!user || character.userId === user.id) {
+				if (user && character.userId === user.id) {
 					characters.push({ character, realm });
 				}
 			});

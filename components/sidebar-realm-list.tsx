@@ -56,7 +56,7 @@ export function SidebarRealmList({
 			const realmId = realms[index]?.id;
 			if (realmId && query.data) {
 				counts[realmId] = query.data.filter(
-					(c) => !user || c.userId === user.id,
+					(c) => user && c.userId === user.id,
 				).length;
 			}
 		});

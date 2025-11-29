@@ -113,8 +113,6 @@ export function CharacterOverview({
 		realmId: string;
 	}) => {
 		const displaySrc = character.croppedImageKey || character.referenceImageKey;
-		const classificationSrc =
-			character.referenceImageKey || displaySrc || undefined;
 
 		return (
 			<button
@@ -134,7 +132,7 @@ export function CharacterOverview({
 								className="object-cover transition-transform duration-300 group-hover:scale-105"
 								sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
 								priority={false}
-								classificationSrc={classificationSrc}
+								isNsfw={character.isNsfw ?? false}
 							/>
 						</div>
 						{/* Character name overlay */}

@@ -1,73 +1,31 @@
 "use client";
 
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import Image, { type ImageProps } from "next/image";
 import { memo, useCallback, useEffect, useState } from "react";
 import { useNsfw } from "@/hooks/use-nsfw";
 import { cn } from "@/lib/utils";
 
 interface NsfwImageProps extends Omit<ImageProps, "onLoad"> {
-	/** If true, skip NSFW classification entirely */
-	skipClassification?: boolean;
+	/** Whether this image is NSFW (from server-side classification) */
+	isNsfw?: boolean;
 	/** Called when the image finishes loading */
 	onLoad?: () => void;
-	/** Alternative image URL to use for classification (e.g., full image instead of cropped) */
-	classificationSrc?: string;
 }
 
 export const NsfwImage = memo(function NsfwImage({
 	src,
 	alt,
 	className,
-	skipClassification = false,
+	isNsfw = false,
 	onLoad,
-	classificationSrc,
 	...props
 }: NsfwImageProps) {
-	const { blurNsfw, classifyImage, getClassification, isModelLoading } =
-		useNsfw();
-	const [isNsfw, setIsNsfw] = useState<boolean | null>(null);
+	const { blurNsfw } = useNsfw();
 	const [isRevealed, setIsRevealed] = useState(false);
-	const [isClassifying, setIsClassifying] = useState(false);
 	const [imageLoaded, setImageLoaded] = useState(false);
 
 	const srcString = typeof src === "string" ? src : "";
-	// Use classificationSrc if provided, otherwise fall back to display src
-	const classifySrc = classificationSrc || srcString;
-
-	// Check cache and classify if needed
-	useEffect(() => {
-		if (skipClassification || !blurNsfw || !classifySrc) {
-			setIsNsfw(false);
-			return;
-		}
-
-		// Check cache first
-		const cached = getClassification(classifySrc);
-		if (cached) {
-			setIsNsfw(cached.isNsfw);
-			return;
-		}
-
-		// Start classification
-		setIsClassifying(true);
-		classifyImage(classifySrc)
-			.then((result) => {
-				setIsNsfw(result);
-			})
-			.catch(() => {
-				setIsNsfw(false);
-			})
-			.finally(() => {
-				setIsClassifying(false);
-			});
-	}, [
-		classifySrc,
-		blurNsfw,
-		skipClassification,
-		classifyImage,
-		getClassification,
-	]);
 
 	// Reset revealed state when src changes
 	// biome-ignore lint/correctness/useExhaustiveDependencies: srcString is intentionally used to reset state when image changes
@@ -95,11 +53,8 @@ export const NsfwImage = memo(function NsfwImage({
 		}
 	}, []);
 
-	const isClassificationPending =
-		blurNsfw && (isClassifying || isModelLoading) && isNsfw === null;
-	const shouldBlur =
-		blurNsfw && ((isNsfw === true && !isRevealed) || isClassificationPending);
-	const showLoadingOverlay = isClassificationPending;
+	// Only blur if the preference is enabled and the image is marked NSFW
+	const shouldBlur = blurNsfw && isNsfw && !isRevealed;
 
 	return (
 		<div className="relative h-full w-full">
@@ -115,18 +70,8 @@ export const NsfwImage = memo(function NsfwImage({
 				{...props}
 			/>
 
-			{/* Loading overlay while classifying */}
-			{showLoadingOverlay && imageLoaded && (
-				<div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20">
-					<div className="flex items-center gap-2 rounded-md bg-black/60 px-3 py-2 text-white text-xs">
-						<Loader2 className="h-3 w-3 animate-spin" />
-						<span>Checking...</span>
-					</div>
-				</div>
-			)}
-
 			{/* NSFW overlay with reveal control */}
-			{blurNsfw && isNsfw === true && imageLoaded && (
+			{blurNsfw && isNsfw && imageLoaded && (
 				<div
 					className={cn(
 						"absolute inset-0 flex items-center justify-center transition-opacity duration-300",
@@ -149,7 +94,7 @@ export const NsfwImage = memo(function NsfwImage({
 			)}
 
 			{/* Hide control when revealed */}
-			{blurNsfw && isNsfw === true && isRevealed && imageLoaded && (
+			{blurNsfw && isNsfw && isRevealed && imageLoaded && (
 				// biome-ignore lint/a11y/useSemanticElements: Cannot use button due to potential nesting inside parent button
 				<div
 					role="button"

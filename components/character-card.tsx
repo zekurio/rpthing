@@ -143,7 +143,7 @@ export const CharacterCard = memo(function CharacterCard({
 							className="object-cover"
 							sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
 							priority={false}
-							classificationSrc={fullImageSrc}
+							isNsfw={character.isNsfw ?? false}
 						/>
 					</button>
 					{OptionsMenu}

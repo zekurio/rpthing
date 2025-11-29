@@ -33,8 +33,10 @@ interface CharactersFilterDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	genderFilter: string | null;
+	creatorFilter: string | null;
 	updateUrlParam: (key: string, value: string | null) => void;
 	availableGenders: string[];
+	availableCreators: string[];
 	availableTraitsToFilter: string[];
 	traitFilters: TraitFilter[];
 	addTraitFilter: (traitName: string) => void;
@@ -50,113 +52,179 @@ interface CharactersFilterDialogProps {
 	clearAllFiltersInDialog: () => void;
 }
 
-const comparisonOptions: { value: TraitComparison; label: string }[] = [
+const COMPARISON_OPTIONS: { value: TraitComparison; label: string }[] = [
 	{ value: "gte", label: "At least" },
 	{ value: "lte", label: "At most" },
 	{ value: "eq", label: "Exactly" },
 	{ value: "between", label: "Between" },
 ];
 
-function formatValue(value: number): string {
-	const grade = gradeForValue(value);
-	return `${value} (${grade})`;
+function formatTraitValue(value: number): string {
+	return `${value} (${gradeForValue(value)})`;
 }
 
-interface TraitFilterSliderProps {
-	filter: TraitFilter;
-	updateTraitFilter: CharactersFilterDialogProps["updateTraitFilter"];
+function FilterSelect({
+	label,
+	value,
+	placeholder,
+	options,
+	onChange,
+}: {
+	label: string;
+	value: string | null;
+	placeholder: string;
+	options: string[];
+	onChange: (value: string | null) => void;
+}) {
+	return (
+		<div className="space-y-1.5">
+			<Label className="text-sm">{label}</Label>
+			<Select
+				value={value ?? "all"}
+				onValueChange={(v) => onChange(v === "all" ? null : v)}
+			>
+				<SelectTrigger>
+					<SelectValue placeholder={placeholder} />
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value="all">{placeholder}</SelectItem>
+					{options.map((option) => (
+						<SelectItem key={option} value={option}>
+							{option}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+		</div>
+	);
 }
 
-function TraitFilterSlider({
+function TraitFilterCard({
 	filter,
-	updateTraitFilter,
-}: TraitFilterSliderProps) {
-	const initialValue = filter.value ?? filter.min ?? filter.max ?? 10;
-	const initialMin = filter.min ?? 1;
-	const initialMax = filter.max ?? 20;
-
-	// Local state for visual feedback while dragging
-	const [localValue, setLocalValue] = useState(initialValue);
+	displayMode,
+	onUpdate,
+	onRemove,
+}: {
+	filter: TraitFilter;
+	displayMode: "number" | "grade";
+	onUpdate: CharactersFilterDialogProps["updateTraitFilter"];
+	onRemove: () => void;
+}) {
+	const [localValue, setLocalValue] = useState(
+		filter.value ?? filter.min ?? filter.max ?? 10,
+	);
 	const [localRange, setLocalRange] = useState<[number, number]>([
-		initialMin,
-		initialMax,
+		filter.min ?? 1,
+		filter.max ?? 20,
 	]);
 
-	// Sync local state when filter changes from outside
 	useEffect(() => {
 		setLocalValue(filter.value ?? filter.min ?? filter.max ?? 10);
 		setLocalRange([filter.min ?? 1, filter.max ?? 20]);
 	}, [filter.value, filter.min, filter.max]);
 
-	if (filter.comparison === "between") {
-		const currentMin = filter.min ?? 1;
-		const currentMax = filter.max ?? 20;
+	const handleComparisonChange = (comparison: TraitComparison) => {
+		let newValue: number | null = filter.value ?? 10;
+		let newMin = filter.min;
+		let newMax = filter.max;
 
-		return (
+		if (comparison === "between") {
+			newMin = filter.min ?? filter.value ?? 1;
+			newMax = filter.max ?? filter.value ?? 20;
+			newValue = null;
+		} else {
+			newValue = filter.value ?? filter.min ?? filter.max ?? 10;
+			newMin = comparison === "lte" ? null : newValue;
+			newMax = comparison === "gte" ? null : newValue;
+		}
+
+		onUpdate(filter.traitName, comparison, newValue, newMin, newMax);
+	};
+
+	const isBetween = filter.comparison === "between";
+
+	return (
+		<div className="space-y-3 rounded-lg border bg-muted/30 p-3">
+			<div className="flex items-center justify-between">
+				<div className="flex items-center gap-2">
+					<span className="font-medium text-sm">{filter.traitName}</span>
+					<span className="text-muted-foreground text-xs capitalize">
+						({displayMode})
+					</span>
+				</div>
+				<Button
+					variant="ghost"
+					size="icon"
+					className="h-6 w-6 text-muted-foreground hover:text-foreground"
+					onClick={onRemove}
+				>
+					<X className="h-3 w-3" />
+				</Button>
+			</div>
+
+			<Select
+				value={filter.comparison}
+				onValueChange={(v) => handleComparisonChange(v as TraitComparison)}
+			>
+				<SelectTrigger className="h-8">
+					<SelectValue />
+				</SelectTrigger>
+				<SelectContent>
+					{COMPARISON_OPTIONS.map((opt) => (
+						<SelectItem key={opt.value} value={opt.value}>
+							{opt.label}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+
 			<div className="space-y-2">
-				<div className="flex items-center justify-between">
-					<Label className="text-muted-foreground text-xs">Range</Label>
-					<span className="font-medium text-xs">
-						{formatValue(localRange[0])} – {formatValue(localRange[1])}
+				<div className="flex justify-between text-xs">
+					<span className="text-muted-foreground">
+						{isBetween ? "Range" : "Value"}
+					</span>
+					<span className="font-medium">
+						{isBetween
+							? `${formatTraitValue(localRange[0])} – ${formatTraitValue(localRange[1])}`
+							: formatTraitValue(localValue)}
 					</span>
 				</div>
 				<Slider
-					defaultValue={[currentMin, currentMax]}
+					value={isBetween ? localRange : [localValue]}
 					min={1}
 					max={20}
 					step={1}
-					onValueChange={([min, max]) => {
-						setLocalRange([min, max]);
+					onValueChange={(vals) => {
+						if (isBetween) {
+							setLocalRange([vals[0], vals[1]]);
+						} else {
+							setLocalValue(vals[0]);
+						}
 					}}
-					onValueCommit={([min, max]) => {
-						updateTraitFilter(
-							filter.traitName,
-							filter.comparison,
-							null,
-							min,
-							max,
-						);
+					onValueCommit={(vals) => {
+						if (isBetween) {
+							onUpdate(
+								filter.traitName,
+								filter.comparison,
+								null,
+								vals[0],
+								vals[1],
+							);
+						} else {
+							onUpdate(
+								filter.traitName,
+								filter.comparison,
+								vals[0],
+								filter.comparison === "lte" ? null : vals[0],
+								filter.comparison === "gte" ? null : vals[0],
+							);
+						}
 					}}
-					className="py-2"
 				/>
 				<div className="flex justify-between text-[10px] text-muted-foreground">
 					<span>1 (F)</span>
 					<span>20 (S+)</span>
 				</div>
-			</div>
-		);
-	}
-
-	const currentValue = filter.value ?? filter.min ?? filter.max ?? 10;
-
-	return (
-		<div className="space-y-2">
-			<div className="flex items-center justify-between">
-				<Label className="text-muted-foreground text-xs">Value</Label>
-				<span className="font-medium text-xs">{formatValue(localValue)}</span>
-			</div>
-			<Slider
-				defaultValue={[currentValue]}
-				min={1}
-				max={20}
-				step={1}
-				onValueChange={([value]) => {
-					setLocalValue(value);
-				}}
-				onValueCommit={([value]) => {
-					updateTraitFilter(
-						filter.traitName,
-						filter.comparison,
-						value,
-						filter.comparison === "lte" ? null : value,
-						filter.comparison === "gte" ? null : value,
-					);
-				}}
-				className="py-2"
-			/>
-			<div className="flex justify-between text-[10px] text-muted-foreground">
-				<span>1 (F)</span>
-				<span>20 (S+)</span>
 			</div>
 		</div>
 	);
@@ -166,8 +234,10 @@ export function CharactersFilterDialog({
 	open,
 	onOpenChange,
 	genderFilter,
+	creatorFilter,
 	updateUrlParam,
 	availableGenders,
+	availableCreators,
 	availableTraitsToFilter,
 	traitFilters,
 	addTraitFilter,
@@ -176,7 +246,12 @@ export function CharactersFilterDialog({
 	removeTraitFilter,
 	clearAllFiltersInDialog,
 }: CharactersFilterDialogProps) {
-	const hasActiveFilters = traitFilters.length > 0 || genderFilter;
+	const hasFilters = traitFilters.length > 0 || genderFilter || creatorFilter;
+	const hasNoOptions =
+		availableCreators.length <= 1 &&
+		availableGenders.length === 0 &&
+		availableTraitsToFilter.length === 0 &&
+		traitFilters.length === 0;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -186,48 +261,37 @@ export function CharactersFilterDialog({
 				</DialogHeader>
 
 				<div className="space-y-4">
+					{availableCreators.length > 1 && (
+						<FilterSelect
+							label="Creator"
+							value={creatorFilter}
+							placeholder="All creators"
+							options={availableCreators}
+							onChange={(v) => updateUrlParam("creator", v)}
+						/>
+					)}
+
 					{availableGenders.length > 0 && (
-						<div className="space-y-2">
-							<Label className="font-medium text-xs">Gender</Label>
-							<Select
-								value={genderFilter ?? "all"}
-								onValueChange={(value) =>
-									updateUrlParam("gender", value === "all" ? null : value)
-								}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder="All genders" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="all">All genders</SelectItem>
-									{availableGenders.map((gender) => (
-										<SelectItem key={gender} value={gender}>
-											{gender}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
+						<FilterSelect
+							label="Gender"
+							value={genderFilter}
+							placeholder="All genders"
+							options={availableGenders}
+							onChange={(v) => updateUrlParam("gender", v)}
+						/>
 					)}
 
 					{availableTraitsToFilter.length > 0 && (
-						<div className="space-y-2">
-							<Label className="font-medium text-xs">Add trait filter</Label>
-							<Select
-								value=""
-								onValueChange={(traitName) => {
-									if (traitName) {
-										addTraitFilter(traitName);
-									}
-								}}
-							>
+						<div className="space-y-1.5">
+							<Label className="text-sm">Add trait filter</Label>
+							<Select value="" onValueChange={(v) => v && addTraitFilter(v)}>
 								<SelectTrigger>
 									<SelectValue placeholder="Select a trait..." />
 								</SelectTrigger>
 								<SelectContent>
-									{availableTraitsToFilter.map((traitName) => (
-										<SelectItem key={traitName} value={traitName}>
-											{traitName}
+									{availableTraitsToFilter.map((trait) => (
+										<SelectItem key={trait} value={trait}>
+											{trait}
 										</SelectItem>
 									))}
 								</SelectContent>
@@ -236,120 +300,35 @@ export function CharactersFilterDialog({
 					)}
 
 					{traitFilters.length > 0 && (
-						<div className="max-h-72 space-y-3 overflow-y-auto">
-							{traitFilters.map((filter) => {
-								const displayMode = getTraitDisplayMode(filter.traitName);
-
-								return (
-									<div
-										key={filter.traitName}
-										className="space-y-3 rounded-lg border bg-muted/30 p-3"
-									>
-										<div className="flex items-center justify-between gap-2">
-											<div className="flex items-center gap-2">
-												<span className="font-medium text-xs">
-													{filter.traitName}
-												</span>
-												<span className="text-muted-foreground text-xs capitalize">
-													({displayMode})
-												</span>
-											</div>
-											<Button
-												variant="ghost"
-												size="sm"
-												className="h-6 px-2 text-muted-foreground hover:text-foreground"
-												onClick={() => removeTraitFilter(filter.traitName)}
-												aria-label="Remove trait filter"
-											>
-												<X className="h-3 w-3" />
-											</Button>
-										</div>
-
-										{/* Comparison type selector */}
-										<div className="space-y-1">
-											<Label className="text-muted-foreground text-xs">
-												Condition
-											</Label>
-											<Select
-												value={filter.comparison}
-												onValueChange={(value: TraitComparison) => {
-													// Set default values based on comparison type
-													let newValue: number | null = filter.value ?? 10;
-													let newMin = filter.min;
-													let newMax = filter.max;
-
-													if (value === "between") {
-														newMin = filter.min ?? filter.value ?? 1;
-														newMax = filter.max ?? filter.value ?? 20;
-														newValue = null;
-													} else {
-														newValue =
-															filter.value ?? filter.min ?? filter.max ?? 10;
-														if (value === "gte") {
-															newMin = newValue;
-															newMax = null;
-														} else if (value === "lte") {
-															newMin = null;
-															newMax = newValue;
-														} else {
-															newMin = newValue;
-															newMax = newValue;
-														}
-													}
-
-													updateTraitFilter(
-														filter.traitName,
-														value,
-														newValue,
-														newMin,
-														newMax,
-													);
-												}}
-											>
-												<SelectTrigger className="h-8">
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													{comparisonOptions.map((option) => (
-														<SelectItem key={option.value} value={option.value}>
-															{option.label}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</div>
-
-										{/* Slider for value selection */}
-										<TraitFilterSlider
-											filter={filter}
-											updateTraitFilter={updateTraitFilter}
-										/>
-									</div>
-								);
-							})}
+						<div className="max-h-64 space-y-3 overflow-y-auto">
+							{traitFilters.map((filter) => (
+								<TraitFilterCard
+									key={filter.traitName}
+									filter={filter}
+									displayMode={getTraitDisplayMode(filter.traitName)}
+									onUpdate={updateTraitFilter}
+									onRemove={() => removeTraitFilter(filter.traitName)}
+								/>
+							))}
 						</div>
 					)}
 
-					{traitFilters.length === 0 &&
-						availableTraitsToFilter.length === 0 &&
-						availableGenders.length === 0 && (
-							<p className="text-center text-muted-foreground text-sm">
-								No filters available
-							</p>
-						)}
+					{hasNoOptions && (
+						<p className="py-4 text-center text-muted-foreground text-sm">
+							No filters available
+						</p>
+					)}
 
-					{hasActiveFilters && (
-						<div className="border-t pt-4">
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={clearAllFiltersInDialog}
-								className="w-full"
-							>
-								<X className="mr-2 h-4 w-4" />
-								Clear all filters
-							</Button>
-						</div>
+					{hasFilters && (
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={clearAllFiltersInDialog}
+							className="w-full"
+						>
+							<X className="mr-2 h-4 w-4" />
+							Clear all filters
+						</Button>
 					)}
 				</div>
 			</DialogContent>

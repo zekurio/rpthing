@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Filter, Plus, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useMemo, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -9,13 +9,13 @@ import { CharacterGallery } from "@/components/character-gallery";
 import { CharactersEmptyState } from "@/components/characters-empty-state";
 import { CharactersErrorState } from "@/components/characters-error-state";
 import { CharactersFilterDialog } from "@/components/characters-filter-dialog";
-import { CharactersFiltersBar } from "@/components/characters-filters-bar";
 import { CharactersLoadingState } from "@/components/characters-loading-state";
 import { CharactersPageHeader } from "@/components/characters-page-header";
 import { CharactersSkeleton } from "@/components/characters-skeleton";
 import { CreateCharacterDialog } from "@/components/create-character-dialog";
 import { CreateOrJoinRealmDialog } from "@/components/create-or-join-realm-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -436,28 +436,47 @@ function CharactersPageContent() {
 				<div className="flex h-full min-h-0 w-full flex-col">
 					<main className="scrollbar-none flex-1 overflow-y-auto p-6 [scrollbar-gutter:stable]">
 						<div className="space-y-6">
-							{/* Filters */}
-							<CharactersFiltersBar
-								localSearch={localSearch}
-								setLocalSearch={setLocalSearch}
-								handleSearchKeyDown={handleSearchKeyDown}
-								updateUrlParam={updateUrlParam}
-								creatorFilter={creatorFilter}
-								availableCreators={availableCreators}
-								availableGenders={availableGenders}
-								availableTraitNames={availableTraitNames}
-								traitFilters={traitFilters}
-								genderFilter={genderFilter}
-								setTraitFilterOpen={setTraitFilterOpen}
-							/>
+							{/* Search and Filter */}
+							<div className="mx-auto flex w-full max-w-xl items-center gap-2">
+								<div className="relative flex-1">
+									<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+									<Input
+										value={localSearch}
+										onChange={(e) => setLocalSearch(e.target.value)}
+										onKeyDown={handleSearchKeyDown}
+										onBlur={() => updateUrlParam("search", localSearch || null)}
+										placeholder="Search characters..."
+										className="pl-9"
+									/>
+								</div>
+								<Button
+									variant="outline"
+									size="icon"
+									className="relative shrink-0"
+									onClick={() => setTraitFilterOpen(true)}
+								>
+									<Filter className="h-4 w-4" />
+									{(traitFilters.length > 0 ||
+										genderFilter ||
+										creatorFilter) && (
+										<span className="-right-1.5 -top-1.5 absolute flex h-5 w-5 items-center justify-center rounded-full bg-primary font-medium text-[11px] text-primary-foreground">
+											{traitFilters.length +
+												(genderFilter ? 1 : 0) +
+												(creatorFilter ? 1 : 0)}
+										</span>
+									)}
+								</Button>
+							</div>
 
 							{/* Filter Dialog */}
 							<CharactersFilterDialog
 								open={traitFilterOpen}
 								onOpenChange={setTraitFilterOpen}
 								genderFilter={genderFilter}
+								creatorFilter={creatorFilter}
 								updateUrlParam={updateUrlParam}
 								availableGenders={availableGenders}
+								availableCreators={availableCreators}
 								availableTraitsToFilter={availableTraitsToFilter}
 								traitFilters={traitFilters}
 								addTraitFilter={addTraitFilter}

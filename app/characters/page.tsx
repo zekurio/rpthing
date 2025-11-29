@@ -37,7 +37,7 @@ export default function CharactersPage() {
 function CharactersPageContent() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
-	const { user } = useAuth();
+	useAuth();
 
 	// Get filters from URL
 	const realmFilter = searchParams?.get("realm") ?? null;
@@ -192,10 +192,7 @@ function CharactersPageContent() {
 			const realmCharacters = query.data ?? [];
 
 			realmCharacters.forEach((character) => {
-				// Only show user's own characters
-				if (user && character.userId === user.id) {
-					characters.push({ character, realm });
-				}
+				characters.push({ character, realm });
 			});
 		});
 
@@ -205,7 +202,7 @@ function CharactersPageContent() {
 			const bName = b.character.name.toLowerCase();
 			return aName.localeCompare(bName);
 		});
-	}, [characterQueries, realmIds, realms, user]);
+	}, [characterQueries, realmIds, realms]);
 
 	// Apply filters and separate into rated/unrated groups
 	const { filteredCharacters, unratedCharacters } = useMemo(() => {

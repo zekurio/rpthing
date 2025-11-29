@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, EyeOff } from "lucide-react";
+import { Eye } from "lucide-react";
 import Image, { type ImageProps } from "next/image";
 import { memo, useCallback, useEffect, useState } from "react";
 import { useNsfw } from "@/hooks/use-nsfw";
@@ -11,6 +11,12 @@ interface NsfwImageProps extends Omit<ImageProps, "onLoad"> {
 	isNsfw?: boolean;
 	/** Called when the image finishes loading */
 	onLoad?: () => void;
+	/** Called when the blur state changes (true = blurred, false = revealed) */
+	onBlurStateChange?: (isBlurred: boolean) => void;
+	/** Called to request hiding (re-blurring) the image from external control */
+	onHide?: () => void;
+	/** External control to force the image to be hidden/revealed */
+	forceHidden?: boolean;
 }
 
 export const NsfwImage = memo(function NsfwImage({
@@ -19,6 +25,8 @@ export const NsfwImage = memo(function NsfwImage({
 	className,
 	isNsfw = false,
 	onLoad,
+	onBlurStateChange,
+	forceHidden,
 	...props
 }: NsfwImageProps) {
 	const { blurNsfw } = useNsfw();
@@ -33,6 +41,19 @@ export const NsfwImage = memo(function NsfwImage({
 		setIsRevealed(false);
 		setImageLoaded(false);
 	}, [srcString]);
+
+	// Handle external force hidden control
+	useEffect(() => {
+		if (forceHidden === true) {
+			setIsRevealed(false);
+		}
+	}, [forceHidden]);
+
+	// Notify parent when blur state changes
+	useEffect(() => {
+		const isBlurred = blurNsfw && isNsfw && !isRevealed;
+		onBlurStateChange?.(isBlurred);
+	}, [blurNsfw, isNsfw, isRevealed, onBlurStateChange]);
 
 	const handleImageLoad = useCallback(() => {
 		setImageLoaded(true);
@@ -84,28 +105,12 @@ export const NsfwImage = memo(function NsfwImage({
 						tabIndex={0}
 						onClick={toggleReveal}
 						onKeyDown={handleKeyDown}
-						className="flex cursor-pointer items-center gap-2 rounded-md bg-black/70 px-3 py-2 text-white text-xs transition-colors hover:bg-black/80"
+						className="flex cursor-pointer items-center gap-2 rounded-lg bg-black/70 px-4 py-3 text-sm text-white transition-colors hover:bg-black/80"
 						aria-label="Show NSFW image"
 					>
-						<Eye className="h-4 w-4" />
+						<Eye className="h-5 w-5" />
 						<span>Show</span>
 					</div>
-				</div>
-			)}
-
-			{/* Hide control when revealed */}
-			{blurNsfw && isNsfw && isRevealed && imageLoaded && (
-				// biome-ignore lint/a11y/useSemanticElements: Cannot use button due to potential nesting inside parent button
-				<div
-					role="button"
-					tabIndex={0}
-					onClick={toggleReveal}
-					onKeyDown={handleKeyDown}
-					className="absolute top-2 left-2 flex cursor-pointer items-center gap-1 rounded-md bg-black/70 px-2 py-1 text-white text-xs transition-colors hover:bg-black/80"
-					aria-label="Hide NSFW image"
-				>
-					<EyeOff className="h-3 w-3" />
-					<span>Hide</span>
 				</div>
 			)}
 		</div>

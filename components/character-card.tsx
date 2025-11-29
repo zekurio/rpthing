@@ -2,7 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import type { CharacterListItem } from "@types";
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { EyeOff, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { memo, useCallback, useState } from "react";
 import { toast } from "sonner";
 import { EditCharacterDialog } from "@/components/edit-character-dialog";
@@ -25,6 +25,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
+import { useNsfw } from "@/hooks/use-nsfw";
 import { useRealmAccess } from "@/hooks/use-realm-access";
 import { getGradeColor, gradeForValue, type TraitGrade } from "@/lib/traits";
 import { queryClient, trpc } from "@/lib/trpc";
@@ -44,8 +45,11 @@ export const CharacterCard = memo(function CharacterCard({
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
+	const [isImageBlurred, setIsImageBlurred] = useState(false);
+	const [forceHidden, setForceHidden] = useState(false);
 
 	const { user } = useAuth();
+	const { blurNsfw } = useNsfw();
 	const realmId = propRealmId || character.realmId;
 	const { realm } = useRealmAccess(realmId);
 
@@ -79,6 +83,14 @@ export const CharacterCard = memo(function CharacterCard({
 		setDeleteOpen(true);
 	}, []);
 
+	const handleBlurStateChange = useCallback((isBlurred: boolean) => {
+		setIsImageBlurred(isBlurred);
+		// Reset forceHidden when the blur state changes naturally
+		if (isBlurred) {
+			setForceHidden(false);
+		}
+	}, []);
+
 	const ratedTraits =
 		character.ratingsSummary
 			?.filter((t) => typeof t.value === "number")
@@ -87,6 +99,33 @@ export const CharacterCard = memo(function CharacterCard({
 	const previewSrc =
 		character.croppedImageKey || character.referenceImageKey || undefined;
 	const fullImageSrc = character.referenceImageKey || undefined;
+
+	// Show hide button when blurNsfw is enabled, image is NSFW, and currently revealed (not blurred)
+	const showHideButton = blurNsfw && character.isNsfw && !isImageBlurred;
+
+	const HideButton = showHideButton ? (
+		<div className="absolute top-2 left-2">
+			{/* biome-ignore lint/a11y/useSemanticElements: Using div to avoid button nesting issues */}
+			<div
+				role="button"
+				tabIndex={0}
+				className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-black/70 text-white transition-colors hover:bg-black/80"
+				aria-label="Hide image"
+				onClick={(e) => {
+					e.stopPropagation();
+					setForceHidden(true);
+				}}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.stopPropagation();
+						setForceHidden(true);
+					}
+				}}
+			>
+				<EyeOff className="h-4 w-4" />
+			</div>
+		</div>
+	) : null;
 
 	const OptionsMenu = (
 		<div className="absolute top-2 right-2">
@@ -131,8 +170,12 @@ export const CharacterCard = memo(function CharacterCard({
 			{previewSrc ? (
 				<div className="relative aspect-square w-full overflow-hidden bg-muted">
 					<button
-						className="absolute inset-0 h-full w-full cursor-pointer"
-						onClick={() => setViewerOpen(true)}
+						className={`absolute inset-0 h-full w-full ${isImageBlurred ? "cursor-default" : "cursor-pointer"}`}
+						onClick={() => {
+							if (!isImageBlurred) {
+								setViewerOpen(true);
+							}
+						}}
 						aria-label="View full image"
 						type="button"
 					>
@@ -144,8 +187,11 @@ export const CharacterCard = memo(function CharacterCard({
 							sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
 							priority={false}
 							isNsfw={character.isNsfw ?? false}
+							onBlurStateChange={handleBlurStateChange}
+							forceHidden={forceHidden}
 						/>
 					</button>
+					{HideButton}
 					{OptionsMenu}
 				</div>
 			) : (

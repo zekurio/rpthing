@@ -1,3 +1,4 @@
+import type { Tensor3D } from "@tensorflow/tfjs";
 import type * as nsfwjs from "nsfwjs";
 import sharp from "sharp";
 
@@ -68,7 +69,7 @@ async function prepareImageForClassification(imageBuffer: Uint8Array): Promise<{
 /**
  * Create a tensor from raw image data for NSFW.js
  */
-async function createImageTensor(imageBuffer: Uint8Array) {
+async function createImageTensor(imageBuffer: Uint8Array): Promise<Tensor3D> {
 	const tf = await import("@tensorflow/tfjs");
 	const { data, width, height } =
 		await prepareImageForClassification(imageBuffer);
@@ -77,7 +78,13 @@ async function createImageTensor(imageBuffer: Uint8Array) {
 	// Shape: [height, width, channels]
 	const tensor = tf.tensor3d(data, [height, width, 3], "int32");
 
-	return tensor;
+	// Normalize pixel values from 0-255 to 0-1 (required by neural networks)
+	const normalizedTensor = tensor.toFloat().div(255) as Tensor3D;
+
+	// Dispose of the original tensor since we no longer need it
+	tensor.dispose();
+
+	return normalizedTensor;
 }
 
 export interface NsfwClassificationResult {
@@ -109,9 +116,7 @@ export async function classifyImage(
 
 		try {
 			// Classify the image
-			const predictions = (await model.classify(
-				tensor as unknown as HTMLImageElement,
-			)) as NsfwPrediction[];
+			const predictions = (await model.classify(tensor)) as NsfwPrediction[];
 
 			// Find the top prediction
 			const topPrediction = predictions.reduce(

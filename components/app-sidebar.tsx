@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { CreateOrJoinRealmDialog } from "@/components/create-or-join-realm-dialog";
 import { DeleteRealmDialog } from "@/components/delete-realm-dialog";
-import EditRealmDialog from "@/components/edit-realm-dialog";
 import { LeaveRealmDialog } from "@/components/leave-realm-dialog";
 import { Logo } from "@/components/logo";
+import { RealmSettingsDialog } from "@/components/realm-settings-dialog";
 import { SidebarRealmList } from "@/components/sidebar-realm-list";
 import { TransferOwnershipDialog } from "@/components/transfer-ownership-dialog";
 import {
@@ -26,34 +26,22 @@ import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/lib/trpc";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-	const params = useParams();
-	const rawRealmId = (params as Record<string, unknown>).realmId;
-	const currentRealmId = Array.isArray(rawRealmId)
-		? typeof rawRealmId[0] === "string"
-			? rawRealmId[0]
-			: null
-		: typeof rawRealmId === "string"
-			? rawRealmId
-			: null;
+	const searchParams = useSearchParams();
+	const currentRealmFilter = searchParams?.get("realm") ?? null;
+
 	const { data, isPending } = useQuery({
 		...trpc.realm.list.queryOptions(),
 	});
 	const [dialogOpen, setDialogOpen] = useState(false);
-	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
 	const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+	const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 	const [selectedRealm, setSelectedRealm] = useState<{
 		id: string;
 		name?: string;
 	} | null>(null);
 	const { user } = useAuth();
-
-	const handleEditRealm = (realmId: string) => {
-		const realm = data?.find((r) => r.id === realmId);
-		setSelectedRealm({ id: realmId, name: realm?.name });
-		setEditDialogOpen(true);
-	};
 
 	const handleDeleteRealm = (realmId: string) => {
 		const realm = data?.find((r) => r.id === realmId);
@@ -72,6 +60,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		}
 	};
 
+	const handleSettingsRealm = (realmId: string) => {
+		const realm = data?.find((r) => r.id === realmId);
+		setSelectedRealm({ id: realmId, name: realm?.name });
+		setSettingsDialogOpen(true);
+	};
+
 	return (
 		<Sidebar collapsible="offcanvas" variant="inset" {...props}>
 			<SidebarHeader>
@@ -81,7 +75,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 							size="lg"
 							className="transition-colors hover:bg-accent active:bg-accent"
 						>
-							<a href="/realms">
+							<a href="/characters">
 								<Logo />
 							</a>
 						</SidebarMenuButton>
@@ -99,42 +93,43 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					</SidebarGroupAction>
 					<SidebarRealmList
 						realms={data ?? []}
-						currentRealmId={currentRealmId}
+						currentRealmFilter={currentRealmFilter}
 						isPending={isPending}
 						currentUserId={user?.id}
-						onEdit={handleEditRealm}
 						onDelete={handleDeleteRealm}
 						onLeave={handleLeaveRealm}
+						onSettings={handleSettingsRealm}
 					/>
 				</SidebarGroup>
 			</SidebarContent>
 			<CreateOrJoinRealmDialog open={dialogOpen} onOpenChange={setDialogOpen} />
-			<EditRealmDialog
-				open={editDialogOpen}
-				onOpenChange={setEditDialogOpen}
-				realmId={selectedRealm?.id ?? null}
-				realmName={selectedRealm?.name}
-			/>
 			<DeleteRealmDialog
 				open={deleteDialogOpen}
 				onOpenChange={setDeleteDialogOpen}
 				realmId={selectedRealm?.id ?? null}
 				realmName={selectedRealm?.name}
-				currentRealmId={currentRealmId}
+				currentRealmId={currentRealmFilter}
 			/>
 			<LeaveRealmDialog
 				open={leaveDialogOpen}
 				onOpenChange={setLeaveDialogOpen}
 				realmId={selectedRealm?.id ?? null}
 				realmName={selectedRealm?.name}
-				currentRealmId={currentRealmId}
+				currentRealmId={currentRealmFilter}
 			/>
 			<TransferOwnershipDialog
 				open={transferDialogOpen}
 				onOpenChange={setTransferDialogOpen}
 				realmId={selectedRealm?.id ?? null}
 				realmName={selectedRealm?.name}
-				currentRealmId={currentRealmId}
+				currentRealmId={currentRealmFilter}
+			/>
+			<RealmSettingsDialog
+				open={settingsDialogOpen}
+				onOpenChange={setSettingsDialogOpen}
+				realmId={selectedRealm?.id ?? null}
+				realmName={selectedRealm?.name}
+				currentUserId={user?.id}
 			/>
 			<SidebarFooter>
 				<UserMenu />

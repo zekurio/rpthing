@@ -22,6 +22,7 @@ interface ImageUploadProps {
 	) => void;
 	onRemove?: () => void;
 	className?: string;
+	size?: "default" | "sm";
 }
 
 export function ImageUpload({
@@ -29,6 +30,7 @@ export function ImageUpload({
 	onSelect,
 	onRemove,
 	className,
+	size = "default",
 }: ImageUploadProps) {
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -59,14 +61,23 @@ export function ImageUpload({
 	const currentPreview = imagePreview || previewSrc;
 
 	return (
-		<div className={`flex items-center gap-3 ${className || ""}`}>
+		<div
+			className={`flex items-center ${size === "sm" ? "gap-2" : "gap-3"} ${className || ""}`}
+		>
 			<IconUploadButton
 				previewSrc={currentPreview}
 				onSelect={handleSelect}
 				showRemoveIcon={false}
+				size={size}
 			/>
 			{currentPreview && (
-				<Button type="button" variant="ghost" size="sm" onClick={handleRemove}>
+				<Button
+					type="button"
+					variant="ghost"
+					size="sm"
+					onClick={handleRemove}
+					className={size === "sm" ? "h-6 px-2 text-xs" : undefined}
+				>
 					Remove
 				</Button>
 			)}

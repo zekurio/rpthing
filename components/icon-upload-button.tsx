@@ -28,6 +28,7 @@ interface IconUploadButtonProps {
 	ariaLabel?: string;
 	title?: string;
 	showRemoveIcon?: boolean;
+	size?: "default" | "sm";
 }
 
 export function IconUploadButton({
@@ -38,6 +39,7 @@ export function IconUploadButton({
 	ariaLabel = "Upload icon",
 	title = "Upload icon",
 	showRemoveIcon = true,
+	size = "default",
 }: IconUploadButtonProps) {
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const [cropDialogOpen, setCropDialogOpen] = useState(false);
@@ -125,7 +127,8 @@ export function IconUploadButton({
 					type="button"
 					onClick={() => fileInputRef.current?.click()}
 					className={cn(
-						"relative grid h-16 w-16 place-items-center rounded-lg border-2 border-border border-dashed text-muted-foreground transition-colors hover:border-foreground hover:text-foreground",
+						"relative grid place-items-center rounded-lg border-2 border-border border-dashed text-muted-foreground transition-colors hover:border-foreground hover:text-foreground",
+						size === "sm" ? "h-12 w-12" : "h-16 w-16",
 						className,
 					)}
 					aria-label={ariaLabel}
@@ -135,16 +138,24 @@ export function IconUploadButton({
 						<Image
 							src={previewSrc}
 							alt="Preview"
-							width={64}
-							height={64}
-							className="h-[60px] w-[60px] rounded-lg object-cover"
+							width={size === "sm" ? 44 : 64}
+							height={size === "sm" ? 44 : 64}
+							className={cn(
+								"rounded-lg object-cover",
+								size === "sm" ? "h-[44px] w-[44px]" : "h-[60px] w-[60px]",
+							)}
 							priority={false}
 						/>
 					) : (
-						<Camera className="size-5" />
+						<Camera className={size === "sm" ? "size-4" : "size-5"} />
 					)}
-					<span className="-right-1 -top-1 absolute grid size-5 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm">
-						<Plus className="size-3" />
+					<span
+						className={cn(
+							"-right-1 -top-1 absolute grid place-items-center rounded-full bg-primary text-primary-foreground shadow-sm",
+							size === "sm" ? "size-4" : "size-5",
+						)}
+					>
+						<Plus className={size === "sm" ? "size-2.5" : "size-3"} />
 					</span>
 				</button>
 				{previewSrc && showRemoveIcon ? (

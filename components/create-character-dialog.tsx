@@ -29,6 +29,13 @@ import {
 	ResponsiveDialogHeader,
 	ResponsiveDialogTitle,
 } from "@/components/ui/responsive-dialog";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useRealmGenderOptions } from "@/hooks/use-realm-gender-options";
@@ -46,16 +53,29 @@ type FormData = z.infer<typeof formSchema>;
 interface CreateCharacterDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	realmId: string;
+	realmId?: string;
 	onCreated: () => void;
 }
 
 export function CreateCharacterDialog({
 	open,
 	onOpenChange,
-	realmId,
+	realmId: initialRealmId,
 	onCreated,
 }: CreateCharacterDialogProps) {
+	const [selectedRealmId, setSelectedRealmId] = React.useState<string>(
+		initialRealmId ?? "",
+	);
+
+	// Use the initial realmId if provided, otherwise use the selected one
+	const realmId = initialRealmId ?? selectedRealmId;
+
+	// Fetch realms for the selector (only when no initial realmId is provided)
+	const { data: realms, isLoading: realmsLoading } = useQuery({
+		...trpc.realm.list.queryOptions(),
+		enabled: !initialRealmId && open,
+	});
+
 	const genderOptions = useRealmGenderOptions(realmId);
 
 	const { data: traits, isLoading: traitsLoading } = useQuery({
@@ -80,6 +100,10 @@ export function CreateCharacterDialog({
 			setImagePreview(null);
 			setOriginalFile(null);
 			setPercentCrop(null);
+			// Reset selected realm if no initial realmId was provided
+			if (!initialRealmId) {
+				setSelectedRealmId("");
+			}
 		},
 		onError: (e) => toast.error(e.message || "Failed to create"),
 	});
@@ -104,8 +128,22 @@ export function CreateCharacterDialog({
 		Record<string, number>
 	>({});
 
+	// Reset local ratings when realm changes
+	const prevRealmIdRef = React.useRef(realmId);
+	React.useEffect(() => {
+		if (prevRealmIdRef.current !== realmId) {
+			setLocalRatings({});
+			prevRealmIdRef.current = realmId;
+		}
+	}, [realmId]);
+
 	const onSubmit = React.useCallback(
 		async (data: FormData) => {
+			if (!realmId) {
+				toast.error("Please select a realm");
+				return;
+			}
+
 			const created = await mutation.mutateAsync({
 				realmId,
 				name: data.name.trim(),
@@ -170,7 +208,9 @@ export function CreateCharacterDialog({
 				<ResponsiveDialogHeader>
 					<ResponsiveDialogTitle>New Character</ResponsiveDialogTitle>
 					<ResponsiveDialogDescription>
-						Create a character for this realm.
+						{initialRealmId
+							? "Create a character for this realm."
+							: "Create a character in one of your realms."}
 					</ResponsiveDialogDescription>
 				</ResponsiveDialogHeader>
 				<ResponsiveDialogBody>
@@ -180,6 +220,38 @@ export function CreateCharacterDialog({
 							onSubmit={form.handleSubmit(onSubmit)}
 							className="grid gap-4"
 						>
+							{/* Realm selector - only shown when no initial realmId */}
+							{!initialRealmId && (
+								<div className="grid gap-2">
+									<FormLabel>Realm</FormLabel>
+									{realmsLoading ? (
+										<InlineLoading
+											text="Loading realms..."
+											className="text-xs"
+										/>
+									) : !realms || realms.length === 0 ? (
+										<div className="rounded-md border p-3 text-muted-foreground text-sm">
+											You need to join or create a realm first.
+										</div>
+									) : (
+										<Select
+											value={selectedRealmId}
+											onValueChange={setSelectedRealmId}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Select a realm..." />
+											</SelectTrigger>
+											<SelectContent>
+												{realms.map((realm) => (
+													<SelectItem key={realm.id} value={realm.id}>
+														{realm.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									)}
+								</div>
+							)}
 							<FormField
 								control={form.control}
 								name="name"
@@ -253,7 +325,11 @@ export function CreateCharacterDialog({
 							</div>
 							<div className="grid gap-2">
 								<FormLabel>Trait ratings</FormLabel>
-								{traitsLoading ? (
+								{!realmId ? (
+									<div className="rounded-md border p-3 text-muted-foreground text-sm">
+										Select a realm to see available traits.
+									</div>
+								) : traitsLoading ? (
 									<InlineLoading text="Loading traits..." className="text-xs" />
 								) : !traits || traits.length === 0 ? (
 									<div className="rounded-md border p-3 text-muted-foreground text-sm">
@@ -340,7 +416,11 @@ export function CreateCharacterDialog({
 					<Button
 						type="submit"
 						form="create-character-form"
-						disabled={form.formState.isSubmitting || mutation.isPending}
+						disabled={
+							form.formState.isSubmitting ||
+							mutation.isPending ||
+							(!initialRealmId && !selectedRealmId)
+						}
 						className="w-full sm:w-auto"
 					>
 						{form.formState.isSubmitting || mutation.isPending

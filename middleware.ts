@@ -9,16 +9,16 @@ export async function middleware(request: NextRequest) {
 
 	const pathname = request.nextUrl.pathname;
 
-	// Handle root route: redirect to /realms if authenticated, otherwise to /login
+	// Handle root route: redirect to /characters if authenticated, otherwise to /login
 	if (pathname === "/") {
 		if (session) {
-			return NextResponse.redirect(new URL("/realms", request.url));
+			return NextResponse.redirect(new URL("/characters", request.url));
 		}
 		return NextResponse.redirect(new URL("/login", request.url));
 	}
 
-	// Protect /realms route - redirect to /login if not authenticated
-	if (pathname === "/realms" && !session) {
+	// Protect /characters route - redirect to /login if not authenticated
+	if (pathname === "/characters" && !session) {
 		return NextResponse.redirect(new URL("/login", request.url));
 	}
 
@@ -27,5 +27,5 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
 	runtime: "nodejs",
-	matcher: ["/", "/realms"], // Apply middleware to root and /realms routes
+	matcher: ["/", "/characters"], // Apply middleware to root, /characters, and /realms routes
 };

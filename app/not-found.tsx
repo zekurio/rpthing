@@ -1,4 +1,4 @@
-import { Globe, Home } from "lucide-react";
+import { Home, Users } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -23,9 +23,9 @@ export default function NotFound() {
 					</Button>
 
 					<Button asChild variant="outline">
-						<Link href="/realms" className="flex items-center gap-2">
-							<Globe className="h-4 w-4" />
-							Go to Realms
+						<Link href="/characters" className="flex items-center gap-2">
+							<Users className="h-4 w-4" />
+							Go to Characters
 						</Link>
 					</Button>
 				</div>

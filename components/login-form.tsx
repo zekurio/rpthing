@@ -29,7 +29,7 @@ export function LoginForm({
 			return redirect;
 		}
 
-		return "/realms";
+		return "/characters";
 	};
 
 	async function handleSignIn(provider: "discord", callbackURL: string) {

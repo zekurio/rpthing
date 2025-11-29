@@ -41,9 +41,9 @@ export function LeaveRealmDialog({
 			toast.success("Left realm successfully.");
 			onOpenChange(false);
 
-			// If the left realm is the current realm, redirect to /realms
+			// If the left realm is the current realm, redirect to /characters
 			if (realmId && currentRealmId && realmId === currentRealmId) {
-				router.push("/realms");
+				router.push("/characters");
 			}
 		},
 		onError: (err) => toast.error(err.message),

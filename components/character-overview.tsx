@@ -118,7 +118,7 @@ export function CharacterOverview({
 			<button
 				type="button"
 				onClick={() => {
-					router.push(`/realms/${realmId}`);
+					router.push(`/characters?realm=${realmId}`);
 				}}
 				className="group relative aspect-square w-full overflow-hidden rounded-xl border border-border bg-muted transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
 			>
@@ -168,7 +168,7 @@ export function CharacterOverview({
 								className="group/realm flex-1 overflow-hidden text-ellipsis whitespace-nowrap rounded-lg bg-primary/10 px-4 py-2 text-left font-bold text-base text-primary transition-all duration-200 hover:bg-primary/20 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 sm:text-lg"
 								onClick={() => {
 									if (group.realm?.id) {
-										router.push(`/realms/${group.realm.id}`);
+										router.push(`/characters?realm=${group.realm.id}`);
 									}
 								}}
 								title={group.realm?.name}

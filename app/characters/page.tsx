@@ -3,7 +3,7 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Filter, Plus, Search, Users, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useMemo, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CharacterGallery } from "@/components/character-gallery";
 import { CreateCharacterDialog } from "@/components/create-character-dialog";
@@ -92,6 +92,14 @@ function CharactersSkeleton() {
 }
 
 export default function CharactersPage() {
+	return (
+		<Suspense fallback={<CharactersSkeleton />}>
+			<CharactersPageContent />
+		</Suspense>
+	);
+}
+
+function CharactersPageContent() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const { user } = useAuth();

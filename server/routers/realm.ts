@@ -126,6 +126,7 @@ export const realmRouter = router({
 					ownerId: realm.ownerId,
 					createdAt: realm.createdAt,
 					updatedAt: realm.updatedAt,
+					password: realm.password,
 				})
 				.from(realm)
 				.innerJoin(realmMember, eq(realm.id, realmMember.realmId))
@@ -139,7 +140,9 @@ export const realmRouter = router({
 
 			// Generate public URL for icon if it exists
 			const iconUrl = result.iconKey ? getPublicFileUrl(result.iconKey) : null;
-			return { ...result, iconKey: iconUrl };
+			const hasPassword = result.password !== null;
+			const { password: _, ...rest } = result;
+			return { ...rest, iconKey: iconUrl, hasPassword };
 		}),
 
 	delete: protectedProcedure

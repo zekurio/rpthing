@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit, LogOut, Trash } from "lucide-react";
+import { LogOut, Settings, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,6 +9,7 @@ import {
 	ContextMenu,
 	ContextMenuContent,
 	ContextMenuItem,
+	ContextMenuSeparator,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,19 +25,21 @@ interface Realm {
 interface RealmItemProps {
 	realm: Realm;
 	isSelected: boolean;
-	onEdit: (realmId: string) => void;
 	onDelete: (realmId: string) => void;
 	onLeave: (realmId: string) => void;
+	onSettings: (realmId: string) => void;
 	isOwner?: boolean;
+	characterCount?: number;
 }
 
 export function RealmItem({
 	realm,
 	isSelected,
-	onEdit,
 	onDelete,
 	onLeave,
+	onSettings,
 	isOwner = false,
+	characterCount,
 }: RealmItemProps) {
 	const router = useRouter();
 	const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -65,7 +68,8 @@ export function RealmItem({
 	}, [src, currentSrc]);
 
 	const handleRealmClick = (realmId: string) => {
-		router.push(`/realms/${realmId}`);
+		// Navigate to /characters with realm filter in URL
+		router.push(`/characters?realm=${realmId}`);
 	};
 
 	const handleImageLoad = () => {
@@ -77,7 +81,6 @@ export function RealmItem({
 	};
 
 	const handleTouchStart: React.TouchEventHandler<HTMLButtonElement> = () => {
-		if (!isOwner) return;
 		longPressTimerRef.current = window.setTimeout(() => {
 			longPressTriggeredRef.current = true;
 			if (buttonRef.current) {
@@ -143,6 +146,11 @@ export function RealmItem({
 					</AvatarFallback>
 				</Avatar>
 				<span className="truncate font-medium text-sm">{realm.name}</span>
+				{characterCount !== undefined && (
+					<span className="ml-auto shrink-0 rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs">
+						{characterCount}
+					</span>
+				)}
 				{src && !isImageLoaded && (
 					<div className="absolute inset-2 flex items-center justify-center">
 						<Skeleton size="2xl" className="rounded-lg" />
@@ -156,17 +164,18 @@ export function RealmItem({
 		<ContextMenu onOpenChange={setIsContextMenuOpen}>
 			<ContextMenuTrigger asChild>{realmButton}</ContextMenuTrigger>
 			<ContextMenuContent>
-				{isOwner ? (
+				<ContextMenuItem
+					onSelect={() => {
+						contextMenuUsedRef.current = true;
+						onSettings(realm.id);
+					}}
+				>
+					<Settings className="mr-2 h-4 w-4" />
+					Settings
+				</ContextMenuItem>
+				{isOwner && (
 					<>
-						<ContextMenuItem
-							onSelect={() => {
-								contextMenuUsedRef.current = true;
-								onEdit(realm.id);
-							}}
-						>
-							<Edit className="mr-2 h-4 w-4" />
-							Edit
-						</ContextMenuItem>
+						<ContextMenuSeparator />
 						{realm.memberCount === 1 ? (
 							<ContextMenuItem
 								onSelect={() => {
@@ -191,16 +200,21 @@ export function RealmItem({
 							</ContextMenuItem>
 						)}
 					</>
-				) : (
-					<ContextMenuItem
-						onSelect={() => {
-							contextMenuUsedRef.current = true;
-							onLeave(realm.id);
-						}}
-					>
-						<LogOut className="mr-2 h-4 w-4" />
-						Leave
-					</ContextMenuItem>
+				)}
+				{!isOwner && (
+					<>
+						<ContextMenuSeparator />
+						<ContextMenuItem
+							onSelect={() => {
+								contextMenuUsedRef.current = true;
+								onLeave(realm.id);
+							}}
+							className="text-destructive focus:text-destructive"
+						>
+							<LogOut className="mr-2 h-4 w-4" />
+							Leave
+						</ContextMenuItem>
+					</>
 				)}
 			</ContextMenuContent>
 		</ContextMenu>

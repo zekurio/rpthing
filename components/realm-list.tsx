@@ -13,10 +13,10 @@ interface Realm {
 interface RealmListProps {
 	realms: Realm[];
 	isPending: boolean;
-	currentRealmId: string | null;
-	onEdit: (realmId: string) => void;
+	currentRealmFilter: string | null;
 	onDelete: (realmId: string) => void;
 	onLeave: (realmId: string) => void;
+	onSettings: (realmId: string) => void;
 	currentUserId?: string;
 	footer?: React.ReactNode;
 }
@@ -24,10 +24,10 @@ interface RealmListProps {
 export function RealmList({
 	realms,
 	isPending,
-	currentRealmId,
-	onEdit,
+	currentRealmFilter,
 	onDelete,
 	onLeave,
+	onSettings,
 	currentUserId,
 	footer,
 }: RealmListProps) {
@@ -40,10 +40,10 @@ export function RealmList({
 					<RealmItem
 						key={realm.id}
 						realm={realm}
-						isSelected={currentRealmId === realm.id}
-						onEdit={onEdit}
+						isSelected={currentRealmFilter === realm.id}
 						onDelete={onDelete}
 						onLeave={onLeave}
+						onSettings={onSettings}
 						isOwner={currentUserId ? realm.ownerId === currentUserId : false}
 					/>
 				))

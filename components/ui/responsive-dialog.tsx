@@ -173,7 +173,7 @@ function ResponsiveDialogHeader({
 	return (
 		<div
 			className={cn(
-				"flex flex-col gap-1.5 border-b px-4 pt-2 pb-3 text-left",
+				"flex flex-col gap-1.5 border-b px-4 pb-3 text-left",
 				className,
 			)}
 		>

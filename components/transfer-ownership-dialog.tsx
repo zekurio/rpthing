@@ -54,7 +54,7 @@ export function TransferOwnershipDialog({
 			onOpenChange(false);
 
 			if (realmId && currentRealmId && realmId === currentRealmId) {
-				router.push("/realms");
+				router.push("/characters");
 			}
 		},
 		onError: (err) => toast.error(err.message),

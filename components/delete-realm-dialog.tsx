@@ -41,9 +41,9 @@ export function DeleteRealmDialog({
 			toast.success("Realm deleted.");
 			onOpenChange(false);
 
-			// If the deleted realm is the current realm, redirect to /realms
+			// If the deleted realm is the current realm, redirect to /characters
 			if (realmId && currentRealmId && realmId === currentRealmId) {
-				router.push("/realms");
+				router.push("/characters");
 			}
 		},
 		onError: (err) => toast.error(err.message),

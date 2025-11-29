@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -83,7 +83,10 @@ function TraitFilterSlider({
 	]);
 
 	// Sync local state when filter changes from outside
-	const filterKey = `${filter.traitName}-${filter.comparison}-${filter.value}-${filter.min}-${filter.max}`;
+	useEffect(() => {
+		setLocalValue(filter.value ?? filter.min ?? filter.max ?? 10);
+		setLocalRange([filter.min ?? 1, filter.max ?? 20]);
+	}, [filter.value, filter.min, filter.max]);
 
 	if (filter.comparison === "between") {
 		const currentMin = filter.min ?? 1;
@@ -98,7 +101,6 @@ function TraitFilterSlider({
 					</span>
 				</div>
 				<Slider
-					key={filterKey}
 					defaultValue={[currentMin, currentMax]}
 					min={1}
 					max={20}
@@ -134,7 +136,6 @@ function TraitFilterSlider({
 				<span className="font-medium text-xs">{formatValue(localValue)}</span>
 			</div>
 			<Slider
-				key={filterKey}
 				defaultValue={[currentValue]}
 				min={1}
 				max={20}

@@ -3,7 +3,14 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Filter, Plus, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useMemo, useState } from "react";
+import {
+	Suspense,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CharacterGallery } from "@/components/character-gallery";
 import { CharactersEmptyState } from "@/components/characters-empty-state";
@@ -59,6 +66,12 @@ function CharactersPageContent() {
 	const [createCharacterOpen, setCreateCharacterOpen] = useState(false);
 	const [localSearch, setLocalSearch] = useState(searchFilter);
 	const [traitFilterOpen, setTraitFilterOpen] = useState(false);
+	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	// Sync localSearch with URL when searchFilter changes (e.g., back/forward navigation)
+	useEffect(() => {
+		setLocalSearch(searchFilter);
+	}, [searchFilter]);
 
 	// Helper to update URL params
 	const updateUrlParams = useCallback(
@@ -85,6 +98,23 @@ function CharactersPageContent() {
 		},
 		[updateUrlParams],
 	);
+
+	// Debounced URL update for search
+	useEffect(() => {
+		if (debounceRef.current) {
+			clearTimeout(debounceRef.current);
+		}
+		debounceRef.current = setTimeout(() => {
+			if (localSearch !== searchFilter) {
+				updateUrlParam("search", localSearch || null);
+			}
+		}, 300);
+		return () => {
+			if (debounceRef.current) {
+				clearTimeout(debounceRef.current);
+			}
+		};
+	}, [localSearch, searchFilter, updateUrlParam]);
 
 	const clearAllFilters = useCallback(() => {
 		// Preserve realm filter when clearing other filters
@@ -369,9 +399,12 @@ function CharactersPageContent() {
 		return realms?.find((r) => r.id === realmFilter)?.name ?? null;
 	}, [realmFilter, realms]);
 
-	// Handle search on Enter
+	// Handle search on Enter (immediate update, bypassing debounce)
 	const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
 		if (e.key === "Enter") {
+			if (debounceRef.current) {
+				clearTimeout(debounceRef.current);
+			}
 			updateUrlParam("search", localSearch || null);
 		}
 	};
@@ -440,9 +473,9 @@ function CharactersPageContent() {
 			<SidebarInset>
 				<CharactersPageHeader filteredRealmName={filteredRealmName} />
 				<div className="flex h-full min-h-0 w-full flex-col">
-					<main className="scrollbar-none flex-1 overflow-y-auto p-6 [scrollbar-gutter:stable]">
-						<div className="space-y-6">
-							{/* Search and Filter */}
+					<main className="scrollbar-none flex-1 overflow-y-auto [scrollbar-gutter:stable]">
+						{/* Sticky Search and Filter */}
+						<div className="sticky top-0 z-10 bg-background px-6 pt-6 pb-4">
 							<div className="mx-auto flex w-full max-w-xl items-center gap-2">
 								<div className="relative flex-1">
 									<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
@@ -450,7 +483,6 @@ function CharactersPageContent() {
 										value={localSearch}
 										onChange={(e) => setLocalSearch(e.target.value)}
 										onKeyDown={handleSearchKeyDown}
-										onBlur={() => updateUrlParam("search", localSearch || null)}
 										placeholder="Search characters..."
 										className="pl-9"
 									/>
@@ -473,7 +505,9 @@ function CharactersPageContent() {
 									)}
 								</Button>
 							</div>
+						</div>
 
+						<div className="space-y-6 px-6 pb-6">
 							{/* Filter Dialog */}
 							<CharactersFilterDialog
 								open={traitFilterOpen}

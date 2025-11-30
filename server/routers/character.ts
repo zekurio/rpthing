@@ -295,7 +295,7 @@ export const characterRouter = router({
 							traitId: matchingTraitId,
 							value: oldRating.value,
 						});
-					} else if (!matchingTraitId) {
+					} else if (!matchingTraitId && oldRating.value !== null) {
 						unmappedTraits.push(oldRating.traitName);
 					}
 					ratingIdsToDelete.push(oldRating.ratingId);

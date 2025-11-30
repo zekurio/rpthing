@@ -83,9 +83,9 @@ export const NsfwImage = memo(function NsfwImage({
 				src={src}
 				alt={alt}
 				className={cn(
+					"transform-gpu transition-[filter] duration-200 ease-in-out will-change-[filter]",
 					className,
-					shouldBlur && "scale-105 blur-xl transition-all duration-300",
-					!shouldBlur && "scale-100 blur-0 transition-all duration-300",
+					shouldBlur ? "blur-xl" : "blur-0",
 				)}
 				onLoad={handleImageLoad}
 				{...props}

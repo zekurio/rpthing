@@ -215,7 +215,7 @@ export const characterRouter = router({
 		.input(characterUpdateInputSchema)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
-			const { id, ...updates } = input;
+			const { id, realmId: newRealmId, ...updates } = input;
 
 			const [row] = await db
 				.select({ realmId: character.realmId })
@@ -229,17 +229,103 @@ export const characterRouter = router({
 				});
 			}
 
-			// Check if user is a realm member
-			const isMember = await isRealmMember(userId, row.realmId);
-			if (!isMember) {
+			// Check if user is a member of the current realm
+			const isMemberOfCurrentRealm = await isRealmMember(userId, row.realmId);
+			if (!isMemberOfCurrentRealm) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
 					message: "Not a realm member",
 				});
 			}
 
-			await db.update(character).set(updates).where(eq(character.id, id));
-			return { success: true };
+			const unmappedTraits: string[] = [];
+
+			// If moving to a new realm, check membership in the target realm and migrate ratings
+			if (newRealmId && newRealmId !== row.realmId) {
+				const isMemberOfNewRealm = await isRealmMember(userId, newRealmId);
+				if (!isMemberOfNewRealm) {
+					throw new TRPCError({
+						code: "FORBIDDEN",
+						message: "Not a member of the target realm",
+					});
+				}
+
+				// Get old ratings with trait names
+				const oldRatings = await db
+					.select({
+						ratingId: characterTraitRating.id,
+						traitId: characterTraitRating.traitId,
+						traitName: trait.name,
+						value: characterTraitRating.value,
+					})
+					.from(characterTraitRating)
+					.innerJoin(trait, eq(trait.id, characterTraitRating.traitId))
+					.where(eq(characterTraitRating.characterId, id));
+
+				// Get traits in the new realm
+				const newRealmTraits = await db
+					.select({
+						id: trait.id,
+						name: trait.name,
+					})
+					.from(trait)
+					.where(eq(trait.realmId, newRealmId));
+
+				// Create a map of lowercase trait names to trait IDs in the new realm
+				const newTraitMap = new Map<string, string>();
+				for (const t of newRealmTraits) {
+					newTraitMap.set(t.name.toLowerCase(), t.id);
+				}
+
+				// Migrate ratings by matching trait names
+				const ratingsToCreate: Array<{
+					characterId: string;
+					traitId: string;
+					value: number;
+				}> = [];
+				const ratingIdsToDelete: string[] = [];
+
+				for (const oldRating of oldRatings) {
+					const matchingTraitId = newTraitMap.get(
+						oldRating.traitName.toLowerCase(),
+					);
+					if (matchingTraitId && oldRating.value !== null) {
+						ratingsToCreate.push({
+							characterId: id,
+							traitId: matchingTraitId,
+							value: oldRating.value,
+						});
+					} else if (!matchingTraitId) {
+						unmappedTraits.push(oldRating.traitName);
+					}
+					ratingIdsToDelete.push(oldRating.ratingId);
+				}
+
+				// Delete old ratings
+				if (ratingIdsToDelete.length > 0) {
+					await db
+						.delete(characterTraitRating)
+						.where(inArray(characterTraitRating.id, ratingIdsToDelete));
+				}
+
+				// Create new ratings in the target realm
+				if (ratingsToCreate.length > 0) {
+					await db
+						.insert(characterTraitRating)
+						.values(ratingsToCreate)
+						.onConflictDoNothing();
+				}
+
+				// Update character with new realm
+				await db
+					.update(character)
+					.set({ ...updates, realmId: newRealmId })
+					.where(eq(character.id, id));
+			} else {
+				await db.update(character).set(updates).where(eq(character.id, id));
+			}
+
+			return { success: true, unmappedTraits };
 		}),
 
 	delete: protectedProcedure

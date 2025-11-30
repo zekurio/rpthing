@@ -1,17 +1,19 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { ImageUpload } from "@/components/image-upload";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
 	Form,
 	FormControl,
+	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
@@ -28,6 +30,13 @@ import {
 	ResponsiveDialogHeader,
 	ResponsiveDialogTitle,
 } from "@/components/ui/responsive-dialog";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { queryClient, trpc } from "@/lib/trpc";
@@ -46,6 +55,7 @@ const createRealmSchema = z.object({
 		.string()
 		.max(32, "Password must be less than 32 characters")
 		.optional(),
+	templateRealmId: z.string().optional(),
 });
 
 const joinRealmSchema = z.object({
@@ -87,12 +97,23 @@ export function CreateOrJoinRealmDialog({
 
 	const createForm = useForm<CreateRealmFormData>({
 		resolver: zodResolver(createRealmSchema),
-		defaultValues: { name: "", description: "", password: "" },
+		defaultValues: {
+			name: "",
+			description: "",
+			password: "",
+			templateRealmId: "",
+		},
 	});
 
 	const joinForm = useForm<JoinRealmFormData>({
 		resolver: zodResolver(joinRealmSchema),
 		defaultValues: { realmId: "", password: "" },
+	});
+
+	// Fetch user's realms for template selection
+	const { data: userRealms } = useQuery({
+		...trpc.realm.list.queryOptions(),
+		enabled: open,
 	});
 
 	// Memoize server URL to avoid recalculation
@@ -197,6 +218,7 @@ export function CreateOrJoinRealmDialog({
 					name: data.name.trim(),
 					description: data.description?.trim() || undefined,
 					password: data.password || undefined,
+					templateRealmId: data.templateRealmId || undefined,
 				});
 
 				// Then upload the icon if a file was selected
@@ -206,6 +228,11 @@ export function CreateOrJoinRealmDialog({
 					queryClient.invalidateQueries({
 						queryKey: trpc.realm.list.queryKey(),
 					});
+				}
+
+				// Show additional message if traits were copied
+				if (data.templateRealmId) {
+					toast.success("Traits copied from template realm!");
 				}
 			} catch (error) {
 				console.error("Failed to create realm or upload icon:", error);
@@ -295,10 +322,59 @@ export function CreateOrJoinRealmDialog({
 													<Textarea
 														{...field}
 														placeholder="Enter a description for this realm..."
-														className="min-h-[80px] resize-none"
+														className="min-h-20 resize-none"
 														maxLength={500}
 													/>
 												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<FormField
+										control={createForm.control}
+										name="templateRealmId"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Template Realm (optional)</FormLabel>
+												<Select
+													onValueChange={(value) =>
+														field.onChange(value === "none" ? "" : value)
+													}
+													value={field.value || "none"}
+												>
+													<FormControl>
+														<SelectTrigger>
+															<SelectValue placeholder="Select a realm to copy traits from" />
+														</SelectTrigger>
+													</FormControl>
+													<SelectContent>
+														<SelectItem value="none">No template</SelectItem>
+														{userRealms?.map((realm) => (
+															<SelectItem key={realm.id} value={realm.id}>
+																<div className="flex items-center gap-2">
+																	<Avatar className="h-5 w-5">
+																		{realm.iconKey ? (
+																			<AvatarImage
+																				src={realm.iconKey}
+																				alt={realm.name || "Realm icon"}
+																			/>
+																		) : null}
+																		<AvatarFallback className="text-[10px]">
+																			{(realm.name || "R")
+																				.charAt(0)
+																				.toUpperCase()}
+																		</AvatarFallback>
+																	</Avatar>
+																	<span>{realm.name}</span>
+																</div>
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+												<FormDescription>
+													Copy traits from an existing realm you&apos;re a
+													member of
+												</FormDescription>
 												<FormMessage />
 											</FormItem>
 										)}

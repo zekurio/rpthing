@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ImageUpload } from "@/components/image-upload";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import {
@@ -244,7 +245,20 @@ export function CreateCharacterDialog({
 											<SelectContent>
 												{realms.map((realm) => (
 													<SelectItem key={realm.id} value={realm.id}>
-														{realm.name}
+														<div className="flex items-center gap-2">
+															<Avatar className="h-5 w-5">
+																{realm.iconKey ? (
+																	<AvatarImage
+																		src={realm.iconKey}
+																		alt={realm.name || "Realm icon"}
+																	/>
+																) : null}
+																<AvatarFallback className="text-[10px]">
+																	{(realm.name || "R").charAt(0).toUpperCase()}
+																</AvatarFallback>
+															</Avatar>
+															<span>{realm.name}</span>
+														</div>
 													</SelectItem>
 												))}
 											</SelectContent>
@@ -336,18 +350,18 @@ export function CreateCharacterDialog({
 										No traits in this realm yet.
 									</div>
 								) : (
-									<div className="grid gap-4">
+									<div className="grid gap-2">
 										{traits.map((t) => {
 											const current = localRatings[t.id] ?? 10;
 											const isSet = Object.hasOwn(localRatings, t.id);
-											const label =
-												t.displayMode === "grade"
-													? gradeForValue(current)
-													: String(current);
+											const isGrade = t.displayMode === "grade";
+											const displayValue = isGrade
+												? gradeForValue(current)
+												: String(current);
 											return (
-												<div key={t.id} className="grid gap-2">
-													<div className="flex items-center justify-between gap-2">
-														<div className="min-w-0">
+												<div key={t.id} className="rounded-md border px-3 py-2">
+													<div className="mb-2 flex items-center justify-between gap-2">
+														<div className="min-w-0 flex-1">
 															<div className="truncate font-medium text-sm">
 																{t.name}
 															</div>
@@ -358,41 +372,46 @@ export function CreateCharacterDialog({
 															) : null}
 														</div>
 														<div className="flex items-center gap-2">
-															<span className="text-muted-foreground text-xs">
-																{isSet ? label : "Not set"}
+															<span className="min-w-[2.5rem] text-right font-medium text-sm tabular-nums">
+																{isSet ? displayValue : "—"}
 															</span>
 															{isSet ? (
 																<Button
 																	type="button"
 																	variant="ghost"
 																	size="sm"
-																	className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-																	onClick={() =>
+																	className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+																	onClick={() => {
 																		setLocalRatings((prev) => {
 																			const { [t.id]: _omit, ...rest } =
 																				prev as Record<string, number>;
 																			return rest;
-																		})
-																	}
+																		});
+																	}}
 																	aria-label="Clear rating"
 																>
 																	<X className="h-3 w-3" />
 																</Button>
-															) : null}
+															) : (
+																<div className="h-6 w-6" />
+															)}
 														</div>
 													</div>
 													<Slider
+														value={[current]}
 														min={1}
 														max={20}
 														step={1}
-														value={[current]}
-														onValueChange={(vals) => {
-															const v = vals[0] ?? 10;
-															setLocalRatings((prev) => ({
-																...prev,
-																[t.id]: v,
-															}));
+														onValueChange={(values) => {
+															const value = values[0];
+															if (value >= 1 && value <= 20) {
+																setLocalRatings((prev) => ({
+																	...prev,
+																	[t.id]: value,
+																}));
+															}
 														}}
+														className="w-full"
 													/>
 												</div>
 											);

@@ -159,7 +159,7 @@ export function ImageCropDialog({
 						handles to resize.
 					</ResponsiveDialogDescription>
 				</ResponsiveDialogHeader>
-				<ResponsiveDialogBody className="flex justify-center">
+				<ResponsiveDialogBody className="flex justify-center overflow-hidden">
 					<ReactCrop
 						crop={crop}
 						onChange={(_, percentCrop) => setCrop(percentCrop)}

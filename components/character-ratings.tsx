@@ -131,6 +131,33 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 		[characterId, upsert],
 	);
 
+	const handleSliderChange = React.useCallback(
+		(traitId: string, values: number[]) => {
+			const value = values[0];
+			if (value < 1 || value > 20) return;
+			setLocalValues((prev) => ({ ...prev, [traitId]: value }));
+			requestSave(traitId, value);
+		},
+		[requestSave],
+	);
+
+	const handleClear = React.useCallback(
+		(traitId: string, ratingId: string | null) => {
+			if (ratingId && ratingId !== "optimistic") {
+				del.mutate(ratingId);
+			} else {
+				const timer = timersRef.current[traitId];
+				if (timer) clearTimeout(timer);
+				timersRef.current[traitId] = null;
+				setLocalValues((prev) => {
+					const { [traitId]: _omit, ...rest } = prev;
+					return rest;
+				});
+			}
+		},
+		[del],
+	);
+
 	if (isLoading) {
 		return (
 			<div className="grid gap-4">
@@ -152,7 +179,7 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 	if (!data) return null;
 
 	return (
-		<div className="grid gap-4">
+		<div className="grid gap-2">
 			{data.traits.length === 0 ? (
 				<div className="rounded-md border p-3 text-muted-foreground text-sm">
 					No traits in this realm yet.
@@ -163,15 +190,15 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 					const isSet =
 						typeof t.value === "number" ||
 						typeof localValues[t.traitId] === "number";
-					const label =
-						t.displayMode === "grade"
-							? gradeForValue(current)
-							: String(current);
-					const canClear = Boolean(isSet);
+					const isGrade = t.displayMode === "grade";
+					const displayValue = isGrade
+						? gradeForValue(current)
+						: String(current);
+
 					return (
-						<div key={t.traitId} className="grid gap-2">
-							<div className="flex items-center justify-between gap-2">
-								<div className="min-w-0">
+						<div key={t.traitId} className="rounded-md border px-3 py-2">
+							<div className="mb-2 flex items-center justify-between gap-2">
+								<div className="min-w-0 flex-1">
 									<div className="truncate font-medium text-sm">
 										{t.traitName}
 									</div>
@@ -182,46 +209,35 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 									) : null}
 								</div>
 								<div className="flex items-center gap-2">
-									<span className="text-muted-foreground text-xs">
-										{isSet ? label : "Not set"}
+									<span className="min-w-[2.5rem] text-right font-medium text-sm tabular-nums">
+										{isSet ? displayValue : "—"}
 									</span>
-									{canClear ? (
+									{isSet ? (
 										<Button
 											type="button"
 											variant="ghost"
 											size="sm"
-											className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-											onClick={() => {
-												if (t.ratingId && t.ratingId !== "optimistic") {
-													del.mutate(t.ratingId as string);
-												} else {
-													const timer = timersRef.current[t.traitId];
-													if (timer) clearTimeout(timer);
-													timersRef.current[t.traitId] = null;
-													setLocalValues((prev) => {
-														const { [t.traitId]: _omit, ...rest } = prev;
-														return rest;
-													});
-												}
-											}}
+											className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+											onClick={() => handleClear(t.traitId, t.ratingId)}
 											disabled={del.isPending}
 											aria-label="Clear rating"
 										>
 											<X className="h-3 w-3" />
 										</Button>
-									) : null}
+									) : (
+										<div className="h-6 w-6" />
+									)}
 								</div>
 							</div>
 							<Slider
+								value={[current]}
 								min={1}
 								max={20}
 								step={1}
-								value={[current]}
-								onValueChange={(vals) => {
-									const v = vals[0] ?? 10;
-									setLocalValues((prev) => ({ ...prev, [t.traitId]: v }));
-									requestSave(t.traitId, v);
-								}}
+								onValueChange={(values) =>
+									handleSliderChange(t.traitId, values)
+								}
+								className="w-full"
 							/>
 						</div>
 					);

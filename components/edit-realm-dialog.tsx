@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -80,25 +80,15 @@ export function EditRealmDialog({
 
 	const updateMutation = useMutation({
 		...trpc.realm.update.mutationOptions(),
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: trpc.realm.list.queryKey(),
-			});
-			if (realmId) {
-				queryClient.invalidateQueries({
-					queryKey: trpc.realm.getById.queryKey({ realmId }),
-				});
-			}
-			toast.success("Realm updated.");
-			onClose();
-		},
-		onError: (err) => toast.error(err.message),
 	});
 
 	const currentIconSrc = realm?.iconKey || null;
 
+	const prevOpenRef = useRef(false);
+
 	useEffect(() => {
-		if (open) {
+		// Only reset form when dialog opens, not when realm data changes while open
+		if (open && !prevOpenRef.current) {
 			form.reset({
 				name: realm?.name || realmName || "",
 				description: realm?.description || "",
@@ -110,6 +100,7 @@ export function EditRealmDialog({
 			setPercentCrop(null);
 			setRemoveIcon(false);
 		}
+		prevOpenRef.current = open;
 	}, [realm, realmName, open, form]);
 
 	const uploadIcon = async (
@@ -184,20 +175,28 @@ export function EditRealmDialog({
 			if (selectedFile) {
 				// Upload new icon with crop data
 				await uploadIcon(realmId, selectedFile, originalFile, percentCrop);
-				// Invalidate realm list to refresh sidebar
-				queryClient.invalidateQueries({
-					queryKey: trpc.realm.list.queryKey(),
-				});
 			} else if (removeIcon && currentIconSrc) {
 				// Remove existing icon
 				await deleteIcon(realmId);
-				// Invalidate realm list to refresh sidebar
-				queryClient.invalidateQueries({
-					queryKey: trpc.realm.list.queryKey(),
-				});
 			}
+
+			// Invalidate queries after all operations complete
+			queryClient.invalidateQueries({
+				queryKey: trpc.realm.list.queryKey(),
+			});
+			queryClient.invalidateQueries({
+				queryKey: trpc.realm.getById.queryKey({ realmId }),
+			});
+
+			toast.success("Realm updated.");
+			onClose();
 		} catch (error) {
 			console.error("Failed to update realm or handle icon:", error);
+			if (error instanceof Error) {
+				toast.error(error.message);
+			} else {
+				toast.error("Failed to update realm");
+			}
 		}
 	};
 

@@ -137,7 +137,10 @@ function ResponsiveDialogContent({
 
 	if (isDesktop) {
 		return (
-			<DialogContent className={className} showCloseButton={showCloseButton}>
+			<DialogContent
+				className={cn("flex max-h-[85vh] flex-col", className)}
+				showCloseButton={showCloseButton}
+			>
 				{children}
 			</DialogContent>
 		);
@@ -149,12 +152,12 @@ function ResponsiveDialogContent({
 			<Drawer.Overlay className="fixed inset-0 z-50 bg-black/50" />
 			<Drawer.Content
 				className={cn(
-					"fixed inset-x-0 bottom-0 z-50 mt-24 flex max-h-[96vh] flex-col rounded-t-xl border bg-background",
+					"fixed inset-x-0 bottom-0 z-50 mt-24 flex max-h-[85vh] flex-col rounded-t-xl border bg-background",
 					className,
 				)}
 			>
 				<div className="mx-auto mt-4 h-1.5 w-12 shrink-0 rounded-full bg-muted" />
-				<div className="flex flex-1 flex-col overflow-hidden">{children}</div>
+				<div className="flex min-h-0 flex-1 flex-col">{children}</div>
 			</Drawer.Content>
 		</Drawer.Portal>
 	);
@@ -276,13 +279,22 @@ function ResponsiveDialogBody({
 	const { isDesktop } = useResponsiveDialog();
 
 	if (isDesktop) {
-		return <div className={className}>{children}</div>;
+		return (
+			<div
+				className={cn(
+					"min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain",
+					className,
+				)}
+			>
+				{children}
+			</div>
+		);
 	}
 
 	return (
 		<div
 			className={cn(
-				"scrollbar-none flex-1 overflow-y-auto overscroll-contain px-4 py-3",
+				"scrollbar-none min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-3",
 				className,
 			)}
 		>

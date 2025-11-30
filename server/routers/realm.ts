@@ -13,6 +13,7 @@ import { user } from "@/server/db/schema/auth";
 import { character } from "@/server/db/schema/character";
 import { realm } from "@/server/db/schema/realm";
 import { realmMember } from "@/server/db/schema/realmMember";
+import { trait } from "@/server/db/schema/traits";
 import { deleteFile, getPublicFileUrl } from "@/server/storage";
 import { protectedProcedure, router } from "@/server/trpc";
 
@@ -21,6 +22,27 @@ export const realmRouter = router({
 		.input(realmCreateInputSchema)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
+
+			// If a template realm is specified, verify user is a member of it
+			if (input.templateRealmId) {
+				const [memberCheck] = await db
+					.select({ id: realmMember.id })
+					.from(realmMember)
+					.where(
+						and(
+							eq(realmMember.realmId, input.templateRealmId),
+							eq(realmMember.userId, userId),
+						),
+					)
+					.limit(1);
+
+				if (!memberCheck) {
+					throw new TRPCError({
+						code: "FORBIDDEN",
+						message: "You must be a member of the template realm",
+					});
+				}
+			}
 
 			const [created] = await db
 				.insert(realm)
@@ -39,6 +61,30 @@ export const realmRouter = router({
 				.insert(realmMember)
 				.values({ realmId: created.id, userId })
 				.onConflictDoNothing();
+
+			// Copy traits from template realm if specified
+			if (input.templateRealmId) {
+				const templateTraits = await db
+					.select({
+						name: trait.name,
+						description: trait.description,
+						displayMode: trait.displayMode,
+					})
+					.from(trait)
+					.where(eq(trait.realmId, input.templateRealmId));
+
+				if (templateTraits.length > 0) {
+					await db.insert(trait).values(
+						templateTraits.map((t) => ({
+							realmId: created.id,
+							createdByUserId: userId,
+							name: t.name,
+							description: t.description,
+							displayMode: t.displayMode,
+						})),
+					);
+				}
+			}
 
 			return created;
 		}),

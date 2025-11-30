@@ -11,11 +11,11 @@ import { CharactersErrorState } from "@/components/characters-error-state";
 import { CharactersFilterDialog } from "@/components/characters-filter-dialog";
 import { CharactersLoadingState } from "@/components/characters-loading-state";
 import { CharactersPageHeader } from "@/components/characters-page-header";
-import { CharactersSkeleton } from "@/components/characters-skeleton";
 import { CreateCharacterDialog } from "@/components/create-character-dialog";
 import { CreateOrJoinRealmDialog } from "@/components/create-or-join-realm-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LoadingSpinner } from "@/components/ui/loading";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -28,7 +28,13 @@ import { queryClient, trpc } from "@/lib/trpc";
 
 export default function CharactersPage() {
 	return (
-		<Suspense fallback={<CharactersSkeleton />}>
+		<Suspense
+			fallback={
+				<div className="flex h-full items-center justify-center">
+					<LoadingSpinner size="lg" />
+				</div>
+			}
+		>
 			<CharactersPageContent />
 		</Suspense>
 	);
@@ -488,7 +494,9 @@ function CharactersPageContent() {
 
 							{/* Characters Grid */}
 							{isLoading ? (
-								<CharactersSkeleton />
+								<div className="flex h-64 items-center justify-center">
+									<LoadingSpinner size="lg" />
+								</div>
 							) : filteredCharacters.length > 0 ||
 								unratedCharacters.length > 0 ? (
 								<div className="space-y-8">

@@ -1,1 +1,0 @@
-ALTER TABLE "character" ADD COLUMN "is_nsfw" boolean DEFAULT false;

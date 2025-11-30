@@ -48,4 +48,6 @@ export const env = createEnv({
 		PUBLIC_S3_ENDPOINT: process.env.PUBLIC_S3_ENDPOINT,
 		NEXT_PUBLIC_S3_ENDPOINT: process.env.NEXT_PUBLIC_S3_ENDPOINT,
 	},
+
+	skipValidation: process.env.SKIP_VALIDATION === "true",
 });

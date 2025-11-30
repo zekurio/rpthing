@@ -2,8 +2,8 @@
 
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { User, Users } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { NsfwImage } from "@/components/nsfw-image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
@@ -125,14 +125,13 @@ export function CharacterOverview({
 				{displaySrc ? (
 					<>
 						<div className="relative h-full w-full">
-							<NsfwImage
+							<Image
 								src={displaySrc}
 								alt={character.name}
 								fill
 								className="object-cover transition-transform duration-300 group-hover:scale-105"
 								sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
 								priority={false}
-								isNsfw={character.isNsfw ?? false}
 							/>
 						</div>
 						{/* Character name overlay */}

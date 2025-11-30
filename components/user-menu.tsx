@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, EyeOff, LogOut, MoreVertical } from "lucide-react";
+import { LogOut, MoreVertical } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -14,14 +14,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
-import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/use-auth";
-import { useNsfw } from "@/hooks/use-nsfw";
 
 export function UserMenu() {
 	const router = useRouter();
 	const { user, isLoading, signOut } = useAuth();
-	const { blurNsfw, setBlurNsfw } = useNsfw();
 
 	const handleSignOut = async () => {
 		try {
@@ -90,25 +87,6 @@ export function UserMenu() {
 								</div>
 							</div>
 						</DropdownMenuLabel>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem
-							onSelect={(e) => e.preventDefault()}
-							className="flex items-center justify-between"
-						>
-							<div className="flex items-center gap-2">
-								{blurNsfw ? (
-									<EyeOff className="size-4 shrink-0" />
-								) : (
-									<Eye className="size-4 shrink-0" />
-								)}
-								<span>Blur NSFW</span>
-							</div>
-							<Switch
-								checked={blurNsfw}
-								onCheckedChange={setBlurNsfw}
-								aria-label="Toggle NSFW blur"
-							/>
-						</DropdownMenuItem>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem
 							onSelect={(event) => {

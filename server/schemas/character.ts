@@ -19,6 +19,7 @@ export type CharacterCreateInput = z.infer<typeof characterCreateInputSchema>;
 
 export const characterUpdateInputSchema = z.object({
 	id: characterIdSchema,
+	realmId: realmIdSchema.optional(),
 	name: characterNameSchema.optional(),
 	gender: characterGenderSchema.optional(),
 	referenceImageKey: characterReferenceImageKeySchema.optional(),

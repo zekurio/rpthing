@@ -20,20 +20,41 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
 
-  outputs = { self, nixpkgs, ... }:
-  let
-    systems = [ "x86_64-linux" "aarch64-linux" ];
-    forAllSystems = f:
-      nixpkgs.lib.genAttrs systems (system:
-        f nixpkgs.legacyPackages.${system});
-  in
-  {
-    devShells = forAllSystems (pkgs: {
-      default = pkgs.mkShell {
-        packages = with pkgs; [
-          bun
-        ];
-      };
-    });
-  };
+  outputs =
+    { self, nixpkgs, ... }:
+    let
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
+      forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
+    in
+    {
+      devShells = forAllSystems (pkgs: {
+        default = pkgs.mkShell {
+          packages = with pkgs; [
+            bun
+          ];
+
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+            pkgs.stdenv.cc.cc.lib
+            pkgs.vips
+            pkgs.glib
+            pkgs.libffi
+          ];
+
+          shellHook = ''
+            export NIX_LD_LIBRARY_PATH="${
+              pkgs.lib.makeLibraryPath [
+                pkgs.stdenv.cc.cc.lib
+                pkgs.vips
+                pkgs.glib
+                pkgs.libffi
+              ]
+            }"
+            export NIX_LD="$(cat ${pkgs.stdenv.cc}/nix-support/dynamic-linker)"
+          '';
+        };
+      });
+    };
 }

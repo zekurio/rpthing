@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { CharacterRatings } from "@/components/character-ratings";
 import { ImageUpload } from "@/components/image-upload";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import {
@@ -19,6 +20,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { InlineLoading } from "@/components/ui/loading";
 import { Progress } from "@/components/ui/progress";
 import {
 	ResponsiveDialog,
@@ -29,6 +31,13 @@ import {
 	ResponsiveDialogHeader,
 	ResponsiveDialogTitle,
 } from "@/components/ui/responsive-dialog";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useRealmGenderOptions } from "@/hooks/use-realm-gender-options";
 import { queryClient, trpc } from "@/lib/trpc";
@@ -38,6 +47,7 @@ const editCharacterSchema = z.object({
 	name: z.string().min(1, "Name is required").max(200),
 	gender: z.string().max(50).optional(),
 	notes: z.string().max(10000).optional(),
+	realmId: z.string().min(1, "Realm is required"),
 });
 
 type EditCharacterFormData = z.infer<typeof editCharacterSchema>;
@@ -69,6 +79,11 @@ export function EditCharacterDialog({
 	const [isUploading, setIsUploading] = useState(false);
 	const [uploadProgress, setUploadProgress] = useState(0);
 
+	const form = useForm<EditCharacterFormData>({
+		resolver: zodResolver(editCharacterSchema),
+		defaultValues: { name: "", gender: "", notes: "", realmId: "" },
+	});
+
 	const { data: character } = useQuery({
 		...trpc.character.getById.queryOptions({ id: characterId }),
 		enabled: !!characterId && open,
@@ -76,26 +91,16 @@ export function EditCharacterDialog({
 		retryDelay: 1000,
 	});
 
-	const genderOptions = useRealmGenderOptions(character?.realmId || "");
-
-	const form = useForm<EditCharacterFormData>({
-		resolver: zodResolver(editCharacterSchema),
-		defaultValues: { name: "", gender: "", notes: "" },
+	const { data: realms, isLoading: realmsLoading } = useQuery({
+		...trpc.realm.list.queryOptions(),
+		enabled: open,
 	});
+
+	const selectedRealmId = form.watch("realmId") || character?.realmId || "";
+	const genderOptions = useRealmGenderOptions(selectedRealmId);
 
 	const updateMutation = useMutation({
 		...trpc.character.update.mutationOptions(),
-		onSuccess: () => {
-			queryClient.invalidateQueries({
-				queryKey: trpc.character.list.queryKey(),
-			});
-			queryClient.invalidateQueries({
-				queryKey: trpc.character.getById.queryKey({ id: characterId }),
-			});
-			toast.success("Character updated.");
-			onChanged?.();
-			onClose();
-		},
 		onError: (err) => toast.error(err.message),
 	});
 
@@ -105,6 +110,7 @@ export function EditCharacterDialog({
 				name: character.name || "",
 				gender: character.gender || "",
 				notes: character.notes || "",
+				realmId: character.realmId || "",
 			});
 			setSelectedFile(null);
 			setImagePreview(null);
@@ -117,12 +123,48 @@ export function EditCharacterDialog({
 	const onSubmit = async (data: EditCharacterFormData) => {
 		if (!characterId) return;
 
-		await updateMutation.mutateAsync({
+		const realmChanged = data.realmId !== character?.realmId;
+
+		const result = await updateMutation.mutateAsync({
 			id: characterId,
 			name: data.name,
 			gender: data.gender || undefined,
 			notes: (data.notes?.trim() ?? "") === "" ? null : data.notes?.trim(),
+			realmId: realmChanged ? data.realmId : undefined,
 		});
+
+		// Invalidate queries
+		queryClient.invalidateQueries({
+			queryKey: trpc.character.list.queryKey(),
+		});
+		queryClient.invalidateQueries({
+			queryKey: trpc.character.getById.queryKey({ id: characterId }),
+		});
+
+		// If realm changed, invalidate both realms' character lists
+		if (realmChanged && character?.realmId) {
+			queryClient.invalidateQueries({
+				queryKey: trpc.character.list.queryKey({ realmId: character.realmId }),
+			});
+			queryClient.invalidateQueries({
+				queryKey: trpc.character.list.queryKey({ realmId: data.realmId }),
+			});
+
+			// Show notification about unmapped traits
+			if (result.unmappedTraits && result.unmappedTraits.length > 0) {
+				const traitList = result.unmappedTraits.join(", ");
+				toast.warning(
+					`Character moved, but the following trait ratings could not be mapped to the new realm: ${traitList}`,
+					{ duration: 8000 },
+				);
+			} else {
+				toast.success("Character updated and moved to new realm.");
+			}
+		} else {
+			toast.success("Character updated.");
+		}
+
+		onChanged?.();
 
 		try {
 			if (selectedFile) {
@@ -172,6 +214,8 @@ export function EditCharacterDialog({
 			setIsUploading(false);
 			setUploadProgress(0);
 		}
+
+		onClose();
 	};
 
 	const onClose = () => {
@@ -202,6 +246,59 @@ export function EditCharacterDialog({
 							onSubmit={form.handleSubmit(onSubmit)}
 							className="grid gap-4"
 						>
+							<FormField
+								control={form.control}
+								name="realmId"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Realm</FormLabel>
+										{realmsLoading ? (
+											<InlineLoading
+												text="Loading realms..."
+												className="text-xs"
+											/>
+										) : !realms || realms.length === 0 ? (
+											<div className="rounded-md border p-3 text-muted-foreground text-sm">
+												No realms available.
+											</div>
+										) : (
+											<Select
+												value={field.value}
+												onValueChange={field.onChange}
+											>
+												<FormControl>
+													<SelectTrigger>
+														<SelectValue placeholder="Select a realm..." />
+													</SelectTrigger>
+												</FormControl>
+												<SelectContent>
+													{realms.map((realm) => (
+														<SelectItem key={realm.id} value={realm.id}>
+															<div className="flex items-center gap-2">
+																<Avatar className="h-5 w-5">
+																	{realm.iconKey ? (
+																		<AvatarImage
+																			src={realm.iconKey}
+																			alt={realm.name || "Realm icon"}
+																		/>
+																	) : null}
+																	<AvatarFallback className="text-[10px]">
+																		{(realm.name || "R")
+																			.charAt(0)
+																			.toUpperCase()}
+																	</AvatarFallback>
+																</Avatar>
+																<span>{realm.name}</span>
+															</div>
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+										)}
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
 							<FormField
 								control={form.control}
 								name="name"

@@ -45,8 +45,8 @@ export function uploadWithProgress(opts: {
 			const status = xhr.status;
 			const body = xhr.responseText;
 			const response = new Response(body, { status });
-			if (status >= 200 && status < 300) resolve(response);
-			else reject(response);
+			// Always resolve like native fetch - let caller check response.ok
+			resolve(response);
 		};
 		xhr.onerror = () => reject(new TypeError("Network request failed"));
 		xhr.onabort = () => reject(new DOMException("Aborted", "AbortError"));

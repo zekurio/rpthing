@@ -17,6 +17,7 @@ export const realmCreateInputSchema = z.object({
 	name: realmNameSchema,
 	description: realmDescriptionSchema,
 	password: realmPasswordSchema.nullish(),
+	templateRealmId: realmIdSchema.nullish(),
 });
 export type RealmCreateInput = z.infer<typeof realmCreateInputSchema>;
 

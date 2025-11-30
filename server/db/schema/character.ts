@@ -1,4 +1,4 @@
-import { boolean, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 import { realm } from "./realm";
 
@@ -16,7 +16,6 @@ export const character = pgTable("character", {
 	gender: text("gender"),
 	referenceImageKey: text("reference_image_key"),
 	croppedImageKey: text("cropped_image_key"),
-	isNsfw: boolean("is_nsfw").default(false),
 	notes: text("notes"),
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 	updatedAt: timestamp("updated_at")

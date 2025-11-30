@@ -43,7 +43,6 @@ export const characterDataSchema = z.object({
 	gender: nullableString,
 	referenceImageKey: nullableString,
 	croppedImageKey: nullableString,
-	isNsfw: z.boolean(),
 	notes: nullableString,
 	userId: idSchema,
 	userName: nullableString.optional(),
@@ -62,7 +61,6 @@ export const characterListItemSchema = characterDataSchema
 		createdAt: true,
 		updatedAt: true,
 		croppedImageKey: true,
-		isNsfw: true,
 	});
 export type CharacterListItem = z.infer<typeof characterListItemSchema>;
 

@@ -65,7 +65,6 @@ export const characterRouter = router({
 					gender: character.gender,
 					referenceImageKey: character.referenceImageKey,
 					croppedImageKey: character.croppedImageKey,
-					isNsfw: character.isNsfw,
 					notes: character.notes,
 					createdAt: character.createdAt,
 					updatedAt: character.updatedAt,
@@ -97,7 +96,6 @@ export const characterRouter = router({
 				...row,
 				referenceImageKey: referenceUrl,
 				croppedImageKey: croppedUrl,
-				isNsfw: row.isNsfw ?? false,
 			};
 		}),
 
@@ -124,7 +122,6 @@ export const characterRouter = router({
 					gender: character.gender,
 					referenceImageKey: character.referenceImageKey,
 					croppedImageKey: character.croppedImageKey,
-					isNsfw: character.isNsfw,
 					notes: character.notes,
 					userId: character.userId,
 					userName: user.name,
@@ -203,7 +200,6 @@ export const characterRouter = router({
 					...row,
 					referenceImageKey: referenceUrl,
 					croppedImageKey: croppedUrl,
-					isNsfw: row.isNsfw ?? false,
 					ratingsSummary: ratingsByCharacter[row.id] ?? [],
 				};
 			});

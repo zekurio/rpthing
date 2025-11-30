@@ -11,7 +11,6 @@ import {
 	parseCropJson,
 	unsupportedImageResponse,
 } from "@/server/image-processing";
-import { classifyImage } from "@/server/nsfw-classification";
 import {
 	deleteFile,
 	existsFile,
@@ -158,21 +157,7 @@ export async function POST(
 			}
 		}
 
-		// Classify the image for NSFW content (server-side)
-		let isNsfw = false;
-		if (baseBuffer) {
-			try {
-				const classification = await classifyImage(baseBuffer);
-				isNsfw = classification.isNsfw;
-				console.log(
-					`NSFW classification for character ${characterId}: ${classification.topClass} (${(classification.confidence * 100).toFixed(1)}%) - isNsfw: ${isNsfw}`,
-				);
-			} catch (error) {
-				console.error("NSFW classification failed:", error);
-				// Default to false on error
-				isNsfw = false;
-			}
-		}
+		// No NSFW classification - images are processed normally
 
 		const finalOriginalKey = `character-images/${characterId}.${originalExt ?? "bin"}`;
 		await db
@@ -180,7 +165,6 @@ export async function POST(
 			.set({
 				referenceImageKey: finalOriginalKey,
 				croppedImageKey: croppedKey,
-				isNsfw,
 			})
 			.where(eq(character.id, characterId));
 
@@ -190,7 +174,6 @@ export async function POST(
 			imageKey: finalOriginalKey,
 			croppedKey,
 			url,
-			isNsfw,
 		});
 	} catch (error) {
 		console.error("Character image upload failed:", error);
@@ -270,7 +253,6 @@ export async function DELETE(
 			.set({
 				referenceImageKey: null,
 				croppedImageKey: null,
-				isNsfw: false,
 			})
 			.where(eq(character.id, characterId));
 

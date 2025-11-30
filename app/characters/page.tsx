@@ -470,9 +470,9 @@ function CharactersPageContent() {
 	return (
 		<SidebarProvider>
 			<AppSidebar />
-			<SidebarInset>
+			<SidebarInset className="overflow-hidden">
 				<CharactersPageHeader filteredRealmName={filteredRealmName} />
-				<div className="flex h-full min-h-0 w-full flex-col">
+				<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 					<main className="scrollbar-none flex-1 overflow-y-auto [scrollbar-gutter:stable]">
 						{/* Sticky Search and Filter */}
 						<div className="sticky top-0 z-10 bg-background px-6 pt-6 pb-4">

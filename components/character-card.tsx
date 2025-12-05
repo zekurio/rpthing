@@ -211,7 +211,6 @@ export const CharacterCard = memo(function CharacterCard({
 					alt={`${character.name} full image`}
 					downloadHref={fullImageSrc}
 					maxScale={5}
-					minScale={1}
 				/>
 			)}
 

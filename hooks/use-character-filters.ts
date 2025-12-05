@@ -55,10 +55,15 @@ export function useCharacterFilters(): UseCharacterFiltersReturn {
 
 	const [localSearch, setLocalSearch] = useState(searchFilter);
 	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const isUpdatingRef = useRef(false);
 
-	// Sync localSearch with URL when searchFilter changes (e.g., back/forward navigation)
+	// Sync localSearch with URL when searchFilter changes from external navigation
 	useEffect(() => {
-		setLocalSearch(searchFilter);
+		// Only sync if this isn't our own update
+		if (!isUpdatingRef.current) {
+			setLocalSearch(searchFilter);
+		}
+		isUpdatingRef.current = false;
 	}, [searchFilter]);
 
 	// Helper to update URL params
@@ -75,6 +80,7 @@ export function useCharacterFilters(): UseCharacterFiltersReturn {
 			const newUrl = params.toString()
 				? `/characters?${params.toString()}`
 				: "/characters";
+			isUpdatingRef.current = true;
 			router.push(newUrl as never);
 		},
 		[router, searchParams],
@@ -182,6 +188,7 @@ export function useCharacterFilters(): UseCharacterFiltersReturn {
 				if (debounceRef.current) {
 					clearTimeout(debounceRef.current);
 				}
+				isUpdatingRef.current = true;
 				updateUrlParam("search", localSearch || null);
 			}
 		},

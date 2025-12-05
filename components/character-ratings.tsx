@@ -181,7 +181,7 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 	return (
 		<div className="grid gap-2">
 			{data.traits.length === 0 ? (
-				<div className="rounded-md border p-3 text-muted-foreground text-sm">
+				<div className="rounded-sm border border-border p-3 text-muted-foreground text-sm">
 					No traits in this realm yet.
 				</div>
 			) : (
@@ -196,7 +196,10 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 						: String(current);
 
 					return (
-						<div key={t.traitId} className="rounded-md border px-3 py-2">
+						<div
+							key={t.traitId}
+							className="rounded-sm border border-border px-3 py-2"
+						>
 							<div className="mb-2 flex items-center justify-between gap-2">
 								<div className="min-w-0 flex-1">
 									<div className="truncate font-medium text-sm">

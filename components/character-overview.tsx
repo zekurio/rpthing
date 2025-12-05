@@ -120,7 +120,7 @@ export function CharacterOverview({
 				onClick={() => {
 					router.push(`/characters?realm=${realmId}`);
 				}}
-				className="group relative aspect-square w-full overflow-hidden rounded-xl border border-border bg-muted transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+				className="group relative aspect-square w-full overflow-hidden border border-border bg-muted transition-all duration-300 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
 			>
 				{displaySrc ? (
 					<>

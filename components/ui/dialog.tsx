@@ -63,7 +63,7 @@ function DialogContent({
 					// Sizing
 					"w-full max-w-[min(640px,calc(100%-2rem))]",
 					// Layout + spacing
-					"gap-3 rounded-lg border bg-background p-4 shadow-lg sm:p-5",
+					"gap-3 rounded-lg border border-border bg-background p-4 shadow-lg sm:p-5",
 					className,
 				)}
 				{...props}
@@ -72,7 +72,7 @@ function DialogContent({
 				{showCloseButton && (
 					<DialogPrimitive.Close
 						data-slot="dialog-close"
-						className="absolute top-3 right-3 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
+						className="absolute top-3 right-3 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
 					>
 						<XIcon />
 						<span className="sr-only">Close</span>
@@ -88,7 +88,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
 		<div
 			data-slot="dialog-header"
 			className={cn(
-				"-mx-4 sm:-mx-5 flex flex-col gap-1.5 border-b px-4 pb-3 text-left sm:px-5 sm:text-left",
+				"-mx-4 sm:-mx-5 flex flex-col gap-1.5 border-border border-b px-4 pb-3 text-left sm:px-5 sm:text-left",
 				className,
 			)}
 			{...props}
@@ -101,7 +101,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
 		<div
 			data-slot="dialog-footer"
 			className={cn(
-				"-mx-4 sm:-mx-5 flex flex-col-reverse gap-2 border-t px-4 pt-3 sm:flex-row sm:justify-end sm:px-5",
+				"-mx-4 sm:-mx-5 flex flex-col-reverse gap-2 border-border border-t px-4 pt-3 sm:flex-row sm:justify-end sm:px-5",
 				className,
 			)}
 			{...props}

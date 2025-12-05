@@ -152,7 +152,7 @@ function ResponsiveDialogContent({
 			<Drawer.Overlay className="fixed inset-0 z-50 bg-black/50" />
 			<Drawer.Content
 				className={cn(
-					"fixed inset-x-0 bottom-0 z-50 mt-24 flex max-h-[85vh] flex-col rounded-t-xl border bg-background",
+					"fixed inset-x-0 bottom-0 z-50 mt-24 flex max-h-[85vh] flex-col rounded-t-xl border border-border bg-background",
 					className,
 				)}
 			>
@@ -176,7 +176,7 @@ function ResponsiveDialogHeader({
 	return (
 		<div
 			className={cn(
-				"flex flex-col gap-1.5 border-b px-4 pb-3 text-left",
+				"flex flex-col gap-1.5 border-border border-b px-4 pb-3 text-left",
 				className,
 			)}
 		>
@@ -198,7 +198,7 @@ function ResponsiveDialogFooter({
 	return (
 		<div
 			className={cn(
-				"flex flex-col-reverse gap-2 border-t px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:flex-row sm:justify-end",
+				"flex flex-col-reverse gap-2 border-border border-t px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:flex-row sm:justify-end",
 				className,
 			)}
 		>

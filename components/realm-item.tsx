@@ -29,7 +29,6 @@ interface RealmItemProps {
 	onLeave: (realmId: string) => void;
 	onSettings: (realmId: string) => void;
 	isOwner?: boolean;
-	characterCount?: number;
 }
 
 export function RealmItem({
@@ -39,7 +38,6 @@ export function RealmItem({
 	onLeave,
 	onSettings,
 	isOwner = false,
-	characterCount,
 }: RealmItemProps) {
 	const router = useRouter();
 	const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -146,11 +144,7 @@ export function RealmItem({
 					</AvatarFallback>
 				</Avatar>
 				<span className="truncate font-medium text-sm">{realm.name}</span>
-				{characterCount !== undefined && (
-					<span className="ml-auto shrink-0 rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs">
-						{characterCount}
-					</span>
-				)}
+
 				{src && !isImageLoaded && (
 					<div className="absolute inset-2 flex items-center justify-center">
 						<Skeleton size="2xl" className="rounded-lg" />

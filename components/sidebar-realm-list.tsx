@@ -1,16 +1,12 @@
 "use client";
 
-import { useQueries } from "@tanstack/react-query";
 import { Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
 import { RealmItem } from "@/components/realm-item";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
-import { useAuth } from "@/hooks/use-auth";
-import { trpc } from "@/lib/trpc";
 
 type Realm = {
 	id: string;
@@ -37,41 +33,6 @@ export function SidebarRealmList({
 	onLeave: (realmId: string) => void;
 	onSettings: (realmId: string) => void;
 }) {
-	// All hooks must be called at the top level, before any early returns
-	const { user } = useAuth();
-
-	// Fetch character counts for all realms
-	const characterQueries = useQueries({
-		queries: (realms || []).map((realm) => ({
-			...trpc.character.list.queryOptions({ realmId: realm.id }),
-			enabled: !!realm.id && !isPending && realms.length > 0,
-		})),
-	});
-
-	// Calculate character counts per realm (only user's own characters)
-	const characterCountsByRealm = useMemo(() => {
-		const counts: Record<string, number> = {};
-		if (!realms || realms.length === 0) return counts;
-		characterQueries.forEach((query, index) => {
-			const realmId = realms[index]?.id;
-			if (realmId && query.data) {
-				counts[realmId] = query.data.filter(
-					(c) => user && c.userId === user.id,
-				).length;
-			}
-		});
-		return counts;
-	}, [characterQueries, realms, user]);
-
-	// Calculate total character count
-	const totalCharacterCount = useMemo(() => {
-		return Object.values(characterCountsByRealm).reduce(
-			(sum, count) => sum + count,
-			0,
-		);
-	}, [characterCountsByRealm]);
-
-	// Now we can have early returns after all hooks have been called
 	if (isPending) {
 		return (
 			<SidebarMenu>
@@ -122,11 +83,6 @@ export function SidebarRealmList({
 							<span className="truncate font-medium text-sm">
 								All Characters
 							</span>
-							{totalCharacterCount > 0 && (
-								<span className="ml-auto shrink-0 rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs">
-									{totalCharacterCount}
-								</span>
-							)}
 						</Link>
 					</Button>
 				</div>
@@ -142,7 +98,6 @@ export function SidebarRealmList({
 				const isOwner = Boolean(
 					currentUserId && realm.ownerId === currentUserId,
 				);
-				const characterCount = characterCountsByRealm[realm.id];
 				return (
 					<SidebarMenuItem key={realm.id}>
 						<RealmItem
@@ -152,7 +107,6 @@ export function SidebarRealmList({
 							onDelete={onDelete}
 							onLeave={onLeave}
 							onSettings={onSettings}
-							characterCount={characterCount}
 						/>
 					</SidebarMenuItem>
 				);

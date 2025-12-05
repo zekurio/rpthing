@@ -73,7 +73,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					<SidebarMenuItem>
 						<SidebarMenuButton
 							size="lg"
-							className="transition-colors hover:bg-accent active:bg-accent"
+							className="bg-transparent hover:bg-transparent active:bg-transparent"
 						>
 							<a href="/characters">
 								<Logo />

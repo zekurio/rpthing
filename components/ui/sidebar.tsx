@@ -214,7 +214,7 @@ function Sidebar({
 					data-sidebar="sidebar"
 					data-slot="sidebar"
 					data-mobile="true"
-					className="w-(--sidebar-width) bg-sidebar/60 p-0 text-sidebar-foreground backdrop-blur supports-[backdrop-filter]:bg-sidebar/60 [&>button]:hidden"
+					className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
 					style={
 						{
 							"--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -364,7 +364,10 @@ function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
 		<div
 			data-slot="sidebar-header"
 			data-sidebar="header"
-			className={cn("flex flex-col gap-2 p-2", className)}
+			className={cn(
+				"sticky top-0 z-10 flex flex-col gap-2 bg-sidebar p-2",
+				className,
+			)}
 			{...props}
 		/>
 	);

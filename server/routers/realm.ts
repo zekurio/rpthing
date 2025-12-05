@@ -1,10 +1,3 @@
-import {
-	realmCreateInputSchema,
-	realmIdSchema,
-	realmJoinInputSchema,
-	realmTransferOwnershipInputSchema,
-	realmUpdateInputSchema,
-} from "@schemas";
 import { TRPCError } from "@trpc/server";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -14,6 +7,13 @@ import { character } from "@/server/db/schema/character";
 import { realm } from "@/server/db/schema/realm";
 import { realmMember } from "@/server/db/schema/realmMember";
 import { trait } from "@/server/db/schema/traits";
+import {
+	realmCreateInputSchema,
+	realmIdSchema,
+	realmJoinInputSchema,
+	realmTransferOwnershipInputSchema,
+	realmUpdateInputSchema,
+} from "@/server/db/types";
 import { deleteFile, getPublicFileUrl } from "@/server/storage";
 import { protectedProcedure, router } from "@/server/trpc";
 

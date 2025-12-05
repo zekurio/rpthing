@@ -22,10 +22,11 @@ async function isRealmMember(userId: string, realmId: string) {
 
 import {
 	traitCreateInputSchema,
+	traitIdOnlySchema,
 	traitIdSchema,
 	traitListInputSchema,
 	traitUpdateInputSchema,
-} from "@schemas/traits";
+} from "@/server/db/types";
 
 export const traitRouter = router({
 	create: protectedProcedure
@@ -161,7 +162,7 @@ export const traitRouter = router({
 		}),
 
 	delete: protectedProcedure
-		.input(traitIdSchema)
+		.input(traitIdOnlySchema)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
 

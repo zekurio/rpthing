@@ -35,8 +35,8 @@ export function CharactersEmptyState({
 
 	if (type === "no-characters" || type === "no-results") {
 		return (
-			<div className="flex min-h-[12rem] flex-col items-center justify-center rounded-lg border-2 border-muted-foreground/25 border-dashed p-8 text-center">
-				<div className="mb-4 rounded-full bg-muted p-3">
+			<div className="flex min-h-[12rem] flex-col items-center justify-center border-2 border-muted-foreground/25 border-dashed p-8 text-center">
+				<div className="mb-4 bg-muted p-3">
 					<Users className="h-6 w-6 text-muted-foreground" />
 				</div>
 				<h4 className="mb-1 font-semibold text-sm">

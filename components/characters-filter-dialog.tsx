@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
@@ -144,7 +145,7 @@ function TraitFilterCard({
 	const isBetween = filter.comparison === "between";
 
 	return (
-		<div className="space-y-3 rounded-lg border bg-muted/30 p-3">
+		<div className="space-y-3 border border-border bg-muted/30 p-3">
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
 					<span className="font-medium text-sm">{filter.traitName}</span>
@@ -257,10 +258,13 @@ export function CharactersFilterDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-w-sm">
 				<DialogHeader>
-					<DialogTitle>Filters</DialogTitle>
+					<DialogTitle>Filter characters</DialogTitle>
+					<DialogDescription>
+						Filter characters by traits, gender, and creator.
+					</DialogDescription>
 				</DialogHeader>
 
-				<div className="space-y-4">
+				<div className="space-y-4 pt-2">
 					{availableCreators.length > 1 && (
 						<FilterSelect
 							label="Creator"

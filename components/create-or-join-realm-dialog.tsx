@@ -2,7 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
+import { ArrowLeft, Plus, UserPlus } from "lucide-react";
+import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -37,7 +38,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { queryClient, trpc } from "@/lib/trpc";
 import { uploadWithProgress } from "@/lib/utils";
@@ -71,6 +72,7 @@ const joinRealmSchema = z.object({
 
 type CreateRealmFormData = z.infer<typeof createRealmSchema>;
 type JoinRealmFormData = z.infer<typeof joinRealmSchema>;
+type DialogView = "selection" | "create" | "join";
 
 interface CreateOrJoinRealmDialogProps {
 	open: boolean;
@@ -91,7 +93,7 @@ export function CreateOrJoinRealmDialog({
 		width?: number;
 		height?: number;
 	} | null>(null);
-	const [activeTab, setActiveTab] = useState<"create" | "join">("create");
+	const [currentView, setCurrentView] = useState<DialogView>("selection");
 	const [uploadProgress, setUploadProgress] = useState<number>(0);
 	const [isUploading, setIsUploading] = useState<boolean>(false);
 
@@ -113,11 +115,8 @@ export function CreateOrJoinRealmDialog({
 	// Fetch user's realms for template selection
 	const { data: userRealms } = useQuery({
 		...trpc.realm.list.queryOptions(),
-		enabled: open,
+		enabled: open && currentView === "create",
 	});
-
-	// Memoize server URL to avoid recalculation
-	const _serverUrl = useMemo(() => "", []); // No longer needed, API is local
 
 	const createMutation = useMutation({
 		...trpc.realm.create.mutationOptions(),
@@ -207,8 +206,15 @@ export function CreateOrJoinRealmDialog({
 		setPercentCrop(null);
 		setIsUploading(false);
 		setUploadProgress(0);
-		setActiveTab("create");
+		setCurrentView("selection");
 	}, [onOpenChange, createForm, joinForm]);
+
+	const handleBack = useCallback(() => {
+		setCurrentView("selection");
+		createForm.reset();
+		joinForm.reset();
+		handleRemoveIcon();
+	}, [createForm, joinForm, handleRemoveIcon]);
 
 	const onCreateSubmit = useCallback(
 		async (data: CreateRealmFormData) => {
@@ -263,255 +269,328 @@ export function CreateOrJoinRealmDialog({
 			if (!newOpen) {
 				handleClose();
 			} else {
-				setActiveTab("create");
+				setCurrentView("selection");
 			}
 			onOpenChange(newOpen);
 		},
 		[handleClose, onOpenChange],
 	);
 
+	const getDialogTitle = () => {
+		switch (currentView) {
+			case "create":
+				return "Create Realm";
+			case "join":
+				return "Join Realm";
+			default:
+				return "Add Realm";
+		}
+	};
+
+	const getDialogDescription = () => {
+		switch (currentView) {
+			case "create":
+				return "Set up a new realm for your community.";
+			case "join":
+				return "Enter a realm ID to join an existing community.";
+			default:
+				return "Create a new realm or join an existing one.";
+		}
+	};
+
 	return (
 		<ResponsiveDialog open={open} onOpenChange={handleOpenChange}>
 			<ResponsiveDialogContent className="sm:max-w-lg">
 				<ResponsiveDialogHeader>
-					<ResponsiveDialogTitle>Realm Options</ResponsiveDialogTitle>
-					<ResponsiveDialogDescription>
-						Create a new realm or join an existing one.
-					</ResponsiveDialogDescription>
+					<div className="flex items-center gap-2">
+						{currentView !== "selection" && (
+							<Button
+								variant="ghost"
+								size="icon"
+								className="-ml-2 h-8 w-8"
+								onClick={handleBack}
+							>
+								<ArrowLeft className="h-4 w-4" />
+							</Button>
+						)}
+						<div>
+							<ResponsiveDialogTitle>{getDialogTitle()}</ResponsiveDialogTitle>
+							<ResponsiveDialogDescription>
+								{getDialogDescription()}
+							</ResponsiveDialogDescription>
+						</div>
+					</div>
 				</ResponsiveDialogHeader>
 				<ResponsiveDialogBody>
-					<Tabs
-						value={activeTab}
-						onValueChange={(value) => setActiveTab(value as "create" | "join")}
-						className="w-full"
-					>
-						<TabsList className="grid w-full grid-cols-2">
-							<TabsTrigger value="create">Create</TabsTrigger>
-							<TabsTrigger value="join">Join</TabsTrigger>
-						</TabsList>
-						<TabsContent value="create" className="mt-6">
-							<Form {...createForm}>
-								<form
-									onSubmit={createForm.handleSubmit(onCreateSubmit)}
-									className="grid gap-4"
-								>
-									<FormField
-										control={createForm.control}
-										name="name"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Name</FormLabel>
-												<FormControl>
-													<Input
-														{...field}
-														placeholder="Enter realm name"
-														maxLength={50}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-									<FormField
-										control={createForm.control}
-										name="description"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Description (optional)</FormLabel>
-												<FormControl>
-													<Textarea
-														{...field}
-														placeholder="Enter a description for this realm..."
-														className="min-h-20 resize-none"
-														maxLength={500}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-									<FormField
-										control={createForm.control}
-										name="templateRealmId"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Template Realm (optional)</FormLabel>
-												<Select
-													onValueChange={(value) =>
-														field.onChange(value === "none" ? "" : value)
-													}
-													value={field.value || "none"}
-												>
-													<FormControl>
-														<SelectTrigger>
-															<SelectValue placeholder="Select a realm to copy traits from" />
-														</SelectTrigger>
-													</FormControl>
-													<SelectContent>
-														<SelectItem value="none">No template</SelectItem>
-														{userRealms?.map((realm) => (
-															<SelectItem key={realm.id} value={realm.id}>
-																<div className="flex items-center gap-2">
-																	<Avatar className="h-5 w-5">
-																		{realm.iconKey ? (
-																			<AvatarImage
-																				src={realm.iconKey}
-																				alt={realm.name || "Realm icon"}
-																			/>
-																		) : null}
-																		<AvatarFallback className="text-[10px]">
-																			{(realm.name || "R")
-																				.charAt(0)
-																				.toUpperCase()}
-																		</AvatarFallback>
-																	</Avatar>
-																	<span>{realm.name}</span>
-																</div>
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-												<FormDescription>
-													Copy traits from an existing realm you&apos;re a
-													member of
-												</FormDescription>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-									<FormField
-										control={createForm.control}
-										name="password"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Password (optional)</FormLabel>
-												<FormControl>
-													<Input
-														type="password"
-														{...field}
-														placeholder="Enter password (min 4 characters)"
-														maxLength={100}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-									<div className="grid gap-2">
-										<FormLabel>Icon (optional)</FormLabel>
-										<ImageUpload
-											previewSrc={imagePreview || undefined}
-											onSelect={(file, preview, meta) => {
-												setSelectedFile(file);
-												setImagePreview(preview);
-												setOriginalFile(meta?.originalFile ?? null);
-												setPercentCrop(meta?.percentCrop ?? null);
-											}}
-											onRemove={handleRemoveIcon}
-										/>
-										{isUploading ? (
-											<div className="flex items-center gap-2">
-												<Progress
-													value={uploadProgress}
-													className="h-2 w-full"
+					{currentView === "selection" && (
+						<div className="grid gap-4">
+							<button
+								type="button"
+								onClick={() => setCurrentView("create")}
+								className="group flex items-start gap-4 rounded-lg border border-border p-4 text-left transition-colors hover:bg-accent"
+							>
+								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+									<Plus className="h-5 w-5" />
+								</div>
+								<div className="space-y-1">
+									<h3 className="font-medium leading-none">Create a Realm</h3>
+									<p className="text-muted-foreground text-sm">
+										Start a new community and invite others to join
+									</p>
+								</div>
+							</button>
+
+							<div className="relative">
+								<div className="absolute inset-0 flex items-center">
+									<Separator className="w-full" />
+								</div>
+								<div className="relative flex justify-center text-xs uppercase">
+									<span className="bg-background px-2 text-muted-foreground">
+										or
+									</span>
+								</div>
+							</div>
+
+							<button
+								type="button"
+								onClick={() => setCurrentView("join")}
+								className="group flex items-start gap-4 rounded-lg border border-border p-4 text-left transition-colors hover:bg-accent"
+							>
+								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+									<UserPlus className="h-5 w-5" />
+								</div>
+								<div className="space-y-1">
+									<h3 className="font-medium leading-none">Join a Realm</h3>
+									<p className="text-muted-foreground text-sm">
+										Enter a realm ID to join an existing community
+									</p>
+								</div>
+							</button>
+						</div>
+					)}
+
+					{currentView === "create" && (
+						<Form {...createForm}>
+							<form
+								onSubmit={createForm.handleSubmit(onCreateSubmit)}
+								className="grid gap-4"
+							>
+								<FormField
+									control={createForm.control}
+									name="name"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Name</FormLabel>
+											<FormControl>
+												<Input
+													{...field}
+													placeholder="Enter realm name"
+													maxLength={50}
 												/>
-												<span className="text-muted-foreground text-xs">
-													{Math.max(0, Math.round(uploadProgress))}%
-												</span>
-											</div>
-										) : null}
-									</div>
-									<ResponsiveDialogFooter className="border-none p-0 pt-2">
-										<Button
-											variant="outline"
-											type="button"
-											onClick={handleClose}
-											disabled={createMutation.isPending}
-											className="w-full sm:w-auto"
-										>
-											Cancel
-										</Button>
-										<Button
-											type="submit"
-											disabled={
-												createForm.formState.isSubmitting ||
-												createMutation.isPending
-											}
-											className="w-full sm:w-auto"
-										>
-											{createMutation.isPending ? "Creating..." : "Create"}
-										</Button>
-									</ResponsiveDialogFooter>
-								</form>
-							</Form>
-						</TabsContent>
-						<TabsContent value="join" className="mt-6">
-							<Form {...joinForm}>
-								<form
-									onSubmit={joinForm.handleSubmit(onJoinSubmit)}
-									className="grid gap-4"
-								>
-									<FormField
-										control={joinForm.control}
-										name="realmId"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Realm ID</FormLabel>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={createForm.control}
+									name="description"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Description (optional)</FormLabel>
+											<FormControl>
+												<Textarea
+													{...field}
+													placeholder="Enter a description for this realm..."
+													className="min-h-20 resize-none"
+													maxLength={500}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={createForm.control}
+									name="templateRealmId"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Template Realm (optional)</FormLabel>
+											<Select
+												onValueChange={(value) =>
+													field.onChange(value === "none" ? "" : value)
+												}
+												value={field.value || "none"}
+											>
 												<FormControl>
-													<Input
-														{...field}
-														placeholder="Enter 7-character realm ID"
-														maxLength={7}
-														className="font-mono"
-													/>
+													<SelectTrigger>
+														<SelectValue placeholder="Select a realm to copy traits from" />
+													</SelectTrigger>
 												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
+												<SelectContent>
+													<SelectItem value="none">No template</SelectItem>
+													{userRealms?.map((realm) => (
+														<SelectItem key={realm.id} value={realm.id}>
+															<div className="flex items-center gap-2">
+																<Avatar className="h-5 w-5">
+																	{realm.iconKey ? (
+																		<AvatarImage
+																			src={realm.iconKey}
+																			alt={realm.name || "Realm icon"}
+																		/>
+																	) : null}
+																	<AvatarFallback className="text-[10px]">
+																		{(realm.name || "R")
+																			.charAt(0)
+																			.toUpperCase()}
+																	</AvatarFallback>
+																</Avatar>
+																<span>{realm.name}</span>
+															</div>
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<FormDescription>
+												Copy traits from an existing realm you&apos;re a member
+												of
+											</FormDescription>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={createForm.control}
+									name="password"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Password (optional)</FormLabel>
+											<FormControl>
+												<Input
+													type="password"
+													{...field}
+													placeholder="Enter password (min 4 characters)"
+													maxLength={100}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<div className="grid gap-2">
+									<FormLabel>Icon (optional)</FormLabel>
+									<ImageUpload
+										previewSrc={imagePreview || undefined}
+										onSelect={(file, preview, meta) => {
+											setSelectedFile(file);
+											setImagePreview(preview);
+											setOriginalFile(meta?.originalFile ?? null);
+											setPercentCrop(meta?.percentCrop ?? null);
+										}}
+										onRemove={handleRemoveIcon}
 									/>
-									<FormField
-										control={joinForm.control}
-										name="password"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Password (optional)</FormLabel>
-												<FormControl>
-													<Input
-														type="password"
-														{...field}
-														placeholder="Enter password if required"
-														maxLength={100}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-									<ResponsiveDialogFooter className="border-none p-0 pt-2">
-										<Button
-											variant="outline"
-											type="button"
-											onClick={handleClose}
-											disabled={joinMutation.isPending}
-											className="w-full sm:w-auto"
-										>
-											Cancel
-										</Button>
-										<Button
-											type="submit"
-											disabled={
-												joinForm.formState.isSubmitting ||
-												joinMutation.isPending
-											}
-											className="w-full sm:w-auto"
-										>
-											{joinMutation.isPending ? "Joining..." : "Join Realm"}
-										</Button>
-									</ResponsiveDialogFooter>
-								</form>
-							</Form>
-						</TabsContent>
-					</Tabs>
+									{isUploading ? (
+										<div className="flex items-center gap-2">
+											<Progress value={uploadProgress} className="h-2 w-full" />
+											<span className="text-muted-foreground text-xs">
+												{Math.max(0, Math.round(uploadProgress))}%
+											</span>
+										</div>
+									) : null}
+								</div>
+								<ResponsiveDialogFooter className="border-none p-0 pt-2">
+									<Button
+										variant="outline"
+										type="button"
+										onClick={handleBack}
+										disabled={createMutation.isPending}
+										className="w-full sm:w-auto"
+									>
+										Back
+									</Button>
+									<Button
+										type="submit"
+										disabled={
+											createForm.formState.isSubmitting ||
+											createMutation.isPending
+										}
+										className="w-full sm:w-auto"
+									>
+										{createMutation.isPending ? "Creating..." : "Create Realm"}
+									</Button>
+								</ResponsiveDialogFooter>
+							</form>
+						</Form>
+					)}
+
+					{currentView === "join" && (
+						<Form {...joinForm}>
+							<form
+								onSubmit={joinForm.handleSubmit(onJoinSubmit)}
+								className="grid gap-4"
+							>
+								<FormField
+									control={joinForm.control}
+									name="realmId"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Realm ID</FormLabel>
+											<FormControl>
+												<Input
+													{...field}
+													placeholder="Enter 7-character realm ID"
+													maxLength={7}
+													className="text-center font-mono text-lg tracking-widest"
+												/>
+											</FormControl>
+											<FormDescription>
+												Ask the realm owner for this 7-character code
+											</FormDescription>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={joinForm.control}
+									name="password"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Password (if required)</FormLabel>
+											<FormControl>
+												<Input
+													type="password"
+													{...field}
+													placeholder="Enter password if the realm requires one"
+													maxLength={100}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<ResponsiveDialogFooter className="border-none p-0 pt-2">
+									<Button
+										variant="outline"
+										type="button"
+										onClick={handleBack}
+										disabled={joinMutation.isPending}
+										className="w-full sm:w-auto"
+									>
+										Back
+									</Button>
+									<Button
+										type="submit"
+										disabled={
+											joinForm.formState.isSubmitting || joinMutation.isPending
+										}
+										className="w-full sm:w-auto"
+									>
+										{joinMutation.isPending ? "Joining..." : "Join Realm"}
+									</Button>
+								</ResponsiveDialogFooter>
+							</form>
+						</Form>
+					)}
 				</ResponsiveDialogBody>
 			</ResponsiveDialogContent>
 		</ResponsiveDialog>

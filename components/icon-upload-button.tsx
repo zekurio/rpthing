@@ -138,11 +138,11 @@ export function IconUploadButton({
 						<Image
 							src={previewSrc}
 							alt="Preview"
-							width={size === "sm" ? 44 : 64}
-							height={size === "sm" ? 44 : 64}
+							width={size === "sm" ? 40 : 56}
+							height={size === "sm" ? 40 : 56}
 							className={cn(
-								"rounded-lg object-cover",
-								size === "sm" ? "h-[44px] w-[44px]" : "h-[60px] w-[60px]",
+								"rounded object-cover",
+								size === "sm" ? "h-10 w-10" : "h-14 w-14",
 							)}
 							priority={false}
 						/>

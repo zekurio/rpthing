@@ -66,14 +66,14 @@ export function CharactersActiveFilters({
 				return (
 					<div
 						key={filter.traitName}
-						className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-primary text-sm"
+						className="flex items-center gap-1 bg-primary/10 px-3 py-1 text-primary text-sm"
 					>
 						<span className="font-medium">{filter.traitName}:</span>
 						<span>{rangeLabel}</span>
 						<button
 							type="button"
 							onClick={() => removeTraitFilter(filter.traitName)}
-							className="ml-1 rounded-full p-0.5 hover:bg-primary/20"
+							className="ml-1 p-0.5 hover:bg-primary/20"
 							aria-label={`Remove ${filter.traitName} filter`}
 						>
 							<X className="h-3 w-3" />

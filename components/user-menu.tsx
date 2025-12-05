@@ -72,7 +72,7 @@ export function UserMenu() {
 						</div>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
-						className="box-border w-(--radix-dropdown-menu-trigger-width) min-w-0 rounded-lg"
+						className="box-border w-(--radix-dropdown-menu-trigger-width) min-w-0"
 						side="top"
 						align="end"
 						sideOffset={6}

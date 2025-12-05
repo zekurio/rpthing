@@ -258,7 +258,7 @@ export function EditCharacterDialog({
 												className="text-xs"
 											/>
 										) : !realms || realms.length === 0 ? (
-											<div className="rounded-md border p-3 text-muted-foreground text-sm">
+											<div className="rounded-sm border border-border p-3 text-muted-foreground text-sm">
 												No realms available.
 											</div>
 										) : (

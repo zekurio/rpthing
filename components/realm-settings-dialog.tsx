@@ -471,7 +471,7 @@ function MembersSection({
 				{members?.map((member) => (
 					<div
 						key={member.userId}
-						className="flex items-center justify-between rounded-md border p-2"
+						className="flex items-center justify-between rounded-sm border border-border p-2"
 					>
 						<div className="flex items-center gap-2">
 							<Avatar className="h-8 w-8">
@@ -688,7 +688,7 @@ function TraitsSection({ realmId }: { realmId: string }) {
 				</Button>
 			</div>
 			{traits?.length === 0 ? (
-				<div className="flex flex-col items-center justify-center rounded-md border border-dashed py-8 text-center">
+				<div className="flex flex-col items-center justify-center rounded-sm border border-border border-dashed py-8 text-center">
 					<Sparkles className="mb-2 h-8 w-8 text-muted-foreground/50" />
 					<p className="font-medium text-sm">No traits yet</p>
 					<p className="mt-0.5 text-muted-foreground text-xs">
@@ -700,7 +700,7 @@ function TraitsSection({ realmId }: { realmId: string }) {
 					{traits?.map((trait) => (
 						<div
 							key={trait.id}
-							className="flex items-center justify-between rounded-md border p-2"
+							className="flex items-center justify-between rounded-sm border border-border p-2"
 						>
 							<div className="min-w-0 flex-1">
 								<div className="flex items-center gap-1.5">

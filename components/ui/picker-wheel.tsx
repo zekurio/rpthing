@@ -229,7 +229,7 @@ export function PickerWheel({
 
 			{/* Selection highlight */}
 			<div
-				className="pointer-events-none absolute inset-x-0.5 z-[5] rounded border border-primary/40 bg-primary/10"
+				className="pointer-events-none absolute inset-x-0.5 z-[5] rounded-sm border border-border bg-primary/10"
 				style={{
 					top: centerIndex * ITEM_HEIGHT,
 					height: ITEM_HEIGHT,

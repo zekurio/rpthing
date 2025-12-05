@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 import { useRealmAccess } from "@/hooks/use-realm-access";
-import { getGradeColor, gradeForValue, type TraitGrade } from "@/lib/traits";
+import { gradeForValue } from "@/lib/traits";
 import { queryClient, trpc } from "@/lib/trpc";
 
 interface CharacterCardProps {
@@ -97,7 +97,7 @@ export const CharacterCard = memo(function CharacterCard({
 					<div
 						role="button"
 						tabIndex={0}
-						className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-black/70 text-white transition-colors hover:bg-black/80"
+						className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-sm bg-black/70 text-white transition-colors hover:bg-black/80"
 						aria-label="Character options"
 						onClick={(e) => e.stopPropagation()}
 						onKeyDown={(e) => {
@@ -128,7 +128,7 @@ export const CharacterCard = memo(function CharacterCard({
 	);
 
 	return (
-		<div className="group overflow-hidden rounded-lg border border-border">
+		<div className="group overflow-hidden rounded-sm border border-border">
 			{previewSrc ? (
 				<div className="relative aspect-square w-full overflow-hidden bg-muted">
 					<button
@@ -181,12 +181,12 @@ export const CharacterCard = memo(function CharacterCard({
 								: String(t.value);
 						const badgeColor =
 							t.displayMode === "grade"
-								? getGradeColor(label as TraitGrade)
-								: "bg-gray-100 text-gray-800 border-gray-200";
+								? "bg-primary/10 text-primary border-primary/20"
+								: "bg-gray-100 text-gray-800 border-border";
 						return (
 							<span
 								key={t.traitId}
-								className={`rounded-full border px-2 py-0.5 font-medium text-[11px] ${badgeColor}`}
+								className={`rounded-sm border border-border px-2 py-0.5 font-medium text-[11px] ${badgeColor}`}
 								title={`${t.traitName}: ${label}`}
 							>
 								{t.traitName}: {label}

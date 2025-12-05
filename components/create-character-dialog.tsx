@@ -231,7 +231,7 @@ export function CreateCharacterDialog({
 											className="text-xs"
 										/>
 									) : !realms || realms.length === 0 ? (
-										<div className="rounded-md border p-3 text-muted-foreground text-sm">
+										<div className="rounded-sm border border-border p-3 text-muted-foreground text-sm">
 											You need to join or create a realm first.
 										</div>
 									) : (
@@ -340,13 +340,13 @@ export function CreateCharacterDialog({
 							<div className="grid gap-2">
 								<FormLabel>Trait ratings</FormLabel>
 								{!realmId ? (
-									<div className="rounded-md border p-3 text-muted-foreground text-sm">
+									<div className="rounded-sm border border-border p-3 text-muted-foreground text-sm">
 										Select a realm to see available traits.
 									</div>
 								) : traitsLoading ? (
 									<InlineLoading text="Loading traits..." className="text-xs" />
 								) : !traits || traits.length === 0 ? (
-									<div className="rounded-md border p-3 text-muted-foreground text-sm">
+									<div className="rounded-sm border border-border p-3 text-muted-foreground text-sm">
 										No traits in this realm yet.
 									</div>
 								) : (
@@ -359,7 +359,10 @@ export function CreateCharacterDialog({
 												? gradeForValue(current)
 												: String(current);
 											return (
-												<div key={t.id} className="rounded-md border px-3 py-2">
+												<div
+													key={t.id}
+													className="rounded-sm border border-border px-3 py-2"
+												>
 													<div className="mb-2 flex items-center justify-between gap-2">
 														<div className="min-w-0 flex-1">
 															<div className="truncate font-medium text-sm">

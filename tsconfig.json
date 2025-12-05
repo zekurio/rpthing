@@ -23,9 +23,7 @@
 		"paths": {
 			"@/*": ["./*"],
 			"@types": ["./types/index.ts"],
-			"@types/*": ["./types/*"],
-			"@schemas": ["./server/schemas/index.ts"],
-			"@schemas/*": ["./server/schemas/*"]
+			"@types/*": ["./types/*"]
 		}
 	},
 	"include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

@@ -1,9 +1,3 @@
-import {
-	characterCreateInputSchema,
-	characterIdOnlySchema,
-	characterListInputSchema,
-	characterUpdateInputSchema,
-} from "@schemas";
 import { TRPCError } from "@trpc/server";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/server/db/index";
@@ -11,6 +5,12 @@ import { user } from "@/server/db/schema/auth";
 import { character } from "@/server/db/schema/character";
 import { realmMember } from "@/server/db/schema/realmMember";
 import { characterTraitRating, trait } from "@/server/db/schema/traits";
+import {
+	characterCreateInputSchema,
+	characterIdOnlySchema,
+	characterListInputSchema,
+	characterUpdateInputSchema,
+} from "@/server/db/types";
 import { ratingRouter } from "@/server/routers/characterTraitRating";
 import { deleteFile, getPublicFileUrl } from "@/server/storage";
 import { protectedProcedure, router } from "@/server/trpc";

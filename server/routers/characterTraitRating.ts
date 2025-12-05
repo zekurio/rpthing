@@ -1,25 +1,17 @@
-import {
-	ratingCreateOrUpdateInputSchema,
-	ratingGetByPairInputSchema,
-	ratingIdSchema,
-	ratingListByCharacterInputSchema,
-	TRAIT_GRADES,
-} from "@schemas";
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/server/db/index";
 import { character } from "@/server/db/schema/character";
 import { realmMember } from "@/server/db/schema/realmMember";
 import { characterTraitRating, trait } from "@/server/db/schema/traits";
+import {
+	mapGradeToValue,
+	ratingCreateOrUpdateInputSchema,
+	ratingGetByPairInputSchema,
+	ratingIdSchema,
+	ratingListByCharacterInputSchema,
+} from "@/server/db/types";
 import { protectedProcedure, router } from "@/server/trpc";
-
-function mapGradeToValue(
-	value: number | (typeof TRAIT_GRADES)[number],
-): number {
-	if (typeof value === "number") return value;
-	const idx = TRAIT_GRADES.indexOf(value);
-	return idx + 1; // 1..20
-}
 
 // Helper function to check if user is a realm member (including owner)
 async function isRealmMember(userId: string, realmId: string) {

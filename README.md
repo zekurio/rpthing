@@ -1,6 +1,6 @@
-# RPThing
+# rpthing
 
-A modern web application for managing roleplay characters and campaigns. Built with Next.js, TypeScript, and collaborative features for storytelling.
+A modern web application for managing roleplay characters and campaigns.
 
 ## Features
 

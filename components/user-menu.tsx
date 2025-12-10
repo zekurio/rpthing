@@ -1,7 +1,8 @@
 "use client";
 
-import { LogOut, MoreVertical } from "lucide-react";
+import { LogOut, Monitor, Moon, MoreVertical, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,11 +15,13 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 
 export function UserMenu() {
 	const router = useRouter();
 	const { user, isLoading, signOut } = useAuth();
+	const { theme, setTheme } = useTheme();
 
 	const handleSignOut = async () => {
 		try {
@@ -85,6 +88,24 @@ export function UserMenu() {
 										{user?.email || ""}
 									</span>
 								</div>
+							</div>
+						</DropdownMenuLabel>
+						<DropdownMenuSeparator />
+						<DropdownMenuLabel className="p-0">
+							<div className="px-1 py-2">
+								<Tabs value={theme} onValueChange={setTheme} className="w-full">
+									<TabsList className="grid w-full grid-cols-3">
+										<TabsTrigger value="light">
+											<Sun className="h-4 w-4" />
+										</TabsTrigger>
+										<TabsTrigger value="dark">
+											<Moon className="h-4 w-4" />
+										</TabsTrigger>
+										<TabsTrigger value="system">
+											<Monitor className="h-4 w-4" />
+										</TabsTrigger>
+									</TabsList>
+								</Tabs>
 							</div>
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />

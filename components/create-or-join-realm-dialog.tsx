@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Plus, UserPlus } from "lucide-react";
+import { Plus, UserPlus } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -302,24 +302,10 @@ export function CreateOrJoinRealmDialog({
 		<ResponsiveDialog open={open} onOpenChange={handleOpenChange}>
 			<ResponsiveDialogContent className="sm:max-w-lg">
 				<ResponsiveDialogHeader>
-					<div className="flex items-center gap-2">
-						{currentView !== "selection" && (
-							<Button
-								variant="ghost"
-								size="icon"
-								className="-ml-2 h-8 w-8"
-								onClick={handleBack}
-							>
-								<ArrowLeft className="h-4 w-4" />
-							</Button>
-						)}
-						<div>
-							<ResponsiveDialogTitle>{getDialogTitle()}</ResponsiveDialogTitle>
-							<ResponsiveDialogDescription>
-								{getDialogDescription()}
-							</ResponsiveDialogDescription>
-						</div>
-					</div>
+					<ResponsiveDialogTitle>{getDialogTitle()}</ResponsiveDialogTitle>
+					<ResponsiveDialogDescription>
+						{getDialogDescription()}
+					</ResponsiveDialogDescription>
 				</ResponsiveDialogHeader>
 				<ResponsiveDialogBody>
 					{currentView === "selection" && (

@@ -67,11 +67,11 @@ export function SidebarRealmList({
 		return (
 			<SidebarMenuItem>
 				<div
-					className={`group relative w-full rounded-md transition-colors hover:bg-accent ${isActive ? "bg-accent" : ""}`}
+					className={`group relative w-full rounded-md transition-colors hover:bg-accent ${isActive ? "bg-primary/10" : ""}`}
 				>
 					<Button
 						variant="ghost"
-						className="h-auto w-full justify-start gap-3 p-2"
+						className={`h-auto w-full justify-start gap-3 p-2 ${isActive ? "text-primary" : "text-foreground"}`}
 						asChild
 					>
 						<Link href="/characters">

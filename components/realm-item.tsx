@@ -123,11 +123,11 @@ export function RealmItem({
 
 	const realmButton = (
 		<div
-			className={`group relative w-full rounded-md transition-colors hover:bg-accent ${isSelected ? "bg-accent" : ""}`}
+			className={`group relative w-full rounded-md transition-colors hover:bg-accent ${isSelected ? "bg-primary/10" : ""}`}
 		>
 			<Button
 				variant="ghost"
-				className="h-auto w-full justify-start gap-3 p-2"
+				className={`h-auto w-full justify-start gap-3 p-2 ${isSelected ? "text-primary" : "text-foreground"}`}
 				onClick={handleButtonClick}
 				onTouchStart={handleTouchStart}
 				onTouchEnd={handleTouchEnd}

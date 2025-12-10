@@ -4,12 +4,12 @@ import "@/app/globals.css";
 import Providers from "@/components/providers";
 
 const jetBrainsMono = JetBrains_Mono({
-	variable: "--font-jetbrainsmono-sans",
+	variable: "--font-sans",
 	subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
+	variable: "--font-mono",
 	subsets: ["latin"],
 });
 

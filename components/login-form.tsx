@@ -63,7 +63,7 @@ export function LoginForm({
 						<div className="flex flex-col gap-4">
 							<Button
 								variant="outline"
-								className="h-12 w-full font-medium text-base"
+								className="h-12 w-full border-border font-medium text-base"
 								type="button"
 								onClick={() => handleSignIn("discord", getRedirectUrl())}
 								disabled={loading}

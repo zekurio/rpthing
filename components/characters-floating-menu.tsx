@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react";
 import { CharactersSearchFilterBar } from "@/components/characters-search-filter-bar";
 import { Button } from "@/components/ui/button";
+import { useKeyboardVisible } from "@/hooks/use-keyboard-visible";
 
 interface CharactersFloatingMenuProps {
 	localSearch: string;
@@ -21,8 +22,15 @@ export function CharactersFloatingMenu({
 	onFilterClick,
 	onCreateClick,
 }: CharactersFloatingMenuProps) {
+	const { isKeyboardVisible, keyboardHeight } = useKeyboardVisible();
+
 	return (
-		<div className="-translate-x-1/2 fixed bottom-4 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md items-center gap-2 rounded-lg border border-border bg-background/80 px-3 py-2 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80 md:bottom-6 md:w-auto md:max-w-none">
+		<div
+			className="-translate-x-1/2 fixed left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md items-center gap-2 rounded-lg border border-border bg-background/80 px-3 py-2 shadow-lg backdrop-blur transition-all duration-300 ease-in-out supports-[backdrop-filter]:bg-background/80 md:bottom-6 md:w-auto md:max-w-none"
+			style={{
+				bottom: isKeyboardVisible ? `${keyboardHeight}px` : "1rem", // 1rem = bottom-4
+			}}
+		>
 			<CharactersSearchFilterBar
 				localSearch={localSearch}
 				onSearchChange={onSearchChange}

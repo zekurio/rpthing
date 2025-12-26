@@ -42,8 +42,8 @@ export interface CharacterListItem
 	croppedImageKey: string | null;
 	userId?: string;
 	userName?: string | null;
-	createdAt: string;
-	updatedAt: string;
+	createdAt: Date | string;
+	updatedAt: Date | string;
 	ratingsSummary?: Array<{
 		traitId: string;
 		traitName: string;

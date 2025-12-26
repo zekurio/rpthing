@@ -23,14 +23,14 @@ import {
 } from "@/components/ui/sidebar";
 import { UserMenu } from "@/components/user-menu";
 import { useAuth } from "@/hooks/use-auth";
-import { trpc } from "@/lib/trpc";
+import { realmQueries } from "@/lib/eden";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const searchParams = useSearchParams();
 	const currentRealmFilter = searchParams?.get("realm") ?? null;
 
 	const { data, isPending } = useQuery({
-		...trpc.realm.list.queryOptions(),
+		...realmQueries.list(),
 	});
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

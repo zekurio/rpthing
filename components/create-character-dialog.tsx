@@ -40,8 +40,15 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useRealmGenderOptions } from "@/hooks/use-realm-gender-options";
+import {
+	characterMutations,
+	queryClient,
+	ratingMutations,
+	realmQueries,
+	traitQueries,
+} from "@/lib/eden";
+import { queryKeys } from "@/lib/query-keys";
 import { gradeForValue } from "@/lib/traits";
-import { queryClient, trpc } from "@/lib/trpc";
 
 const formSchema = z.object({
 	name: z.string().min(1, "Name is required").max(200),
@@ -73,14 +80,14 @@ export function CreateCharacterDialog({
 
 	// Fetch realms for the selector (only when no initial realmId is provided)
 	const { data: realms, isLoading: realmsLoading } = useQuery({
-		...trpc.realm.list.queryOptions(),
+		...realmQueries.list(),
 		enabled: !initialRealmId && open,
 	});
 
 	const genderOptions = useRealmGenderOptions(realmId);
 
 	const { data: traits, isLoading: traitsLoading } = useQuery({
-		...trpc.trait.list.queryOptions({ realmId }),
+		...traitQueries.list(realmId),
 		enabled: !!realmId && open,
 	});
 
@@ -90,7 +97,12 @@ export function CreateCharacterDialog({
 	});
 
 	const mutation = useMutation({
-		...trpc.character.create.mutationOptions(),
+		mutationFn: (data: {
+			name: string;
+			realmId: string;
+			gender?: string;
+			notes?: string;
+		}) => characterMutations.create(data),
 		onSuccess: () => {
 			toast.success("Character created");
 			onCreated();
@@ -110,7 +122,11 @@ export function CreateCharacterDialog({
 	});
 
 	const ratingsMutation = useMutation({
-		...trpc.character.ratings.upsert.mutationOptions(),
+		mutationFn: (data: {
+			characterId: string;
+			traitId: string;
+			value: number;
+		}) => ratingMutations.upsert(data),
 		onError: (e) => toast.error(e.message || "Failed to save rating"),
 	});
 
@@ -166,7 +182,7 @@ export function CreateCharacterDialog({
 					credentials: "include",
 				});
 				queryClient.invalidateQueries({
-					queryKey: trpc.character.list.queryKey({ realmId }),
+					queryKey: queryKeys.character.list(realmId),
 				});
 			}
 
@@ -183,12 +199,10 @@ export function CreateCharacterDialog({
 					),
 				);
 				queryClient.invalidateQueries({
-					queryKey: trpc.character.getWithRatings.queryKey({
-						id: created.id,
-					}),
+					queryKey: queryKeys.character.withRatings(created.id),
 				});
 				queryClient.invalidateQueries({
-					queryKey: trpc.character.list.queryKey({ realmId }),
+					queryKey: queryKeys.character.list(realmId),
 				});
 			}
 		},

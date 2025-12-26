@@ -40,7 +40,13 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useRealmGenderOptions } from "@/hooks/use-realm-gender-options";
-import { queryClient, trpc } from "@/lib/trpc";
+import {
+	characterMutations,
+	characterQueries,
+	queryClient,
+	realmQueries,
+} from "@/lib/eden";
+import { queryKeys } from "@/lib/query-keys";
 import { uploadWithProgress } from "@/lib/utils";
 
 const editCharacterSchema = z.object({
@@ -85,14 +91,14 @@ export function EditCharacterDialog({
 	});
 
 	const { data: character } = useQuery({
-		...trpc.character.getById.queryOptions({ id: characterId }),
+		...characterQueries.byId(characterId),
 		enabled: !!characterId && open,
 		retry: 2,
 		retryDelay: 1000,
 	});
 
 	const { data: realms, isLoading: realmsLoading } = useQuery({
-		...trpc.realm.list.queryOptions(),
+		...realmQueries.list(),
 		enabled: open,
 	});
 
@@ -100,7 +106,13 @@ export function EditCharacterDialog({
 	const genderOptions = useRealmGenderOptions(selectedRealmId);
 
 	const updateMutation = useMutation({
-		...trpc.character.update.mutationOptions(),
+		mutationFn: (data: {
+			id: string;
+			name?: string;
+			gender?: string;
+			notes?: string | null;
+			realmId?: string;
+		}) => characterMutations.update(data.id, data),
 		onError: (err) => toast.error(err.message),
 	});
 
@@ -135,19 +147,19 @@ export function EditCharacterDialog({
 
 		// Invalidate queries
 		queryClient.invalidateQueries({
-			queryKey: trpc.character.list.queryKey(),
+			queryKey: queryKeys.character.all,
 		});
 		queryClient.invalidateQueries({
-			queryKey: trpc.character.getById.queryKey({ id: characterId }),
+			queryKey: queryKeys.character.byId(characterId),
 		});
 
 		// If realm changed, invalidate both realms' character lists
 		if (realmChanged && character?.realmId) {
 			queryClient.invalidateQueries({
-				queryKey: trpc.character.list.queryKey({ realmId: character.realmId }),
+				queryKey: queryKeys.character.list(character.realmId),
 			});
 			queryClient.invalidateQueries({
-				queryKey: trpc.character.list.queryKey({ realmId: data.realmId }),
+				queryKey: queryKeys.character.list(data.realmId),
 			});
 
 			// Show notification about unmapped traits
@@ -187,12 +199,10 @@ export function EditCharacterDialog({
 					throw new Error("Failed to upload character image");
 				}
 				queryClient.invalidateQueries({
-					queryKey: trpc.character.getById.queryKey({
-						id: characterId,
-					}),
+					queryKey: queryKeys.character.byId(characterId),
 				});
 				queryClient.invalidateQueries({
-					queryKey: trpc.character.list.queryKey(),
+					queryKey: queryKeys.character.all,
 				});
 			} else if (removeRequested && character?.referenceImageKey) {
 				await fetch(`/api/upload/character-image/${characterId}`, {
@@ -200,12 +210,10 @@ export function EditCharacterDialog({
 					credentials: "include",
 				});
 				queryClient.invalidateQueries({
-					queryKey: trpc.character.getById.queryKey({
-						id: characterId,
-					}),
+					queryKey: queryKeys.character.byId(characterId),
 				});
 				queryClient.invalidateQueries({
-					queryKey: trpc.character.list.queryKey(),
+					queryKey: queryKeys.character.all,
 				});
 			}
 		} catch (err) {

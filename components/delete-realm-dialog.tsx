@@ -13,7 +13,8 @@ import {
 	ResponsiveAlertDialogHeader,
 	ResponsiveAlertDialogTitle,
 } from "@/components/ui/responsive-alert-dialog";
-import { queryClient, trpc } from "@/lib/trpc";
+import { queryClient, realmMutations } from "@/lib/eden";
+import { queryKeys } from "@/lib/query-keys";
 
 interface DeleteRealmDialogProps {
 	open: boolean;
@@ -33,10 +34,10 @@ export function DeleteRealmDialog({
 	const router = useRouter();
 
 	const deleteMutation = useMutation({
-		...trpc.realm.delete.mutationOptions(),
+		mutationFn: (realmId: string) => realmMutations.delete(realmId),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
-				queryKey: trpc.realm.list.queryKey(),
+				queryKey: queryKeys.realm.list(),
 			});
 			toast.success("Realm deleted.");
 			onOpenChange(false);

@@ -28,7 +28,8 @@ import {
 	ResponsiveDialogTitle,
 } from "@/components/ui/responsive-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { queryClient, trpc } from "@/lib/trpc";
+import { queryClient, realmMutations, realmQueries } from "@/lib/eden";
+import { queryKeys } from "@/lib/query-keys";
 import { uploadWithProgress } from "@/lib/utils";
 
 const editRealmSchema = z.object({
@@ -67,7 +68,7 @@ export function EditRealmDialog({
 	const [uploadProgress, setUploadProgress] = useState(0);
 
 	const { data: realm } = useQuery({
-		...trpc.realm.getById.queryOptions({ realmId: realmId ?? "" }),
+		...realmQueries.byId(realmId ?? ""),
 		enabled: !!realmId && open,
 		retry: 2,
 		retryDelay: 1000,
@@ -79,7 +80,15 @@ export function EditRealmDialog({
 	});
 
 	const updateMutation = useMutation({
-		...trpc.realm.update.mutationOptions(),
+		mutationFn: ({
+			id,
+			...data
+		}: {
+			id: string;
+			name?: string;
+			description?: string;
+			password?: string;
+		}) => realmMutations.update(id, data),
 	});
 
 	const currentIconSrc = realm?.iconKey || null;
@@ -182,10 +191,10 @@ export function EditRealmDialog({
 
 			// Invalidate queries after all operations complete
 			queryClient.invalidateQueries({
-				queryKey: trpc.realm.list.queryKey(),
+				queryKey: queryKeys.realm.list(),
 			});
 			queryClient.invalidateQueries({
-				queryKey: trpc.realm.getById.queryKey({ realmId }),
+				queryKey: queryKeys.realm.byId(realmId),
 			});
 
 			toast.success("Realm updated.");

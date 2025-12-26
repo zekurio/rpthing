@@ -1,5 +1,6 @@
-import { TRPCError } from "@trpc/server";
 import { and, eq, inArray } from "drizzle-orm";
+import { Elysia } from "elysia";
+import { auth } from "@/server/auth";
 import { db } from "@/server/db/index";
 import { user } from "@/server/db/schema/auth";
 import { character } from "@/server/db/schema/character";
@@ -11,9 +12,7 @@ import {
 	characterListInputSchema,
 	characterUpdateInputSchema,
 } from "@/server/db/types";
-import { ratingRouter } from "@/server/routers/characterTraitRating";
 import { deleteFile, getPublicFileUrl } from "@/server/storage";
-import { protectedProcedure, router } from "@/server/trpc";
 
 // Helper function to check if user is a realm member (including owner)
 async function isRealmMember(userId: string, realmId: string) {
@@ -27,21 +26,36 @@ async function isRealmMember(userId: string, realmId: string) {
 	return !!member;
 }
 
-export const characterRouter = router({
-	ratings: ratingRouter,
-	create: protectedProcedure
-		.input(characterCreateInputSchema)
-		.mutation(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
-			const { realmId, ...rest } = input;
+export const characterRoutes = new Elysia({ prefix: "/character" })
+	.macro({
+		isAuthenticated: {
+			async resolve({ status, request: { headers } }) {
+				const session = await auth.api.getSession({ headers });
+				if (!session) {
+					return status(401, { error: "Unauthorized" });
+				}
+				return {
+					user: session.user,
+					session: session.session,
+				};
+			},
+		},
+	})
+	// POST /api/character - Create a new character
+	.post(
+		"/",
+		async ({ body, user: currentUser, status }) => {
+			const parsed = characterCreateInputSchema.safeParse(body);
+			if (!parsed.success) {
+				return status(400, { error: parsed.error.message });
+			}
+			const { realmId, ...rest } = parsed.data;
+			const userId = currentUser.id;
 
 			// Check if user is a realm member (including owner)
 			const isMember = await isRealmMember(userId, realmId);
 			if (!isMember) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Not a realm member",
-				});
+				return status(403, { error: "Not a realm member" });
 			}
 
 			const [created] = await db
@@ -49,69 +63,24 @@ export const characterRouter = router({
 				.values({ realmId, userId, ...rest })
 				.returning();
 			return created;
-		}),
-
-	getById: protectedProcedure
-		.input(characterIdOnlySchema)
-		.query(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
-
-			const [row] = await db
-				.select({
-					id: character.id,
-					realmId: character.realmId,
-					userId: character.userId,
-					name: character.name,
-					gender: character.gender,
-					referenceImageKey: character.referenceImageKey,
-					croppedImageKey: character.croppedImageKey,
-					notes: character.notes,
-					createdAt: character.createdAt,
-					updatedAt: character.updatedAt,
-				})
-				.from(character)
-				.where(eq(character.id, input.id))
-				.limit(1);
-			if (!row) {
-				// Return null instead of throwing error
-				return null;
+		},
+		{ isAuthenticated: true },
+	)
+	// GET /api/character - List characters for a realm
+	.get(
+		"/",
+		async ({ query, user: currentUser, status }) => {
+			const parsed = characterListInputSchema.safeParse(query);
+			if (!parsed.success) {
+				return status(400, { error: parsed.error.message });
 			}
-
-			// Check if user is a realm member (including owner)
-			const isMember = await isRealmMember(userId, row.realmId);
-			if (!isMember) {
-				// Return null instead of throwing error
-				return null;
-			}
-
-			// Generate public URLs for character images with cache-busting
-			const versionParam = row.updatedAt.getTime();
-			const referenceUrl = row.referenceImageKey
-				? `${getPublicFileUrl(row.referenceImageKey)}?v=${versionParam}`
-				: null;
-			const croppedUrl = row.croppedImageKey
-				? `${getPublicFileUrl(row.croppedImageKey)}?v=${versionParam}`
-				: null;
-			return {
-				...row,
-				referenceImageKey: referenceUrl,
-				croppedImageKey: croppedUrl,
-			};
-		}),
-
-	list: protectedProcedure
-		.input(characterListInputSchema)
-		.query(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
-			const { realmId } = input;
+			const { realmId } = parsed.data;
+			const userId = currentUser.id;
 
 			// Check if user is a realm member (including owner)
 			const isMember = await isRealmMember(userId, realmId);
 			if (!isMember) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Not a realm member",
-				});
+				return status(403, { error: "Not a realm member" });
 			}
 
 			const rows = await db
@@ -205,13 +174,127 @@ export const characterRouter = router({
 			});
 
 			return withUrls;
-		}),
+		},
+		{ isAuthenticated: true },
+	)
+	// GET /api/character/:id - Get a single character by ID
+	.get(
+		"/:id",
+		async ({ params, user: currentUser, status }) => {
+			const parsed = characterIdOnlySchema.safeParse(params);
+			if (!parsed.success) {
+				return status(400, { error: parsed.error.message });
+			}
+			const userId = currentUser.id;
 
-	update: protectedProcedure
-		.input(characterUpdateInputSchema)
-		.mutation(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
-			const { id, realmId: newRealmId, ...updates } = input;
+			const [row] = await db
+				.select({
+					id: character.id,
+					realmId: character.realmId,
+					userId: character.userId,
+					name: character.name,
+					gender: character.gender,
+					referenceImageKey: character.referenceImageKey,
+					croppedImageKey: character.croppedImageKey,
+					notes: character.notes,
+					createdAt: character.createdAt,
+					updatedAt: character.updatedAt,
+				})
+				.from(character)
+				.where(eq(character.id, params.id))
+				.limit(1);
+			if (!row) {
+				return null;
+			}
+
+			// Check if user is a realm member (including owner)
+			const isMember = await isRealmMember(userId, row.realmId);
+			if (!isMember) {
+				return null;
+			}
+
+			// Generate public URLs for character images with cache-busting
+			const versionParam = row.updatedAt.getTime();
+			const referenceUrl = row.referenceImageKey
+				? `${getPublicFileUrl(row.referenceImageKey)}?v=${versionParam}`
+				: null;
+			const croppedUrl = row.croppedImageKey
+				? `${getPublicFileUrl(row.croppedImageKey)}?v=${versionParam}`
+				: null;
+			return {
+				...row,
+				referenceImageKey: referenceUrl,
+				croppedImageKey: croppedUrl,
+			};
+		},
+		{ isAuthenticated: true },
+	)
+	// GET /api/character/:id/ratings - Get a character with all its ratings
+	.get(
+		"/:id/ratings",
+		async ({ params, user: currentUser, status }) => {
+			const parsed = characterIdOnlySchema.safeParse(params);
+			if (!parsed.success) {
+				return status(400, { error: parsed.error.message });
+			}
+			const userId = currentUser.id;
+
+			const [charRow] = await db
+				.select({
+					id: character.id,
+					realmId: character.realmId,
+					name: character.name,
+				})
+				.from(character)
+				.where(eq(character.id, params.id))
+				.limit(1);
+			if (!charRow) {
+				return null;
+			}
+
+			// Check if user is a realm member (including owner)
+			const isMember = await isRealmMember(userId, charRow.realmId);
+			if (!isMember) {
+				return null;
+			}
+
+			// Traits in the realm with any rating for this character
+			const rows = await db
+				.select({
+					traitId: trait.id,
+					traitName: trait.name,
+					description: trait.description,
+					displayMode: trait.displayMode,
+					ratingId: characterTraitRating.id,
+					value: characterTraitRating.value,
+				})
+				.from(trait)
+				.leftJoin(
+					characterTraitRating,
+					and(
+						eq(characterTraitRating.traitId, trait.id),
+						eq(characterTraitRating.characterId, params.id),
+					),
+				)
+				.where(eq(trait.realmId, charRow.realmId));
+
+			return { ...charRow, traits: rows };
+		},
+		{ isAuthenticated: true },
+	)
+	// PATCH /api/character/:id - Update a character
+	.patch(
+		"/:id",
+		async ({ params, body, user: currentUser, status }) => {
+			const parsed = characterUpdateInputSchema.safeParse({
+				...(body as Record<string, unknown>),
+				id: params.id,
+			});
+			if (!parsed.success) {
+				return status(400, { error: parsed.error.message });
+			}
+			const { id, realmId: newRealmId, ...updates } = parsed.data;
+			const userId = currentUser.id;
 
 			const [row] = await db
 				.select({ realmId: character.realmId })
@@ -219,19 +302,13 @@ export const characterRouter = router({
 				.where(eq(character.id, id))
 				.limit(1);
 			if (!row) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Character not found",
-				});
+				return status(404, { error: "Character not found" });
 			}
 
 			// Check if user is a member of the current realm
 			const isMemberOfCurrentRealm = await isRealmMember(userId, row.realmId);
 			if (!isMemberOfCurrentRealm) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Not a realm member",
-				});
+				return status(403, { error: "Not a realm member" });
 			}
 
 			const unmappedTraits: string[] = [];
@@ -240,10 +317,7 @@ export const characterRouter = router({
 			if (newRealmId && newRealmId !== row.realmId) {
 				const isMemberOfNewRealm = await isRealmMember(userId, newRealmId);
 				if (!isMemberOfNewRealm) {
-					throw new TRPCError({
-						code: "FORBIDDEN",
-						message: "Not a member of the target realm",
-					});
+					return status(403, { error: "Not a member of the target realm" });
 				}
 
 				// Get old ratings with trait names
@@ -322,53 +396,45 @@ export const characterRouter = router({
 			}
 
 			return { success: true, unmappedTraits };
-		}),
-
-	delete: protectedProcedure
-		.input(characterIdOnlySchema)
-		.mutation(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
+		},
+		{ isAuthenticated: true },
+	)
+	// DELETE /api/character/:id - Delete a character
+	.delete(
+		"/:id",
+		async ({ params, user: currentUser, status }) => {
+			const parsed = characterIdOnlySchema.safeParse(params);
+			if (!parsed.success) {
+				return status(400, { error: parsed.error.message });
+			}
+			const userId = currentUser.id;
 
 			const [row] = await db
 				.select({
 					realmId: character.realmId,
-					imageKey: character.referenceImageKey,
+					referenceImageKey: character.referenceImageKey,
 				})
 				.from(character)
-				.where(eq(character.id, input.id))
+				.where(eq(character.id, params.id))
 				.limit(1);
 			if (!row) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Character not found",
-				});
+				return status(404, { error: "Character not found" });
 			}
 
 			// Check if user is a realm member
 			const isMember = await isRealmMember(userId, row.realmId);
 			if (!isMember) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Not a realm member",
-				});
+				return status(403, { error: "Not a realm member" });
 			}
 
 			// Attempt to delete stored image(s) if present (best-effort)
-			const originalKey = `character-images/${input.id}.png`;
-			const croppedKey = `character-images/${input.id}-cropped.png`;
-			const keys = new Set<string>([originalKey, croppedKey]);
-			if (row.imageKey) keys.add(row.imageKey);
-			// Also try deleting any stored cropped key variant if present
-			const [existing] = await db
-				.select({
-					ref: character.referenceImageKey,
-					crop: character.croppedImageKey,
-				})
-				.from(character)
-				.where(eq(character.id, input.id))
-				.limit(1);
-			if (existing?.ref) keys.add(existing.ref);
-			if (existing?.crop) keys.add(existing.crop);
+			const keys = new Set<string>();
+			if (row.referenceImageKey) {
+				keys.add(row.referenceImageKey);
+				const ext = row.referenceImageKey.split(".").pop();
+				const baseKey = row.referenceImageKey.replace(/\.[^/.]+$/, "");
+				keys.add(`${baseKey}-cropped.${ext}`);
+			}
 			for (const key of keys) {
 				try {
 					await deleteFile(key);
@@ -377,56 +443,8 @@ export const characterRouter = router({
 				}
 			}
 
-			await db.delete(character).where(eq(character.id, input.id));
+			await db.delete(character).where(eq(character.id, params.id));
 			return true;
-		}),
-
-	getWithRatings: protectedProcedure
-		.input(characterIdOnlySchema)
-		.query(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
-
-			const [charRow] = await db
-				.select({
-					id: character.id,
-					realmId: character.realmId,
-					name: character.name,
-				})
-				.from(character)
-				.where(eq(character.id, input.id))
-				.limit(1);
-			if (!charRow) {
-				// Return null instead of throwing error
-				return null;
-			}
-
-			// Check if user is a realm member (including owner)
-			const isMember = await isRealmMember(userId, charRow.realmId);
-			if (!isMember) {
-				// Return null instead of throwing error
-				return null;
-			}
-
-			// Traits in the realm with any rating for this character
-			const rows = await db
-				.select({
-					traitId: trait.id,
-					traitName: trait.name,
-					description: trait.description,
-					displayMode: trait.displayMode,
-					ratingId: characterTraitRating.id,
-					value: characterTraitRating.value,
-				})
-				.from(trait)
-				.leftJoin(
-					characterTraitRating,
-					and(
-						eq(characterTraitRating.traitId, trait.id),
-						eq(characterTraitRating.characterId, input.id),
-					),
-				)
-				.where(eq(trait.realmId, charRow.realmId));
-
-			return { ...charRow, traits: rows };
-		}),
-});
+		},
+		{ isAuthenticated: true },
+	);

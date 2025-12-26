@@ -3,7 +3,8 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import type { TraitFilter } from "@/lib/character-filters";
-import { queryClient, trpc } from "@/lib/trpc";
+import { characterQueries, queryClient, realmQueries } from "@/lib/eden";
+import { queryKeys } from "@/lib/query-keys";
 
 interface UseCharactersDataOptions {
 	realmFilter: string | null;
@@ -28,7 +29,7 @@ export function useCharactersData({
 		error,
 		isPending: realmsLoading,
 	} = useQuery({
-		...trpc.realm.list.queryOptions(),
+		...realmQueries.list(),
 		retry: 2,
 		retryDelay: 1000,
 	});
@@ -41,23 +42,24 @@ export function useCharactersData({
 		return realms?.map((realm) => realm.id) ?? [];
 	}, [realms, realmFilter]);
 
-	const characterQueries = useQueries({
+	const characterQueriesResult = useQueries({
 		queries: realmIds.map((realmId) => ({
-			...trpc.character.list.queryOptions({ realmId }),
+			...characterQueries.list(realmId),
 			enabled: !!realmId,
 		})),
 	});
 
-	const isLoading = realmsLoading || characterQueries.some((q) => q.isPending);
+	const isLoading =
+		realmsLoading || characterQueriesResult.some((q) => q.isPending);
 
 	// Combine all characters with realm info
 	const allCharacters = useMemo(() => {
 		const characters: Array<{
-			character: NonNullable<(typeof characterQueries)[0]["data"]>[0];
+			character: NonNullable<(typeof characterQueriesResult)[0]["data"]>[0];
 			realm: NonNullable<typeof realms>[0] | undefined;
 		}> = [];
 
-		characterQueries.forEach((query, index) => {
+		characterQueriesResult.forEach((query, index) => {
 			const realmId = realmIds[index];
 			const realm = realms?.find((r) => r.id === realmId);
 			const realmCharacters = query.data ?? [];
@@ -73,7 +75,7 @@ export function useCharactersData({
 			const bName = b.character.name.toLowerCase();
 			return aName.localeCompare(bName);
 		});
-	}, [characterQueries, realmIds, realms]);
+	}, [characterQueriesResult, realmIds, realms]);
 
 	// Apply filters and separate into rated/unrated groups
 	const { filteredCharacters, unratedCharacters } = useMemo(() => {
@@ -217,7 +219,7 @@ export function useCharactersData({
 	const invalidateCharacters = useCallback(() => {
 		realmIds.forEach((realmId) => {
 			queryClient.invalidateQueries({
-				queryKey: trpc.character.list.queryKey({ realmId }),
+				queryKey: queryKeys.character.list(realmId),
 			});
 		});
 	}, [realmIds]);

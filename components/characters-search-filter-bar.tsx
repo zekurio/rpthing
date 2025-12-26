@@ -1,6 +1,7 @@
 "use client";
 
 import { Filter, Search } from "lucide-react";
+import { useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -19,14 +20,29 @@ export function CharactersSearchFilterBar({
 	activeFilterCount,
 	onFilterClick,
 }: CharactersSearchFilterBarProps) {
+	const inputRef = useRef<HTMLInputElement>(null);
+
+	const handleFocus = useCallback(() => {
+		setTimeout(() => {
+			if (inputRef.current) {
+				inputRef.current.scrollIntoView({
+					behavior: "smooth",
+					block: "center",
+				});
+			}
+		}, 100);
+	}, []);
+
 	return (
 		<div className="flex w-full items-center gap-2">
 			<div className="relative flex flex-1 items-center">
 				<Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 				<Input
+					ref={inputRef}
 					value={localSearch}
 					onChange={(e) => onSearchChange(e.target.value)}
 					onKeyDown={onSearchKeyDown}
+					onFocus={handleFocus}
 					placeholder="Search characters..."
 					className="h-10 w-full pr-3 pl-9 text-sm placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0"
 				/>

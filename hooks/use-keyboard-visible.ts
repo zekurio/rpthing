@@ -1,10 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface KeyboardVisibilityState {
 	isKeyboardVisible: boolean;
 	keyboardHeight: number;
+}
+
+function isInputFocused(): boolean {
+	const activeElement = document.activeElement;
+	if (!activeElement) return false;
+
+	const tagName = activeElement.tagName.toLowerCase();
+	if (tagName === "input" || tagName === "textarea") {
+		return true;
+	}
+
+	// Check for contenteditable elements
+	if (activeElement.getAttribute("contenteditable") === "true") {
+		return true;
+	}
+
+	return false;
 }
 
 export function useKeyboardVisible(): KeyboardVisibilityState {
@@ -15,20 +32,8 @@ export function useKeyboardVisible(): KeyboardVisibilityState {
 
 	// Track the "base" height when keyboard is not visible
 	const baseHeightRef = useRef<number>(0);
-	const isInitializedRef = useRef(false);
-
-	const updateBaseHeight = useCallback(() => {
-		if (typeof window !== "undefined") {
-			// Use the larger of innerHeight and visualViewport height as base
-			// This handles cases where browser chrome is hidden/shown
-			const viewportHeight =
-				window.visualViewport?.height ?? window.innerHeight;
-			const newBase = Math.max(window.innerHeight, viewportHeight);
-			if (newBase > baseHeightRef.current) {
-				baseHeightRef.current = newBase;
-			}
-		}
-	}, []);
+	// Track if an input is currently focused
+	const inputFocusedRef = useRef(false);
 
 	useEffect(() => {
 		if (typeof window === "undefined" || !window.visualViewport) {
@@ -38,33 +43,31 @@ export function useKeyboardVisible(): KeyboardVisibilityState {
 		const visualViewport = window.visualViewport;
 
 		// Initialize base height
-		if (!isInitializedRef.current) {
-			baseHeightRef.current = window.innerHeight;
-			isInitializedRef.current = true;
-		}
+		baseHeightRef.current = window.innerHeight;
 
-		const handleResize = () => {
+		const updateKeyboardState = () => {
+			// Only consider keyboard visible if an input is focused
+			if (!inputFocusedRef.current) {
+				setState({
+					isKeyboardVisible: false,
+					keyboardHeight: 0,
+				});
+				return;
+			}
+
 			const viewportHeight = visualViewport.height;
-			const viewportOffsetTop = visualViewport.offsetTop;
-
-			// Calculate keyboard height using multiple signals
-			// 1. Difference between base height and current viewport height
-			// 2. The offsetTop indicates how much the viewport has scrolled
 			const heightDiff = baseHeightRef.current - viewportHeight;
-			const keyboardHeight = Math.max(0, heightDiff - viewportOffsetTop);
 
-			// Use a smaller threshold (50px) to detect keyboard
-			// This helps with smaller keyboards and accessory bars
-			const isKeyboardVisible = keyboardHeight > 50;
+			// Keyboard is visible if there's a significant height difference
+			// and an input is focused
+			const isKeyboardVisible = heightDiff > 100;
 
 			if (isKeyboardVisible) {
 				setState({
 					isKeyboardVisible: true,
-					keyboardHeight: keyboardHeight + 16, // Add 16px padding
+					keyboardHeight: heightDiff + 16, // Add padding
 				});
 			} else {
-				// When keyboard closes, update base height in case it changed
-				updateBaseHeight();
 				setState({
 					isKeyboardVisible: false,
 					keyboardHeight: 0,
@@ -72,35 +75,78 @@ export function useKeyboardVisible(): KeyboardVisibilityState {
 			}
 		};
 
-		const handleScroll = () => {
-			// Recalculate on scroll as viewport offset changes
-			handleResize();
+		const handleFocusIn = () => {
+			if (isInputFocused()) {
+				inputFocusedRef.current = true;
+				// Update base height before keyboard appears
+				baseHeightRef.current = Math.max(
+					baseHeightRef.current,
+					window.innerHeight,
+				);
+				// Small delay to let keyboard animation start
+				setTimeout(updateKeyboardState, 100);
+			}
 		};
 
-		// Handle visual viewport changes (iOS Safari, modern browsers)
-		visualViewport.addEventListener("resize", handleResize);
-		visualViewport.addEventListener("scroll", handleScroll);
+		const handleFocusOut = (e: FocusEvent) => {
+			// Check if focus is moving to another input
+			const relatedTarget = e.relatedTarget as HTMLElement | null;
+			const isMovingToInput =
+				relatedTarget &&
+				(relatedTarget.tagName.toLowerCase() === "input" ||
+					relatedTarget.tagName.toLowerCase() === "textarea" ||
+					relatedTarget.getAttribute("contenteditable") === "true");
 
-		// Handle orientation changes - reset base height
+			if (!isMovingToInput) {
+				inputFocusedRef.current = false;
+				// Small delay to let keyboard close
+				setTimeout(updateKeyboardState, 100);
+			}
+		};
+
+		const handleResize = () => {
+			// Only respond to resize if input is focused (keyboard related)
+			if (inputFocusedRef.current) {
+				updateKeyboardState();
+			} else {
+				// Update base height when keyboard is not visible
+				baseHeightRef.current = Math.max(
+					baseHeightRef.current,
+					visualViewport.height,
+				);
+			}
+		};
+
 		const handleOrientationChange = () => {
-			// Wait for orientation change to complete
 			setTimeout(() => {
 				baseHeightRef.current = window.innerHeight;
-				handleResize();
+				updateKeyboardState();
 			}, 100);
 		};
 
+		// Listen for focus changes on the document
+		document.addEventListener("focusin", handleFocusIn);
+		document.addEventListener("focusout", handleFocusOut);
+
+		// Listen for viewport resize (keyboard appearing/disappearing)
+		visualViewport.addEventListener("resize", handleResize);
+
+		// Handle orientation changes
 		window.addEventListener("orientationchange", handleOrientationChange);
 
-		// Initial check
-		handleResize();
+		// Check initial state
+		if (isInputFocused()) {
+			inputFocusedRef.current = true;
+			updateKeyboardState();
+		}
 
 		return () => {
+			document.removeEventListener("focusin", handleFocusIn);
+			document.removeEventListener("focusout", handleFocusOut);
 			visualViewport.removeEventListener("resize", handleResize);
-			visualViewport.removeEventListener("scroll", handleScroll);
 			window.removeEventListener("orientationchange", handleOrientationChange);
 		};
-	}, [updateBaseHeight]);
+	}, []);
 
 	return state;
 }

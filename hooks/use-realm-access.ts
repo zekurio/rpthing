@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { trpc } from "@/lib/trpc";
+import { realmQueries } from "@/lib/eden";
 import { useAuth } from "./use-auth";
 
 /**
@@ -17,7 +17,7 @@ export function useRealmAccess(realmId: string | null | undefined) {
 		isLoading,
 		error,
 	} = useQuery({
-		...trpc.realm.getById.queryOptions({ realmId: realmId ?? "" }),
+		...realmQueries.byId(realmId ?? ""),
 		enabled: Boolean(realmId),
 		retry: false, // Don't retry on authorization errors
 		refetchOnWindowFocus: false,

@@ -16,7 +16,8 @@ import {
 	ResponsiveDialogHeader,
 	ResponsiveDialogTitle,
 } from "@/components/ui/responsive-dialog";
-import { queryClient, trpc } from "@/lib/trpc";
+import { queryClient, realmMutations, realmQueries } from "@/lib/eden";
+import { queryKeys } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 
 interface TransferOwnershipDialogProps {
@@ -38,17 +39,15 @@ export function TransferOwnershipDialog({
 	const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
 	const { data: members, isLoading } = useQuery({
-		...trpc.realm.getMembers.queryOptions(
-			{ realmId: realmId ?? "" },
-			{ enabled: !!realmId && open },
-		),
+		...realmQueries.members(realmId ?? ""),
+		enabled: !!realmId && open,
 	});
 
 	const leaveMutation = useMutation({
-		...trpc.realm.leave.mutationOptions(),
+		mutationFn: (realmId: string) => realmMutations.leave(realmId),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
-				queryKey: trpc.realm.list.queryKey(),
+				queryKey: queryKeys.realm.list(),
 			});
 			toast.success("Ownership transferred and left realm successfully.");
 			onOpenChange(false);
@@ -61,7 +60,13 @@ export function TransferOwnershipDialog({
 	});
 
 	const transferMutation = useMutation({
-		...trpc.realm.transferOwnership.mutationOptions(),
+		mutationFn: ({
+			realmId,
+			newOwnerUserId,
+		}: {
+			realmId: string;
+			newOwnerUserId: string;
+		}) => realmMutations.transferOwnership(realmId, newOwnerUserId),
 		onSuccess: () => {
 			if (realmId) {
 				leaveMutation.mutate(realmId);

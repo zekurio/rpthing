@@ -8,8 +8,14 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
+import {
+	characterQueries,
+	queryClient,
+	ratingMutations,
+	traitQueries,
+} from "@/lib/eden";
+import { queryKeys } from "@/lib/query-keys";
 import { gradeForValue } from "@/lib/traits";
-import { queryClient, trpc } from "@/lib/trpc";
 
 interface CharacterRatingsProps {
 	characterId: string;
@@ -17,29 +23,33 @@ interface CharacterRatingsProps {
 
 export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 	const { data, isLoading } = useQuery({
-		...trpc.character.getWithRatings.queryOptions({ id: characterId }),
+		...characterQueries.withRatings(characterId),
 		enabled: !!characterId,
 	});
 
 	// Also subscribe to trait list for this character's realm to react to display mode changes
 	const realmId = data?.realmId;
 	const { data: traitSnapshot } = useQuery({
-		...trpc.trait.list.queryOptions({ realmId: (realmId ?? "") as string }),
+		...traitQueries.list(realmId ?? ""),
 		enabled: !!realmId,
 	});
 	React.useEffect(() => {
 		if (!realmId) return;
 		if (traitSnapshot) {
 			queryClient.invalidateQueries({
-				queryKey: trpc.character.getWithRatings.queryKey({ id: characterId }),
+				queryKey: queryKeys.character.withRatings(characterId),
 			});
 		}
 	}, [realmId, traitSnapshot, characterId]);
 
 	const upsert = useMutation({
-		...trpc.character.ratings.upsert.mutationOptions(),
+		mutationFn: (data: {
+			characterId: string;
+			traitId: string;
+			value: number;
+		}) => ratingMutations.upsert(data),
 		onMutate: (vars) => {
-			const key = trpc.character.getWithRatings.queryKey({ id: characterId });
+			const key = queryKeys.character.withRatings(characterId);
 			void queryClient.cancelQueries({ queryKey: key });
 			queryClient.setQueryData(
 				key,
@@ -66,15 +76,15 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 		},
 		onSettled: () => {
 			queryClient.invalidateQueries({
-				queryKey: trpc.character.getWithRatings.queryKey({ id: characterId }),
+				queryKey: queryKeys.character.withRatings(characterId),
 			});
 		},
 	});
 
 	const del = useMutation({
-		...trpc.character.ratings.delete.mutationOptions(),
+		mutationFn: (id: string) => ratingMutations.delete(id),
 		onMutate: (ratingId) => {
-			const key = trpc.character.getWithRatings.queryKey({ id: characterId });
+			const key = queryKeys.character.withRatings(characterId);
 			void queryClient.cancelQueries({ queryKey: key });
 			queryClient.setQueryData(
 				key,
@@ -97,7 +107,7 @@ export function CharacterRatings({ characterId }: CharacterRatingsProps) {
 		},
 		onSettled: () => {
 			queryClient.invalidateQueries({
-				queryKey: trpc.character.getWithRatings.queryKey({ id: characterId }),
+				queryKey: queryKeys.character.withRatings(characterId),
 			});
 		},
 	});

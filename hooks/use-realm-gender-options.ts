@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { trpc } from "@/lib/trpc";
+import { characterQueries } from "@/lib/eden";
 
 // Common fallback gender options if no realm-specific options exist
 const FALLBACK_GENDER_OPTIONS = [
@@ -14,7 +14,7 @@ const FALLBACK_GENDER_OPTIONS = [
 
 export function useRealmGenderOptions(realmId: string) {
 	const { data: characters } = useQuery({
-		...trpc.character.list.queryOptions({ realmId }),
+		...characterQueries.list(realmId),
 		enabled: !!realmId,
 	});
 

@@ -13,7 +13,8 @@ import {
 	ResponsiveAlertDialogHeader,
 	ResponsiveAlertDialogTitle,
 } from "@/components/ui/responsive-alert-dialog";
-import { queryClient, trpc } from "@/lib/trpc";
+import { queryClient, realmMutations } from "@/lib/eden";
+import { queryKeys } from "@/lib/query-keys";
 
 interface LeaveRealmDialogProps {
 	open: boolean;
@@ -33,10 +34,10 @@ export function LeaveRealmDialog({
 	const router = useRouter();
 
 	const leaveMutation = useMutation({
-		...trpc.realm.leave.mutationOptions(),
+		mutationFn: (realmId: string) => realmMutations.leave(realmId),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
-				queryKey: trpc.realm.list.queryKey(),
+				queryKey: queryKeys.realm.list(),
 			});
 			toast.success("Left realm successfully.");
 			onOpenChange(false);

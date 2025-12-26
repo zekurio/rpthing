@@ -1,5 +1,7 @@
-import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
+import { Elysia } from "elysia";
+import { z } from "zod";
+import { auth } from "@/server/auth";
 import { db } from "@/server/db/index";
 import { character } from "@/server/db/schema/character";
 import { realmMember } from "@/server/db/schema/realmMember";
@@ -11,7 +13,6 @@ import {
 	ratingIdSchema,
 	ratingListByCharacterInputSchema,
 } from "@/server/db/types";
-import { protectedProcedure, router } from "@/server/trpc";
 
 // Helper function to check if user is a realm member (including owner)
 async function isRealmMember(userId: string, realmId: string) {
@@ -25,12 +26,31 @@ async function isRealmMember(userId: string, realmId: string) {
 	return !!member;
 }
 
-export const ratingRouter = router({
-	upsert: protectedProcedure
-		.input(ratingCreateOrUpdateInputSchema)
-		.mutation(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
-			const { characterId, traitId, value } = input;
+export const ratingRoutes = new Elysia({ prefix: "/rating" })
+	.macro({
+		isAuthenticated: {
+			async resolve({ status, request: { headers } }) {
+				const session = await auth.api.getSession({ headers });
+				if (!session) {
+					return status(401, { error: "Unauthorized" });
+				}
+				return {
+					user: session.user,
+					session: session.session,
+				};
+			},
+		},
+	})
+	// PUT /api/rating - Create or update a rating
+	.put(
+		"/",
+		async ({ body, user, status }) => {
+			const parsed = ratingCreateOrUpdateInputSchema.safeParse(body);
+			if (!parsed.success) {
+				return status(400, { error: parsed.error.message });
+			}
+			const { characterId, traitId, value } = parsed.data;
+			const userId = user.id;
 
 			const [charRow] = await db
 				.select({ id: character.id, realmId: character.realmId })
@@ -39,10 +59,7 @@ export const ratingRouter = router({
 				.limit(1);
 
 			if (!charRow) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Character not found",
-				});
+				return status(404, { error: "Character not found" });
 			}
 
 			const [traitRow] = await db
@@ -52,31 +69,22 @@ export const ratingRouter = router({
 				.limit(1);
 
 			if (!traitRow) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Trait not found" });
+				return status(404, { error: "Trait not found" });
 			}
 
 			if (traitRow.realmId !== charRow.realmId) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "Mismatched realms",
-				});
+				return status(400, { error: "Mismatched realms" });
 			}
 
 			// Check if user is a realm member
 			const isMember = await isRealmMember(userId, traitRow.realmId);
 			if (!isMember) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Not a realm member",
-				});
+				return status(403, { error: "Not a realm member" });
 			}
 
 			const numericValue = mapGradeToValue(value);
 			if (numericValue < 1 || numericValue > 20) {
-				throw new TRPCError({
-					code: "BAD_REQUEST",
-					message: "Invalid rating value",
-				});
+				return status(400, { error: "Invalid rating value" });
 			}
 
 			const [existing] = await db
@@ -103,12 +111,18 @@ export const ratingRouter = router({
 				.values({ characterId, traitId, value: numericValue })
 				.returning();
 			return created;
-		}),
-
-	getById: protectedProcedure
-		.input(ratingIdSchema)
-		.query(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
+		},
+		{ isAuthenticated: true },
+	)
+	// GET /api/rating/:id - Get a rating by ID
+	.get(
+		"/:id",
+		async ({ params, user, status }) => {
+			const parsed = z.object({ id: ratingIdSchema }).safeParse(params);
+			if (!parsed.success) {
+				return status(400, { error: parsed.error.message });
+			}
+			const userId = user.id;
 
 			const [row] = await db
 				.select({
@@ -118,11 +132,10 @@ export const ratingRouter = router({
 					value: characterTraitRating.value,
 				})
 				.from(characterTraitRating)
-				.where(eq(characterTraitRating.id, input))
+				.where(eq(characterTraitRating.id, params.id))
 				.limit(1);
 
 			if (!row) {
-				// Return null instead of throwing error
 				return null;
 			}
 
@@ -133,25 +146,29 @@ export const ratingRouter = router({
 				.limit(1);
 
 			if (!charRow) {
-				// Return null instead of throwing error
 				return null;
 			}
 
 			// Check if user is a realm member
 			const isMember = await isRealmMember(userId, charRow.realmId);
 			if (!isMember) {
-				// Return null instead of throwing error
 				return null;
 			}
 
 			return row;
-		}),
-
-	getByPair: protectedProcedure
-		.input(ratingGetByPairInputSchema)
-		.query(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
-			const { characterId, traitId } = input;
+		},
+		{ isAuthenticated: true },
+	)
+	// GET /api/rating/pair - Get a rating by character and trait pair
+	.get(
+		"/pair",
+		async ({ query, user, status }) => {
+			const parsed = ratingGetByPairInputSchema.safeParse(query);
+			if (!parsed.success) {
+				return status(400, { error: parsed.error.message });
+			}
+			const { characterId, traitId } = parsed.data;
+			const userId = user.id;
 
 			const [charRow] = await db
 				.select({ id: character.id, realmId: character.realmId })
@@ -159,7 +176,6 @@ export const ratingRouter = router({
 				.where(eq(character.id, characterId))
 				.limit(1);
 			if (!charRow) {
-				// Return null instead of throwing error
 				return null;
 			}
 
@@ -169,12 +185,10 @@ export const ratingRouter = router({
 				.where(eq(trait.id, traitId))
 				.limit(1);
 			if (!traitRow) {
-				// Return null instead of throwing error
 				return null;
 			}
 
 			if (traitRow.realmId !== charRow.realmId) {
-				// Return null instead of throwing error
 				return null;
 			}
 
@@ -199,18 +213,23 @@ export const ratingRouter = router({
 			// Check if user is a realm member
 			const isMember = await isRealmMember(userId, charRow.realmId);
 			if (!isMember) {
-				// Return null instead of throwing error
 				return null;
 			}
 
 			return row;
-		}),
-
-	listByCharacter: protectedProcedure
-		.input(ratingListByCharacterInputSchema)
-		.query(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
-			const { characterId } = input;
+		},
+		{ isAuthenticated: true },
+	)
+	// GET /api/rating/character/:characterId - List all ratings for a character
+	.get(
+		"/character/:characterId",
+		async ({ params, user, status }) => {
+			const parsed = ratingListByCharacterInputSchema.safeParse(params);
+			if (!parsed.success) {
+				return status(400, { error: parsed.error.message });
+			}
+			const { characterId } = parsed.data;
+			const userId = user.id;
 
 			const [charRow] = await db
 				.select({ realmId: character.realmId })
@@ -219,19 +238,13 @@ export const ratingRouter = router({
 				.limit(1);
 
 			if (!charRow) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Character not found",
-				});
+				return status(404, { error: "Character not found" });
 			}
 
 			// Check if user is a realm member
 			const isMember = await isRealmMember(userId, charRow.realmId);
 			if (!isMember) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Not a realm member",
-				});
+				return status(403, { error: "Not a realm member" });
 			}
 
 			return await db
@@ -244,12 +257,18 @@ export const ratingRouter = router({
 				})
 				.from(characterTraitRating)
 				.where(eq(characterTraitRating.characterId, characterId));
-		}),
-
-	delete: protectedProcedure
-		.input(ratingIdSchema)
-		.mutation(async ({ ctx, input }) => {
-			const userId = ctx.session.user.id;
+		},
+		{ isAuthenticated: true },
+	)
+	// DELETE /api/rating/:id - Delete a rating
+	.delete(
+		"/:id",
+		async ({ params, user, status }) => {
+			const parsed = z.object({ id: ratingIdSchema }).safeParse(params);
+			if (!parsed.success) {
+				return status(400, { error: parsed.error.message });
+			}
+			const userId = user.id;
 
 			const [row] = await db
 				.select({
@@ -257,11 +276,11 @@ export const ratingRouter = router({
 					characterId: characterTraitRating.characterId,
 				})
 				.from(characterTraitRating)
-				.where(eq(characterTraitRating.id, input))
+				.where(eq(characterTraitRating.id, params.id))
 				.limit(1);
 
 			if (!row) {
-				throw new TRPCError({ code: "NOT_FOUND", message: "Rating not found" });
+				return status(404, { error: "Rating not found" });
 			}
 
 			const [charRow] = await db
@@ -271,24 +290,19 @@ export const ratingRouter = router({
 				.limit(1);
 
 			if (!charRow) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Character not found",
-				});
+				return status(404, { error: "Character not found" });
 			}
 
 			// Check if user is a realm member
 			const isMember = await isRealmMember(userId, charRow.realmId);
 			if (!isMember) {
-				throw new TRPCError({
-					code: "FORBIDDEN",
-					message: "Not a realm member",
-				});
+				return status(403, { error: "Not a realm member" });
 			}
 
 			await db
 				.delete(characterTraitRating)
-				.where(eq(characterTraitRating.id, input));
+				.where(eq(characterTraitRating.id, params.id));
 			return true;
-		}),
-});
+		},
+		{ isAuthenticated: true },
+	);

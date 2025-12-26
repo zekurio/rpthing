@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
-import { trpc } from "@/lib/trpc";
+import { characterQueries, realmQueries } from "@/lib/eden";
 
 const CHARACTER_SKELETON_KEYS = Array.from(
 	{ length: 4 },
@@ -34,20 +34,20 @@ export function CharacterOverview({
 	const { user } = useAuth();
 	const router = useRouter();
 	const { data: realms, isPending: realmsLoading } = useQuery({
-		...trpc.realm.list.queryOptions(),
+		...realmQueries.list(),
 	});
 
 	// Get characters from all realms using useQueries
 	const realmIds = realms?.map((realm) => realm.id) || [];
-	const characterQueries = useQueries({
+	const characterQueriesResult = useQueries({
 		queries: realmIds.map((realmId) => ({
-			...trpc.character.list.queryOptions({ realmId }),
+			...characterQueries.list(realmId),
 			enabled: !!realmId,
 		})),
 	});
 
 	// Group characters by realm, showing 4 most recent per realm
-	const charactersByRealm = characterQueries
+	const charactersByRealm = characterQueriesResult
 		.map((query, index) => {
 			const realmId = realmIds[index];
 			const realm = realms?.find((r) => r.id === realmId);
@@ -72,7 +72,8 @@ export function CharacterOverview({
 		})
 		.filter((group) => group.characters.length > 0 && group.realm);
 
-	const isLoading = realmsLoading || characterQueries.some((q) => q.isPending);
+	const isLoading =
+		realmsLoading || characterQueriesResult.some((q) => q.isPending);
 
 	if (isLoading) {
 		if (unstyled) {

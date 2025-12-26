@@ -26,8 +26,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 import { useRealmAccess } from "@/hooks/use-realm-access";
+import { characterMutations, queryClient } from "@/lib/eden";
+import { queryKeys } from "@/lib/query-keys";
 import { gradeForValue } from "@/lib/traits";
-import { queryClient, trpc } from "@/lib/trpc";
 
 interface CharacterCardProps {
 	character: CharacterListItem;
@@ -54,11 +55,11 @@ export const CharacterCard = memo(function CharacterCard({
 		user && (character.userId === user.id || realm?.ownerId === user.id);
 
 	const deleteMutation = useMutation({
-		...trpc.character.delete.mutationOptions(),
+		mutationFn: (data: { id: string }) => characterMutations.delete(data.id),
 		onSuccess: () => {
 			onChanged();
 			queryClient.invalidateQueries({
-				queryKey: trpc.character.list.queryKey(),
+				queryKey: queryKeys.character.all,
 			});
 			toast.success("Character deleted");
 			setDeleteOpen(false);

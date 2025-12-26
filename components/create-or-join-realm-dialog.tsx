@@ -40,7 +40,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { queryClient, trpc } from "@/lib/trpc";
+import { queryClient, realmMutations, realmQueries } from "@/lib/eden";
+import { queryKeys } from "@/lib/query-keys";
 import { uploadWithProgress } from "@/lib/utils";
 
 const createRealmSchema = z.object({
@@ -114,15 +115,20 @@ export function CreateOrJoinRealmDialog({
 
 	// Fetch user's realms for template selection
 	const { data: userRealms } = useQuery({
-		...trpc.realm.list.queryOptions(),
+		...realmQueries.list(),
 		enabled: open && currentView === "create",
 	});
 
 	const createMutation = useMutation({
-		...trpc.realm.create.mutationOptions(),
+		mutationFn: (data: {
+			name: string;
+			description?: string;
+			password?: string;
+			templateRealmId?: string;
+		}) => realmMutations.create(data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
-				queryKey: trpc.realm.list.queryKey(),
+				queryKey: queryKeys.realm.list(),
 			});
 			toast.success("Realm created successfully!");
 			handleClose();
@@ -134,10 +140,11 @@ export function CreateOrJoinRealmDialog({
 	});
 
 	const joinMutation = useMutation({
-		...trpc.realm.join.mutationOptions(),
+		mutationFn: (data: { realmId: string; password?: string }) =>
+			realmMutations.join(data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
-				queryKey: trpc.realm.list.queryKey(),
+				queryKey: queryKeys.realm.list(),
 			});
 			toast.success("Successfully joined realm!");
 			handleClose();
@@ -232,7 +239,7 @@ export function CreateOrJoinRealmDialog({
 					await uploadIcon(realm.id, selectedFile, originalFile, percentCrop);
 					// Invalidate realm list to refresh sidebar
 					queryClient.invalidateQueries({
-						queryKey: trpc.realm.list.queryKey(),
+						queryKey: queryKeys.realm.list(),
 					});
 				}
 

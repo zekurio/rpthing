@@ -1,1 +1,0 @@
-/home/zekurio/Git/rpthing/AGENTS.md

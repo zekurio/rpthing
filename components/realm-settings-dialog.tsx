@@ -66,7 +66,14 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { queryClient, trpc } from "@/lib/trpc";
+import {
+	queryClient,
+	realmMutations,
+	realmQueries,
+	traitMutations,
+	traitQueries,
+} from "@/lib/eden";
+import { queryKeys } from "@/lib/query-keys";
 import { uploadWithProgress } from "@/lib/utils";
 
 type SettingsSection = "overview" | "members" | "traits";
@@ -121,7 +128,7 @@ function OverviewSection({ realmId }: { realmId: string }) {
 	const [clearPassword, setClearPassword] = useState(false);
 
 	const { data: realm, isLoading } = useQuery({
-		...trpc.realm.getById.queryOptions({ realmId }),
+		...realmQueries.byId(realmId),
 		enabled: !!realmId,
 	});
 
@@ -131,13 +138,21 @@ function OverviewSection({ realmId }: { realmId: string }) {
 	});
 
 	const updateMutation = useMutation({
-		...trpc.realm.update.mutationOptions(),
+		mutationFn: ({
+			id,
+			...data
+		}: {
+			id: string;
+			name?: string;
+			description?: string;
+			password?: string;
+		}) => realmMutations.update(id, data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
-				queryKey: trpc.realm.list.queryKey(),
+				queryKey: queryKeys.realm.list(),
 			});
 			queryClient.invalidateQueries({
-				queryKey: trpc.realm.getById.queryKey({ realmId }),
+				queryKey: queryKeys.realm.byId(realmId),
 			});
 			toast.success("Realm updated.");
 		},
@@ -233,18 +248,18 @@ function OverviewSection({ realmId }: { realmId: string }) {
 			if (selectedFile) {
 				await uploadIcon(realmId, selectedFile, originalFile, percentCrop);
 				queryClient.invalidateQueries({
-					queryKey: trpc.realm.list.queryKey(),
+					queryKey: queryKeys.realm.list(),
 				});
 				queryClient.invalidateQueries({
-					queryKey: trpc.realm.getById.queryKey({ realmId }),
+					queryKey: queryKeys.realm.byId(realmId),
 				});
 			} else if (removeIcon && currentIconSrc) {
 				await deleteIcon(realmId);
 				queryClient.invalidateQueries({
-					queryKey: trpc.realm.list.queryKey(),
+					queryKey: queryKeys.realm.list(),
 				});
 				queryClient.invalidateQueries({
-					queryKey: trpc.realm.getById.queryKey({ realmId }),
+					queryKey: queryKeys.realm.byId(realmId),
 				});
 			}
 		} catch (error) {
@@ -419,18 +434,24 @@ function MembersSection({
 	} | null>(null);
 
 	const { data: members, isLoading } = useQuery({
-		...trpc.realm.getMembers.queryOptions({ realmId }),
+		...realmQueries.members(realmId),
 		enabled: !!realmId,
 	});
 
 	const transferMutation = useMutation({
-		...trpc.realm.transferOwnership.mutationOptions(),
+		mutationFn: ({
+			realmId,
+			newOwnerUserId,
+		}: {
+			realmId: string;
+			newOwnerUserId: string;
+		}) => realmMutations.transferOwnership(realmId, newOwnerUserId),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
-				queryKey: trpc.realm.getMembers.queryKey({ realmId }),
+				queryKey: queryKeys.realm.members(realmId),
 			});
 			queryClient.invalidateQueries({
-				queryKey: trpc.realm.list.queryKey(),
+				queryKey: queryKeys.realm.list(),
 			});
 			toast.success("Ownership transferred successfully.");
 			setTransferDialogOpen(false);
@@ -569,7 +590,7 @@ function TraitsSection({ realmId }: { realmId: string }) {
 	} | null>(null);
 
 	const { data: traits, isLoading } = useQuery({
-		...trpc.trait.list.queryOptions({ realmId }),
+		...traitQueries.list(realmId),
 		enabled: !!realmId,
 	});
 
@@ -584,10 +605,15 @@ function TraitsSection({ realmId }: { realmId: string }) {
 	});
 
 	const createMutation = useMutation({
-		...trpc.trait.create.mutationOptions(),
+		mutationFn: (data: {
+			name: string;
+			realmId: string;
+			description?: string;
+			displayMode?: "number" | "grade";
+		}) => traitMutations.create(data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
-				queryKey: trpc.trait.list.queryKey({ realmId }),
+				queryKey: queryKeys.trait.list(realmId),
 			});
 			toast.success("Trait created.");
 			setCreateDialogOpen(false);
@@ -597,10 +623,18 @@ function TraitsSection({ realmId }: { realmId: string }) {
 	});
 
 	const updateMutation = useMutation({
-		...trpc.trait.update.mutationOptions(),
+		mutationFn: ({
+			id,
+			...data
+		}: {
+			id: string;
+			name?: string;
+			description?: string;
+			displayMode?: "number" | "grade";
+		}) => traitMutations.update(id, data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
-				queryKey: trpc.trait.list.queryKey({ realmId }),
+				queryKey: queryKeys.trait.list(realmId),
 			});
 			toast.success("Trait updated.");
 			setEditDialogOpen(false);
@@ -609,10 +643,10 @@ function TraitsSection({ realmId }: { realmId: string }) {
 	});
 
 	const deleteMutation = useMutation({
-		...trpc.trait.delete.mutationOptions(),
+		mutationFn: (id: string) => traitMutations.delete(id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
-				queryKey: trpc.trait.list.queryKey({ realmId }),
+				queryKey: queryKeys.trait.list(realmId),
 			});
 			toast.success("Trait deleted.");
 			setDeleteDialogOpen(false);
@@ -988,7 +1022,7 @@ export function RealmSettingsDialog({
 	const [activeTab, setActiveTab] = useState<SettingsSection>("overview");
 
 	const { data: realm } = useQuery({
-		...trpc.realm.getById.queryOptions({ realmId: realmId ?? "" }),
+		...realmQueries.byId(realmId ?? ""),
 		enabled: !!realmId && open,
 	});
 

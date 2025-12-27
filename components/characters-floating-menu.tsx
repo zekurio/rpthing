@@ -33,9 +33,10 @@ function isInputFocused(): boolean {
 function useFloatingAboveKeyboard() {
 	const [bottom, setBottom] = useState(16); // Default 1rem = 16px
 	const isInputFocusedRef = useRef(false);
-	const keyboardHeightRef = useRef(0);
 
 	useEffect(() => {
+		// Also listen to scroll events since visualViewport fires on scroll too
+		// when the keyboard is open (viewport moves relative to layout viewport)
 		if (typeof window === "undefined" || !window.visualViewport) {
 			return;
 		}
@@ -43,27 +44,26 @@ function useFloatingAboveKeyboard() {
 		const vv = window.visualViewport;
 
 		const updatePosition = () => {
-			// Only consider keyboard open if an input is focused
+			// Only adjust for keyboard if an input is focused
 			if (!isInputFocusedRef.current) {
-				keyboardHeightRef.current = 0;
 				setBottom(16);
 				return;
 			}
 
-			const heightDiff = window.innerHeight - vv.height;
+			// Calculate the distance from the bottom of the visual viewport to
+			// the bottom of the layout viewport. This accounts for both the
+			// keyboard height AND any scroll offset, keeping the element
+			// positioned correctly relative to what the user actually sees.
+			const visualBottom = vv.offsetTop + vv.height;
+			const keyboardHeight = window.innerHeight - visualBottom;
 
-			// Only update if this looks like a keyboard (>100px) and height increased
-			// This prevents address bar show/hide from affecting position
-			if (heightDiff > 100 && heightDiff >= keyboardHeightRef.current) {
-				keyboardHeightRef.current = heightDiff;
-				setBottom(heightDiff + 16);
-			} else if (heightDiff <= 100) {
-				// Keyboard closed
-				keyboardHeightRef.current = 0;
+			// Only treat as keyboard if significant height (>100px)
+			// This filters out address bar changes
+			if (keyboardHeight > 100) {
+				setBottom(keyboardHeight + 16);
+			} else {
 				setBottom(16);
 			}
-			// If heightDiff decreased but is still >100, keep current position
-			// This handles the case where scrolling causes slight viewport changes
 		};
 
 		const handleFocusIn = () => {
@@ -84,7 +84,6 @@ function useFloatingAboveKeyboard() {
 
 			if (!isMovingToInput) {
 				isInputFocusedRef.current = false;
-				keyboardHeightRef.current = 0;
 				setBottom(16);
 			}
 		};
@@ -98,12 +97,14 @@ function useFloatingAboveKeyboard() {
 		document.addEventListener("focusin", handleFocusIn);
 		document.addEventListener("focusout", handleFocusOut);
 		vv.addEventListener("resize", updatePosition);
+		vv.addEventListener("scroll", updatePosition);
 		window.addEventListener("orientationchange", updatePosition);
 
 		return () => {
 			document.removeEventListener("focusin", handleFocusIn);
 			document.removeEventListener("focusout", handleFocusOut);
 			vv.removeEventListener("resize", updatePosition);
+			vv.removeEventListener("scroll", updatePosition);
 			window.removeEventListener("orientationchange", updatePosition);
 		};
 	}, []);

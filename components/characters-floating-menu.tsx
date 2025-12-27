@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CharactersSearchFilterBar } from "@/components/characters-search-filter-bar";
 import { Button } from "@/components/ui/button";
 
@@ -14,13 +14,26 @@ interface CharactersFloatingMenuProps {
 	onCreateClick: () => void;
 }
 
+function isInputFocused(): boolean {
+	const activeElement = document.activeElement;
+	if (!activeElement) return false;
+	const tagName = activeElement.tagName.toLowerCase();
+	return (
+		tagName === "input" ||
+		tagName === "textarea" ||
+		activeElement.getAttribute("contenteditable") === "true"
+	);
+}
+
 /**
  * Hook to position a fixed element above the virtual keyboard on mobile.
- * Uses the Visual Viewport API to track keyboard state and adjust positioning.
- * Only updates on resize (keyboard open/close), not on scroll.
+ * Uses the Visual Viewport API combined with focus tracking to avoid
+ * false positives from browser chrome (address bar) resizing.
  */
 function useFloatingAboveKeyboard() {
 	const [bottom, setBottom] = useState(16); // Default 1rem = 16px
+	const isInputFocusedRef = useRef(false);
+	const keyboardHeightRef = useRef(0);
 
 	useEffect(() => {
 		if (typeof window === "undefined" || !window.visualViewport) {
@@ -30,26 +43,66 @@ function useFloatingAboveKeyboard() {
 		const vv = window.visualViewport;
 
 		const updatePosition = () => {
-			// When keyboard opens, visualViewport.height shrinks
-			// The difference tells us how much space the keyboard takes
-			const keyboardHeight = window.innerHeight - vv.height;
+			// Only consider keyboard open if an input is focused
+			if (!isInputFocusedRef.current) {
+				keyboardHeightRef.current = 0;
+				setBottom(16);
+				return;
+			}
 
-			// Only adjust if keyboard is actually open (significant height difference)
-			if (keyboardHeight > 100) {
-				setBottom(keyboardHeight + 16);
-			} else {
+			const heightDiff = window.innerHeight - vv.height;
+
+			// Only update if this looks like a keyboard (>100px) and height increased
+			// This prevents address bar show/hide from affecting position
+			if (heightDiff > 100 && heightDiff >= keyboardHeightRef.current) {
+				keyboardHeightRef.current = heightDiff;
+				setBottom(heightDiff + 16);
+			} else if (heightDiff <= 100) {
+				// Keyboard closed
+				keyboardHeightRef.current = 0;
+				setBottom(16);
+			}
+			// If heightDiff decreased but is still >100, keep current position
+			// This handles the case where scrolling causes slight viewport changes
+		};
+
+		const handleFocusIn = () => {
+			if (isInputFocused()) {
+				isInputFocusedRef.current = true;
+				// Delay to let keyboard animation start
+				setTimeout(updatePosition, 100);
+			}
+		};
+
+		const handleFocusOut = (e: FocusEvent) => {
+			const relatedTarget = e.relatedTarget as HTMLElement | null;
+			const isMovingToInput =
+				relatedTarget &&
+				(relatedTarget.tagName.toLowerCase() === "input" ||
+					relatedTarget.tagName.toLowerCase() === "textarea" ||
+					relatedTarget.getAttribute("contenteditable") === "true");
+
+			if (!isMovingToInput) {
+				isInputFocusedRef.current = false;
+				keyboardHeightRef.current = 0;
 				setBottom(16);
 			}
 		};
 
-		// Initial position
-		updatePosition();
+		// Initial state
+		if (isInputFocused()) {
+			isInputFocusedRef.current = true;
+			updatePosition();
+		}
 
-		// Only listen to resize (keyboard open/close), not scroll
+		document.addEventListener("focusin", handleFocusIn);
+		document.addEventListener("focusout", handleFocusOut);
 		vv.addEventListener("resize", updatePosition);
 		window.addEventListener("orientationchange", updatePosition);
 
 		return () => {
+			document.removeEventListener("focusin", handleFocusIn);
+			document.removeEventListener("focusout", handleFocusOut);
 			vv.removeEventListener("resize", updatePosition);
 			window.removeEventListener("orientationchange", updatePosition);
 		};

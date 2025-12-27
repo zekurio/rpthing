@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { CharactersSearchFilterBar } from "@/components/characters-search-filter-bar";
 import { Button } from "@/components/ui/button";
 
@@ -27,16 +27,14 @@ function isInputFocused(): boolean {
 
 /**
  * Hook to position a fixed element above the virtual keyboard on mobile.
- * Uses the Visual Viewport API combined with focus tracking to avoid
- * false positives from browser chrome (address bar) resizing.
+ * Uses direct DOM manipulation to avoid React re-renders during scroll,
+ * which eliminates twitching/jitter on mobile devices.
  */
-function useFloatingAboveKeyboard() {
-	const [bottom, setBottom] = useState(16); // Default 1rem = 16px
+function useFloatingAboveKeyboard(ref: React.RefObject<HTMLDivElement | null>) {
 	const isInputFocusedRef = useRef(false);
+	const lastBottomRef = useRef(16);
 
 	useEffect(() => {
-		// Also listen to scroll events since visualViewport fires on scroll too
-		// when the keyboard is open (viewport moves relative to layout viewport)
 		if (typeof window === "undefined" || !window.visualViewport) {
 			return;
 		}
@@ -44,25 +42,29 @@ function useFloatingAboveKeyboard() {
 		const vv = window.visualViewport;
 
 		const updatePosition = () => {
+			if (!ref.current) return;
+
+			let newBottom = 16;
+
 			// Only adjust for keyboard if an input is focused
-			if (!isInputFocusedRef.current) {
-				setBottom(16);
-				return;
+			if (isInputFocusedRef.current) {
+				// Calculate the distance from the bottom of the visual viewport to
+				// the bottom of the layout viewport. This accounts for both the
+				// keyboard height AND any scroll offset.
+				const visualBottom = vv.offsetTop + vv.height;
+				const keyboardHeight = window.innerHeight - visualBottom;
+
+				// Only treat as keyboard if significant height (>100px)
+				// This filters out address bar changes
+				if (keyboardHeight > 100) {
+					newBottom = keyboardHeight + 16;
+				}
 			}
 
-			// Calculate the distance from the bottom of the visual viewport to
-			// the bottom of the layout viewport. This accounts for both the
-			// keyboard height AND any scroll offset, keeping the element
-			// positioned correctly relative to what the user actually sees.
-			const visualBottom = vv.offsetTop + vv.height;
-			const keyboardHeight = window.innerHeight - visualBottom;
-
-			// Only treat as keyboard if significant height (>100px)
-			// This filters out address bar changes
-			if (keyboardHeight > 100) {
-				setBottom(keyboardHeight + 16);
-			} else {
-				setBottom(16);
+			// Only update DOM if value changed to minimize reflows
+			if (newBottom !== lastBottomRef.current) {
+				lastBottomRef.current = newBottom;
+				ref.current.style.bottom = `${newBottom}px`;
 			}
 		};
 
@@ -84,7 +86,7 @@ function useFloatingAboveKeyboard() {
 
 			if (!isMovingToInput) {
 				isInputFocusedRef.current = false;
-				setBottom(16);
+				updatePosition();
 			}
 		};
 
@@ -107,9 +109,7 @@ function useFloatingAboveKeyboard() {
 			vv.removeEventListener("scroll", updatePosition);
 			window.removeEventListener("orientationchange", updatePosition);
 		};
-	}, []);
-
-	return bottom;
+	}, [ref]);
 }
 
 export function CharactersFloatingMenu({
@@ -120,12 +120,13 @@ export function CharactersFloatingMenu({
 	onFilterClick,
 	onCreateClick,
 }: CharactersFloatingMenuProps) {
-	const bottom = useFloatingAboveKeyboard();
+	const menuRef = useRef<HTMLDivElement>(null);
+	useFloatingAboveKeyboard(menuRef);
 
 	return (
 		<div
-			className="-translate-x-1/2 fixed left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md items-center gap-2 rounded-lg border border-border bg-background/80 px-3 py-2 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80 md:bottom-6 md:w-auto md:max-w-none"
-			style={{ bottom: `${bottom}px` }}
+			ref={menuRef}
+			className="-translate-x-1/2 fixed bottom-4 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md items-center gap-2 rounded-lg border border-border bg-background/80 px-3 py-2 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/80 md:bottom-6 md:w-auto md:max-w-none"
 		>
 			<CharactersSearchFilterBar
 				localSearch={localSearch}
